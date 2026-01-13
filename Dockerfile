@@ -70,9 +70,8 @@ COPY medical_gen ./medical_gen
 # Create public directory (will be populated at runtime if needed)
 RUN mkdir -p ./public
 
-# Expose port (Railway provides PORT env variable)
-ENV PORT=5001
-EXPOSE $PORT
+# Expose port (Railway provides PORT env variable dynamically)
+EXPOSE 8080
 
 # Health check (optional but recommended)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
