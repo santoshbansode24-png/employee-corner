@@ -66,7 +66,9 @@ COPY --from=frontend-builder /app/dist ./dist
 # Copy server and application files
 COPY server.js ./
 COPY medical_gen ./medical_gen
-COPY public ./public
+
+# Create public directory (will be populated at runtime if needed)
+RUN mkdir -p ./public
 
 # Expose port (Railway provides PORT env variable)
 ENV PORT=5001
