@@ -1,7 +1,0 @@
-{
-    "name": "employee-corner/medical-reimbursement",
-    "description": "Medical Reimbursement Form PDF Generator",
-    "require": {
-        "mpdf/mpdf": "^8.0"
-    }
-}

@@ -1,0 +1,70 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build outputs
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+tmp/
+*.tmp
+update.zip
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# Documentation (not needed in production)
+README.md
+README_TESTING.md
+SHARING_INSTRUCTIONS.md
+PROJECT_SUMMARY.md
+migration_guide.md
+
+# Development scripts
+prepare_share.bat
+create_shareable_zip.ps1
+
+# Test files
+*.test.js
+*.spec.js
+
+# Uploads directory (if not needed in container)
+uploads/
+
+# Composer (PHP - not needed)
+composer.phar
+vendor/
+
+# Excel files (if not needed in production)
+*.xlsx

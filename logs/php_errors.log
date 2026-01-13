@@ -1,7 +1,0 @@
-[11-Dec-2025 09:14:14 Europe/Berlin] Error: Invalid request method. Expected POST, got HEAD
-[11-Dec-2025 09:17:00 Europe/Berlin] Error: Invalid request method. Expected POST, got GET
-[11-Dec-2025 09:21:54 Europe/Berlin] Form submission received with 62 fields
-[11-Dec-2025 09:21:54 Europe/Berlin] Template loaded successfully
-[11-Dec-2025 09:21:54 Europe/Berlin] Form validation passed
-[11-Dec-2025 09:21:54 Europe/Berlin] Form data processed successfully
-[11-Dec-2025 09:21:56 Europe/Berlin] PDF generated successfully
