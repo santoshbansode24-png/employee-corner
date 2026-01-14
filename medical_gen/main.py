@@ -18,14 +18,59 @@ except ImportError:
 st.set_page_config(page_title="Medical Reimbursement PDF Generator", layout="wide")
 st.title("🏥 Medical Reimbursement PDF Generator")
 
-# Custom CSS to increase font size
+# Custom CSS to increase font size and ensure Marathi font support
 st.markdown("""
     <style>
-        /* Import fonts - Inter for English and Noto Sans Devanagari for Marathi */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+        /* Preconnect to Google Fonts for faster loading */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@100;200;300;400;500;600;700;800;900&display=swap');
         
-        html, body, [class*="css"] {
-            font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+        /* Multiple font-face declarations for better browser support */
+        @font-face {
+            font-family: 'Noto Sans Devanagari';
+            font-style: normal;
+            font-weight: 100 900;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/notosansdevanagari/v25/TuGoUUFzXI5FBtUq5a8bjKYTZjtRU6Sgv3NaV_SNmI0b8QQCQmHn6B2OHjbL_08AlXQky-AzoFoW4Ow.woff2') format('woff2');
+            unicode-range: U+0900-097F, U+1CD0-1CF6, U+1CF8-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FB;
+        }
+        
+        /* Fallback font for Devanagari if Google Fonts fails */
+        @font-face {
+            font-family: 'Devanagari Fallback';
+            src: local('Noto Sans Devanagari'), 
+                 local('Mangal'), 
+                 local('Kokila'), 
+                 local('Aparajita'),
+                 local('Sanskrit Text');
+            unicode-range: U+0900-097F;
+        }
+        
+        /* Apply Marathi font to all elements with maximum specificity */
+        * {
+            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Mangal', 'Kokila', sans-serif !important;
+        }
+        
+        html, body, [class*="css"], div, span, p, label, input, textarea, button, h1, h2, h3, h4, h5, h6, [data-testid] {
+            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', 'Mangal', sans-serif !important;
+        }
+        
+        /* Streamlit specific selectors with highest priority */
+        .stApp, .stApp *, [data-testid="stMarkdownContainer"], [data-testid="stText"], 
+        .stTextInput label, .stDateInput label, .stNumberInput label, .stSelectbox label,
+        .stTextInput input, .stDateInput input, .stNumberInput input, .stSelectbox select {
+            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', 'Mangal', sans-serif !important;
+        }
+        
+        /* Force font rendering for Devanagari characters */
+        *[lang="mr"], *[lang="hi"], *:lang(mr), *:lang(hi) {
+            font-family: 'Noto Sans Devanagari', 'Mangal', 'Kokila', sans-serif !important;
+        }
+        
+        /* Ensure proper text rendering for complex scripts */
+        * {
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Main App Background */
@@ -762,20 +807,18 @@ with st.container():
                         st.session_state['pdf_generated'] = True
                         st.session_state['pdf_type'] = 'reimbursement'
                         st.session_state['pdf_path'] = os.path.join(script_dir, "temp_filled_form.pdf")
+                        st.session_state['pdf_filename'] = f"Medical_Claim_{emp_name_english.replace(' ', '_') if emp_name_english else 'Form'}.pdf"
                         st.success("✅ PDF generated successfully!")
 
-                        # Copy to public for URL access
-                        public_dir = os.path.join(script_dir, "..", "public")
-                        if not os.path.exists(public_dir):
-                            os.makedirs(public_dir)
-                            
-                        target_pdf_name = f"Medical_Claim_{emp_name_english.replace(' ', '_')}.pdf"
-                        public_pdf_path = os.path.join(public_dir, target_pdf_name)
-                        shutil.copy(st.session_state['pdf_path'], public_pdf_path)
-                        
-                        st.markdown("### 🔗 Direct Access Links:")
-                        st.markdown(f"- **[Open via XAMPP (Apache)]({config.XAMPP_BASE_URL}/public/{target_pdf_name})** (Right-click > Save Link As)")
-                        st.markdown(f"- **[Open via Vite (React)]({config.REACT_BASE_URL}/{target_pdf_name})**")
+                        # Show download button immediately
+                        with open(st.session_state['pdf_path'], "rb") as pdf_file:
+                            st.download_button(
+                                label="📥 Download Reimbursement PDF",
+                                data=pdf_file,
+                                file_name=st.session_state['pdf_filename'],
+                                mime="application/pdf",
+                                key="pdf_download_main"
+                            )
                     except Exception as e:
                         st.error(f"⚠️ PDF Conversion Failed: {e}")
                         st.info("The Word file was created successfully, but PDF conversion failed. You can download the Word file below.")
@@ -783,22 +826,18 @@ with st.container():
                     st.warning("⚠️ LibreOffice not found. PDF creation skipped.")
                     st.info("The Word file was created successfully. Please download it below.")
                 
-                # ALWAYS SHOW DOCX DOWNLOAD IF PDF FAILS OR NOT FOUND
+                # ALWAYS SHOW DOCX DOWNLOAD
                 with open(temp_docx, "rb") as docx_file:
                     st.download_button(
                         label="📥 Download Word Document (.docx)",
                         data=docx_file,
-                        file_name=f"Medical_Claim_{emp_name_english}.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        file_name=f"Medical_Claim_{emp_name_english if emp_name_english else 'Form'}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key="docx_download"
                     )
 
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    if st.session_state.get('pdf_generated') and st.session_state.get('pdf_type') == 'reimbursement':
-        pdf_path = st.session_state.get('pdf_path')
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as pdf_file:
-                st.download_button(label="📥 Download Reimbursement PDF", data=pdf_file, file_name=f"Medical_Claim_{emp_name_english}.pdf", mime="application/pdf")
-
 # Tab 2 'Expense Calculator' removed as per request
+

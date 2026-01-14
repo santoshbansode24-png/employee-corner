@@ -34,6 +34,10 @@ RUN apt-get update && apt-get install -y \
     chromium \
     # Required libraries for Chromium
     fonts-liberation \
+    # Devanagari fonts for Marathi support
+    fonts-noto-core \
+    fonts-indic \
+    fonts-noto-cjk \
     libnss3 \
     libatk-bridge2.0-0 \
     libdrm2 \
