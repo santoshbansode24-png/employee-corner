@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y \
     fonts-noto-core \
     fonts-indic \
     fonts-noto-cjk \
+    # Font configuration tools
+    fontconfig \
     libnss3 \
     libatk-bridge2.0-0 \
     libdrm2 \
@@ -49,6 +51,20 @@ RUN apt-get update && apt-get install -y \
     libreoffice \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure fonts for Devanagari/Marathi support
+RUN mkdir -p /etc/fonts/conf.d && \
+    echo '<?xml version="1.0"?>' > /etc/fonts/local.conf && \
+    echo '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">' >> /etc/fonts/local.conf && \
+    echo '<fontconfig>' >> /etc/fonts/local.conf && \
+    echo '  <match target="pattern">' >> /etc/fonts/local.conf && \
+    echo '    <test qual="any" name="family"><string>sans-serif</string></test>' >> /etc/fonts/local.conf && \
+    echo '    <edit name="family" mode="prepend" binding="strong">' >> /etc/fonts/local.conf && \
+    echo '      <string>Noto Sans Devanagari</string>' >> /etc/fonts/local.conf && \
+    echo '    </edit>' >> /etc/fonts/local.conf && \
+    echo '  </match>' >> /etc/fonts/local.conf && \
+    echo '</fontconfig>' >> /etc/fonts/local.conf && \
+    fc-cache -f -v
 
 # Configure Puppeteer to use system Chromium (saves 170MB download)
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
