@@ -80,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Start both Node.js server and Streamlit
 CMD ["npx", "concurrently", \
     "node server.js", \
-    "python3 -m streamlit run medical_gen/main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.baseUrlPath=/reimbursement-gen"]
+    "python3 -m streamlit run medical_gen/main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true"]

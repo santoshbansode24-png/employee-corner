@@ -3,7 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npx concurrently \"node server.js\" \"python3 -m streamlit run medical_gen/main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.baseUrlPath=/reimbursement-gen\""
+startCommand = "npx concurrently \"node server.js\" \"python3 -m streamlit run medical_gen/main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true\""
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
