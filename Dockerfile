@@ -32,8 +32,10 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     # Chromium for Puppeteer (instead of downloading 170MB)
     chromium \
-    # Required libraries for Chromium
+    # Standard fonts for English text
     fonts-liberation \
+    fonts-liberation2 \
+    ttf-mscorefonts-installer \
     # Devanagari fonts for Marathi support
     fonts-noto-core \
     fonts-indic \
