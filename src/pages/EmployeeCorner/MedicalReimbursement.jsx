@@ -14,7 +14,7 @@ function MedicalReimbursement() {
                 <div className="w-full relative">
                     <div className="w-full">
                         <iframe
-                            src={`http://${window.location.hostname}:8501/?embed=true`}
+                            src="/reimbursement-gen/?embed=true"
                             title="Medical Reimbursement Form"
                             width="100%"
                             height="1200px"
