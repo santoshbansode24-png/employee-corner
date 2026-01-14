@@ -21,10 +21,10 @@ st.title("🏥 Medical Reimbursement PDF Generator")
 # Custom CSS to increase font size and ensure Marathi font support
 st.markdown("""
     <style>
-        /* Preconnect to Google Fonts for faster loading */
+        /* Import fonts - Inter for English and Noto Sans Devanagari for Marathi */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@100;200;300;400;500;600;700;800;900&display=swap');
         
-        /* Multiple font-face declarations for better browser support */
+        /* Devanagari font with unicode-range (only applies to Marathi characters) */
         @font-face {
             font-family: 'Noto Sans Devanagari';
             font-style: normal;
@@ -45,25 +45,20 @@ st.markdown("""
             unicode-range: U+0900-097F;
         }
         
-        /* Apply Marathi font to all elements with maximum specificity */
+        /* Font stack: Inter for English, Noto Sans Devanagari for Marathi (via unicode-range) */
         * {
-            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Mangal', 'Kokila', sans-serif !important;
+            font-family: 'Inter', 'Noto Sans Devanagari', 'Devanagari Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         }
         
         html, body, [class*="css"], div, span, p, label, input, textarea, button, h1, h2, h3, h4, h5, h6, [data-testid] {
-            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', 'Mangal', sans-serif !important;
+            font-family: 'Inter', 'Noto Sans Devanagari', 'Devanagari Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         }
         
         /* Streamlit specific selectors with highest priority */
         .stApp, .stApp *, [data-testid="stMarkdownContainer"], [data-testid="stText"], 
         .stTextInput label, .stDateInput label, .stNumberInput label, .stSelectbox label,
         .stTextInput input, .stDateInput input, .stNumberInput input, .stSelectbox select {
-            font-family: 'Noto Sans Devanagari', 'Devanagari Fallback', 'Inter', 'Mangal', sans-serif !important;
-        }
-        
-        /* Force font rendering for Devanagari characters */
-        *[lang="mr"], *[lang="hi"], *:lang(mr), *:lang(hi) {
-            font-family: 'Noto Sans Devanagari', 'Mangal', 'Kokila', sans-serif !important;
+            font-family: 'Inter', 'Noto Sans Devanagari', 'Devanagari Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         }
         
         /* Ensure proper text rendering for complex scripts */
