@@ -21,11 +21,11 @@ st.title("🏥 Medical Reimbursement PDF Generator")
 # Custom CSS to increase font size
 st.markdown("""
     <style>
-        /* Import a professional font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        /* Import fonts - Inter for English and Noto Sans Devanagari for Marathi */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
         
         html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
         }
 
         /* Main App Background */
