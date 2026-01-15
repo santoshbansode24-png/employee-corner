@@ -8,7 +8,20 @@ export default defineConfig({
     host: true,
     port: 3000,
     open: true,
-    allowedHosts: ['veeruapp.in']
+    allowedHosts: ['veeruapp.in'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false
+      },
+      '/reimbursement-gen': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+        ws: true // Enable WebSocket support for Streamlit
+      }
+    }
   },
   build: {
     outDir: 'dist',
