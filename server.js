@@ -417,22 +417,6 @@ app.post('/api/split-pdf', upload.single('file'), async (req, res) => {
 });
 
 
-// --- Proxy to Streamlit (Internal Port 8501) ---
-// This allows the single container to expose Streamlit via /reimbursement-gen
-// The proxy strips the /reimbursement-gen prefix before forwarding to Streamlit
-app.use('/reimbursement-gen', createProxyMiddleware({
-    target: 'http://127.0.0.1:8501',
-    changeOrigin: true,
-    ws: true, // Enable WebSocket support for Streamlit
-    pathRewrite: {
-        '^/reimbursement-gen': '' // Strip the prefix before forwarding
-    },
-    onError: (err, req, res) => {
-        console.error('Streamlit Proxy Error:', err);
-        res.status(500).send('Streamlit service unavailable');
-    }
-}));
-
 // --- Serve React Build (Production) ---
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
