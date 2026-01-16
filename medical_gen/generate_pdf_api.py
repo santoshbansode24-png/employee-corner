@@ -12,7 +12,7 @@ def generate_pdf_from_data(data_file):
             data = json.load(f)
         
         # Load template
-        template_path = os.path.join(os.path.dirname(__file__), 'template.docx')
+        template_path = os.path.join(os.path.dirname(__file__), 'template_fixed.docx')
         doc = DocxTemplate(template_path)
         
         # Prepare context with all variables
