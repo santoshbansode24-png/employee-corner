@@ -54,16 +54,32 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure fonts for Devanagari/Marathi support
+# Configure fonts for proper rendering (Arial -> Liberation Sans mapping)
 RUN mkdir -p /etc/fonts/conf.d && \
     echo '<?xml version="1.0"?>' > /etc/fonts/local.conf && \
     echo '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">' >> /etc/fonts/local.conf && \
     echo '<fontconfig>' >> /etc/fonts/local.conf && \
+    echo '  <!-- Map Arial to Liberation Sans for consistent rendering -->' >> /etc/fonts/local.conf && \
+    echo '  <match target="pattern">' >> /etc/fonts/local.conf && \
+    echo '    <test qual="any" name="family"><string>Arial</string></test>' >> /etc/fonts/local.conf && \
+    echo '    <edit name="family" mode="assign" binding="strong">' >> /etc/fonts/local.conf && \
+    echo '      <string>Liberation Sans</string>' >> /etc/fonts/local.conf && \
+    echo '    </edit>' >> /etc/fonts/local.conf && \
+    echo '  </match>' >> /etc/fonts/local.conf && \
+    echo '  <!-- Devanagari/Marathi font support -->' >> /etc/fonts/local.conf && \
     echo '  <match target="pattern">' >> /etc/fonts/local.conf && \
     echo '    <test qual="any" name="family"><string>sans-serif</string></test>' >> /etc/fonts/local.conf && \
+    echo '    <test name="lang" compare="contains"><string>mr</string></test>' >> /etc/fonts/local.conf && \
     echo '    <edit name="family" mode="prepend" binding="strong">' >> /etc/fonts/local.conf && \
     echo '      <string>Noto Sans Devanagari</string>' >> /etc/fonts/local.conf && \
     echo '    </edit>' >> /etc/fonts/local.conf && \
+    echo '  </match>' >> /etc/fonts/local.conf && \
+    echo '  <!-- Improve font rendering quality -->' >> /etc/fonts/local.conf && \
+    echo '  <match target="font">' >> /etc/fonts/local.conf && \
+    echo '    <edit name="antialias" mode="assign"><bool>true</bool></edit>' >> /etc/fonts/local.conf && \
+    echo '    <edit name="hinting" mode="assign"><bool>true</bool></edit>' >> /etc/fonts/local.conf && \
+    echo '    <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>' >> /etc/fonts/local.conf && \
+    echo '    <edit name="rgba" mode="assign"><const>rgb</const></edit>' >> /etc/fonts/local.conf && \
     echo '  </match>' >> /etc/fonts/local.conf && \
     echo '</fontconfig>' >> /etc/fonts/local.conf && \
     fc-cache -f -v
