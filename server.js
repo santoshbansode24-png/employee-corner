@@ -416,28 +416,6 @@ app.post('/api/split-pdf', upload.single('file'), async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Split failed' }); }
 });
 
-// 7. Generate Medical PDF (Legacy Python)
-app.post('/api/generate-medical-pdf', async (req, res) => {
-    try {
-        const formData = req.body;
-        const pythonScript = path.join(__dirname, 'medical_gen', 'generate_pdf_api.py');
-        const dataFile = path.join(__dirname, 'medical_gen', 'temp_data.json');
-        fs.writeFileSync(dataFile, JSON.stringify(formData, null, 2));
-        const pythonPath = path.join(__dirname, '.venv', 'Scripts', 'python.exe'); // Windows venv
-        const command = `"${pythonPath}" "${pythonScript}" "${dataFile}"`;
-        exec(command, (error, stdout, stderr) => {
-            if (error) { return res.status(500).json({ error: 'PDF generation failed', details: stderr }); }
-            const pdfPath = path.join(__dirname, 'medical_gen', 'temp_filled_form.pdf');
-            if (fs.existsSync(pdfPath)) {
-                res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', 'attachment; filename=Medical_Reimbursement_Form.pdf');
-                const fileStream = fs.createReadStream(pdfPath);
-                fileStream.pipe(res);
-                fileStream.on('close', () => { try { fs.unlinkSync(dataFile); } catch (e) { } });
-            } else { res.status(500).json({ error: 'PDF file not found after generation' }); }
-        });
-    } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
-});
 
 // --- Proxy to Streamlit (Internal Port 8501) ---
 // This allows the single container to expose Streamlit via /reimbursement-gen
@@ -474,7 +452,6 @@ if (fs.existsSync(distPath)) {
 app.listen(PORT, () => {
     console.log(`\n🚀 Employee Corner UNIFIED Backend running on Port ${PORT}`);
     console.log(`   - Arrears PDF: /api/calculate-arrears`);
-    console.log(`   - Medical PDF: /api/generate-medical-pdf`);
     console.log(`   - Tools: JPG/Word/Merge/Split\n`);
 });
 
