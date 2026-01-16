@@ -7,7 +7,7 @@ import PayslipCalculator from './pages/EmployeeCorner/PayslipCalculator'
 import PensionCalculator from './pages/EmployeeCorner/PensionCalculator'
 import PayScaleViewer from './pages/EmployeeCorner/PayScaleViewer'
 import Form16Calculator from './pages/EmployeeCorner/Form16Calculator'
-import MedicalReimbursement from './pages/EmployeeCorner/MedicalReimbursement'
+
 import ArrearsCalculator from './pages/EmployeeCorner/ArrearsCalculator'
 import SIPCalculator from './pages/FinancialCalculators/SIPCalculator'
 import FDCalculator from './pages/FinancialCalculators/FDCalculator'
@@ -35,7 +35,7 @@ function App() {
                             <Route path="/employee/payslip" element={<PayslipCalculator />} />
                             <Route path="/employee/pension" element={<PensionCalculator />} />
                             <Route path="/employee/payscale" element={<PayScaleViewer />} />
-                            <Route path="/employee/medical-reimbursement" element={<MedicalReimbursement />} />
+
                             <Route path="/employee/arrears" element={<ArrearsCalculator />} />
 
                             {/* Financial Calculators Routes */}
@@ -75,7 +75,7 @@ function Sidebar() {
                 { path: '/employee/arrears', label: 'Arrears Statement', icon: '📜' },
                 { path: '/employee/payscale', label: 'Pay Scale Viewer', icon: '📊' },
                 { path: '/employee/form16', label: 'Form-16 Calculator', icon: '📄' },
-                { path: '/employee/medical-reimbursement', label: 'Medical Reimbursement', icon: '🏥' },
+
             ]
         },
         {
