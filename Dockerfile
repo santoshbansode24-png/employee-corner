@@ -95,7 +95,7 @@ RUN npm ci --only=production
 
 # Install Python Dependencies for Medical Reimbursement
 COPY requirements.txt ./
-RUN pip3 install -r requirements.txt --break-system-packages
+RUN pip3 install -r requirements.txt
 
 
 
