@@ -102,6 +102,7 @@ RUN pip3 install -r requirements.txt
 # Copy built frontend from builder stage
 COPY --from=frontend-builder /app/dist ./dist
 
+COPY medical_gen ./medical_gen
 COPY server.js ./
 
 # Create public directory (will be populated at runtime if needed)
