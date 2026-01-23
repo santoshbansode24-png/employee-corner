@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,6 +36,39 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json());
+
+// Proxy for Medical Reimbursement Streamlit App
+app.use('/reimbursement-gen', createProxyMiddleware({
+    target: 'http://127.0.0.1:8501',
+    changeOrigin: true,
+    ws: true, // Enable Websockets for Streamlit
+    // No pathRewrite needed if we use --server.baseUrlPath in Streamlit
+}));
+
+
+
+// ... (existing imports)
+
+// --- START STREAMLIT SERVER (Medical Reimbursement) ---
+const PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
+const STREAMLIT_PORT = 8501;
+
+console.log('🚀 Starting Streamlit Background Service...');
+const pythonProcess = spawn(PYTHON_CMD, [
+    '-m', 'streamlit', 'run',
+    'medical_gen/main.py',
+    '--server.port', '8501',
+    '--server.headless', 'true',
+    // Set base path so Streamlit knows it is being served under /reimbursement-gen
+    '--server.baseUrlPath', '/reimbursement-gen'
+]);
+
+pythonProcess.stdout.on('data', (data) => console.log(`[Streamlit]: ${data}`));
+pythonProcess.stderr.on('data', (data) => console.error(`[Streamlit ERR]: ${data}`));
+
+// Clean up python process on exit
+process.on('exit', () => pythonProcess.kill());
+// -----------------------------------------------------
 
 // --- Helper Functions ---
 const cleanupFile = (filePath) => {
