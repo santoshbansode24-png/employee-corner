@@ -6,6 +6,7 @@ function PayslipCalculator() {
     const [formData, setFormData] = useState({
         employeeType: 'GPF',
         basicSalary: '',
+        payScale: 'S-7 to S-19', // Default middle grade
         daRate: 55,
         city: '',
         cityCategory: 'X',
@@ -85,26 +86,42 @@ function PayslipCalculator() {
         const hra = Math.round(basic * hraRate / 100)
 
         // Calculate TA based on salary and handicap status
+        // Calculate TA based on Grade/Scale + Salary Threshold + City + Handicap
         let ta = 0
         const cityInfo = cities[formData.city]
         const isMetro = cityInfo ? cityInfo.isMetro : false
-        const totalSalary = basic + da
+
+        let grade = formData.payScale; // 'S-1 to S-6', 'S-7 to S-19', 'S-20 to S-23'
+
+        // Rule: "When Basic Salary >= 24200 of Scale S-1 to S-6: The TA rate JUMPS to 1350 logic (same as S-7)"
+        if (grade === 'S-1 to S-6' && basic >= 24200) {
+            grade = 'S-7 to S-19'; // Treat as higher grade for TA calculation
+        }
 
         if (formData.isHandicap) {
-            if (totalSalary < 24200) {
-                ta = 2250
-            } else if (totalSalary >= 24200 && totalSalary < 56100) {
-                ta = isMetro ? 5400 : 2700
-            } else {
-                ta = isMetro ? 10800 : 5400
+            // HANDICAP RATES
+            if (grade === 'S-1 to S-6') {
+                ta = 2250; // Flat rate for lower grade handicap across all areas (based on user table inference, or usually double metro?)
+                // Table says: Reg: 2250, Metro: 2250. So Flat 2250.
+            } else if (grade === 'S-7 to S-19') {
+                // Table: Regular -> 2700 (Double of 1350?), Metro -> 5400 (Double of 2700?)
+                ta = isMetro ? 5400 : 2700;
+            } else if (grade === 'S-20 to S-23') {
+                // Table: Regular -> 5400, Metro -> 10800 ?? (Assuming proportional double like middle Tier)
+                // User said: "S-20... Handicapped... 5400 regular, 10800 Metro"
+                ta = isMetro ? 10800 : 5400;
             }
         } else {
-            if (totalSalary < 24200) {
-                ta = isMetro ? 1000 : 675
-            } else if (totalSalary >= 24200 && totalSalary < 56100) {
-                ta = isMetro ? 2700 : 1350
-            } else {
-                ta = isMetro ? 5400 : 2700
+            // REGULAR RATES (NON-HANDICAP)
+            if (grade === 'S-1 to S-6') {
+                // Table: Regular 675, Metro 1000
+                ta = isMetro ? 1000 : 675;
+            } else if (grade === 'S-7 to S-19') {
+                // Table: Regular 1350, Metro 2700
+                ta = isMetro ? 2700 : 1350;
+            } else if (grade === 'S-20 to S-23') {
+                // Table: Regular 2700, Metro 5400
+                ta = isMetro ? 5400 : 2700;
             }
         }
 
@@ -446,6 +463,24 @@ function PayslipCalculator() {
                                     required
                                 />
                                 <span className="form-help">Current DA Rate: 55%</span>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label form-label-required">Pay Scale / Grade</label>
+                                <select
+                                    name="payScale"
+                                    value={formData.payScale}
+                                    onChange={handleInputChange}
+                                    className="form-select"
+                                    required
+                                >
+                                    <option value="S-1 to S-6">S-1 to S-6 (Lower Grade)</option>
+                                    <option value="S-7 to S-19">S-7 to S-19 (Middle Grade)</option>
+                                    <option value="S-20 to S-23">S-20 to S-23 (Higher Grade)</option>
+                                </select>
+                                <span className="form-help text-xs text-blue-600">
+                                    *If S-1 to S-6 salary {'>='} 24,200, higher TA applies automatically.
+                                </span>
                             </div>
 
                             <div className="form-group">
