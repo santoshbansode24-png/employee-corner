@@ -28,6 +28,8 @@ FROM node:18-bullseye-slim
 # Install system dependencies with minimal footprint
 # Install system dependencies with minimal footprint
 RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
     # Chromium for Puppeteer (instead of downloading 170MB)
     chromium \
     # Standard fonts for English text
@@ -90,6 +92,10 @@ WORKDIR /app
 # Copy package files and install production dependencies
 COPY package*.json ./
 RUN npm ci --only=production
+
+# Install Python Dependencies for Medical Reimbursement
+COPY requirements.txt ./
+RUN pip3 install -r requirements.txt --break-system-packages
 
 
 

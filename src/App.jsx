@@ -77,8 +77,7 @@ function Sidebar() {
                 { path: '/employee/arrears', label: 'Arrears Statement', icon: '📜' },
                 { path: '/employee/payscale', label: 'Pay Scale Viewer', icon: '📊' },
                 { path: '/employee/form16', label: 'Form-16 Calculator', icon: '📄' },
-                // Show Medical Reimbursement ONLY in Development (Localhost)
-                ...(import.meta.env.DEV ? [{ path: '/employee/medical', label: 'Medical Reimbursement', icon: '🏥' }] : []),
+                { path: '/employee/medical', label: 'Medical Reimbursement', icon: '🏥' },
 
             ]
         },
