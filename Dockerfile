@@ -33,7 +33,6 @@ RUN apt-get update && apt-get install -y \
     # Standard fonts for English text
     fonts-liberation \
     fonts-liberation2 \
-    ttf-mscorefonts-installer \
     # Devanagari fonts for Marathi support
     fonts-noto-core \
     fonts-indic \
