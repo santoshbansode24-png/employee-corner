@@ -26,10 +26,8 @@ RUN npm run build
 FROM node:18-bullseye-slim
 
 # Install system dependencies with minimal footprint
+# Install system dependencies with minimal footprint
 RUN apt-get update && apt-get install -y \
-    # Python for Streamlit
-    python3 \
-    python3-pip \
     # Chromium for Puppeteer (instead of downloading 170MB)
     chromium \
     # Standard fonts for English text

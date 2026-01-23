@@ -20,6 +20,7 @@ import PDFtoJPG from './pages/UtilityTools/PDFtoJPG'
 import ImageCompressor from './pages/UtilityTools/ImageCompressor'
 import PDFMerge from './pages/UtilityTools/PDFMerge'
 import PDFSplit from './pages/UtilityTools/PDFSplit'
+import MedicalReimbursement from './pages/EmployeeCorner/MedicalReimbursement'
 
 function App() {
     return (
@@ -37,6 +38,7 @@ function App() {
                             <Route path="/employee/payscale" element={<PayScaleViewer />} />
 
                             <Route path="/employee/arrears" element={<ArrearsCalculator />} />
+                            <Route path="/employee/medical" element={<MedicalReimbursement />} />
 
                             {/* Financial Calculators Routes */}
                             <Route path="/financial/sip" element={<SIPCalculator />} />
@@ -75,6 +77,8 @@ function Sidebar() {
                 { path: '/employee/arrears', label: 'Arrears Statement', icon: '📜' },
                 { path: '/employee/payscale', label: 'Pay Scale Viewer', icon: '📊' },
                 { path: '/employee/form16', label: 'Form-16 Calculator', icon: '📄' },
+                // Show Medical Reimbursement ONLY in Development (Localhost)
+                ...(import.meta.env.DEV ? [{ path: '/employee/medical', label: 'Medical Reimbursement', icon: '🏥' }] : []),
 
             ]
         },

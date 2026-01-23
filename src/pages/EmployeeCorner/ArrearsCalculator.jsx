@@ -110,7 +110,7 @@ function ArrearsCalculator() {
     const [toggles, setToggles] = useState({
         promotionEnabled: false,
         autoDAMaharashtra: true, // Default ON
-        autoHRAMaharashtra: false // Default OFF
+        autoHRAMaharashtra: true // Default ON
     });
 
     // Due Components
@@ -550,110 +550,195 @@ function ArrearsCalculator() {
 
     const renderComponentInputs = (title, type, compKey, label) => {
         const comps = (type === 'due' ? dueComponents[compKey] : drawnComponents[compKey]) || [];
-        // NPA check removed
+
+        // Dynamic header color based on section type
+        const headerColorClass = type === 'due' ? 'text-emerald-700' : 'text-orange-700';
+        const borderColorClass = type === 'due' ? 'border-l-4 border-emerald-500' : 'border-l-4 border-orange-500';
+
         return (
-            <div className="mb-4 border p-3 rounded bg-white shadow-sm">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-sm text-neutral-700">{label}</span>
+            <div className={`mb-4 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-md ${borderColorClass}`}>
+                <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                    <span className={`font-bold text-[11px] uppercase tracking-wider ${headerColorClass}`}>{label}</span>
                     {toggles.promotionEnabled && (
-                        <button className="text-xs text-blue-600 font-bold" onClick={() => alert('Feature: Add Period')}>+ Add</button>
+                        <button className="text-[10px] bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded shadow-sm hover:text-blue-600 hover:border-blue-300 transition-colors" onClick={() => alert('Feature: Split Period')}>
+                            + Split
+                        </button>
                     )}
                 </div>
-                {comps.map((item, idx) => (
-                    <div key={idx} className="flex gap-2 text-sm items-center">
-                        <input type="number" value={item.amount} onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)} className="form-input py-1 px-2 w-24 border rounded" placeholder="Amount" />
-                        {toggles.promotionEnabled && (
-                            <>
-                                <input type="month" value={item.from} onChange={(e) => updateComponent(type, compKey, idx, 'from', e.target.value)} className="form-input py-1 px-2 w-32 border rounded text-xs" />
-                                <input type="month" value={item.to} onChange={(e) => updateComponent(type, compKey, idx, 'to', e.target.value)} className="form-input py-1 px-2 w-32 border rounded text-xs" />
-                            </>
-                        )}
-                    </div>
-                ))}
+                <div className="p-3 space-y-2">
+                    {comps.map((item, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                            <div className="relative flex-grow">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">₹</span>
+                                <input
+                                    type="number"
+                                    value={item.amount}
+                                    onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
+                                    className="w-full pl-6 pr-3 py-1.5 text-sm font-semibold text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all"
+                                    placeholder="0"
+                                />
+                            </div>
+                            {toggles.promotionEnabled && (
+                                <>
+                                    <input type="month" value={item.from} onChange={(e) => updateComponent(type, compKey, idx, 'from', e.target.value)} className="w-28 text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    <span className="text-slate-300 font-light">to</span>
+                                    <input type="month" value={item.to} onChange={(e) => updateComponent(type, compKey, idx, 'to', e.target.value)} className="w-28 text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     };
 
     return (
-        <div className="animate-fade-in p-4 max-w-[1920px] mx-auto font-sans">
-            {/* --- CONTROLS --- */}
-            <div className="card mb-6 border-t-4 border-blue-600">
-                <div className="card-header bg-gray-50">
-                    <h1 className="text-2xl font-bold text-blue-800">🏛️ Arrears Calculator</h1>
-                    <p className="text-sm text-gray-600">Due-Drawn Statement Generator</p>
-                </div>
-                <div className="card-body grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                        <h3 className="font-bold border-b pb-1">1. Employee Details</h3>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div><label className="text-xs font-semibold block">Name</label><input type="text" className="form-input w-full" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} /></div>
-                            <div><label className="text-xs font-semibold block">Designation</label><input type="text" className="form-input w-full" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} /></div>
+        <div className="animate-fade-in min-h-screen bg-slate-50 py-10 px-4 md:px-8 font-sans text-slate-800">
+            {/* --- MAIN HEADER & CONFIGURATION CARD --- */}
+            <div className="w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+                {/* Header */}
+                <div className="px-6 py-6 border-b border-slate-100 bg-gradient-to-br from-white to-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-blue-600 p-3 rounded-xl shadow-lg shadow-blue-200">
+                            <span className="text-2xl text-white">🏛️</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div><label className="text-xs font-semibold block">From</label><input type="date" className="form-input w-full" value={basicInfo.fromMonth} onChange={e => updateBasicInfo('fromMonth', e.target.value)} /></div>
-                            <div><label className="text-xs font-semibold block">To</label><input type="date" className="form-input w-full" value={basicInfo.toMonth} onChange={e => updateBasicInfo('toMonth', e.target.value)} /></div>
+                        <div>
+                            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Arrears Calculator</h1>
+                            <p className="text-sm font-medium text-slate-500">Government Salary Due-Drawn Statement Generator</p>
                         </div>
-                        <div><label className="text-xs font-semibold block">GR/Order Name</label><textarea className="form-input w-full h-16 text-xs" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} /></div>
                     </div>
-                    <div className="space-y-3">
-                        <h3 className="font-bold border-b pb-1">2. Configuration</h3>
+                </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex items-center gap-2 border p-1 rounded"><input type="checkbox" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} /><label className="text-sm font-semibold text-blue-600">Auto-DA (Mah)</label></div>
-                            <div className="flex items-center gap-2 border p-1 rounded"><input type="checkbox" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} /><label className="text-sm font-semibold text-purple-600">Auto-HRA (7th PC)</label></div>
+                {/* Unified Settings Panel */}
+                <div className="p-6 md:p-8 grid grid-cols-2 gap-8">
+                    {/* Column 1: Employee Details */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-blue-100 text-blue-700 p-1.5 rounded-md text-xs font-bold">01</span>
+                            <h3 className="font-bold text-slate-700 uppercase tracking-wider text-sm">Employee Details</h3>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="text-xs font-semibold block">Employee Category</label>
-                                <select className="form-input w-full text-xs" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}><option>NPS</option><option>GPF</option></select>
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold block">City Category (HRA)</label>
-                                <select className="form-input w-full text-xs" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
-                                    <option value="X">X (Metro - 24/27/30%)</option>
-                                    <option value="Y">Y (16/18/20%)</option>
-                                    <option value="Z">Z (8/9/10%)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold block">Increment</label>
-                                <select className="form-input w-full text-xs" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}><option>No Increment</option><option>January</option><option>July</option><option>Both</option></select>
-                            </div>
-                        </div>
-                        <div className="pt-2 border-t mt-2">
-                            <label className="text-xs font-semibold block mb-1">Custom Columns</label>
-                            <div className="flex gap-1 mb-2">
-                                <input type="text" id="newColInput" className="form-input text-xs" style={{ width: '300px' }} placeholder="Col Name" />
-                                <button onClick={() => {
-                                    const el = document.getElementById('newColInput');
-                                    if (el.value) { addCustomColumn(el.value); el.value = ''; }
-                                }} className="bg-blue-600 text-white text-xs px-2 rounded">Add</button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Name</label>
+                                <input type="text" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                                    value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
                             </div>
                             <div className="space-y-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Designation</label>
+                                <input type="text" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                                    value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">From Month</label>
+                                <input type="date" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                                    value={basicInfo.fromMonth} onChange={e => updateBasicInfo('fromMonth', e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">To Month</label>
+                                <input type="date" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                                    value={basicInfo.toMonth} onChange={e => updateBasicInfo('toMonth', e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">GR / Order Title</label>
+                            <textarea className="w-full text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm h-16 resize-none"
+                                value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
+                        </div>
+                    </div>
+
+                    {/* Column 2: Configuration */}
+                    <div className="space-y-6 border-l border-slate-100 pl-8">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-indigo-100 text-indigo-700 p-1.5 rounded-md text-xs font-bold">02</span>
+                            <h3 className="font-bold text-slate-700 uppercase tracking-wider text-sm">Configuration</h3>
+                        </div>
+
+                        {/* Toggles Panel */}
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-600">Auto-DA (Maharashtra)</span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
+                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-600">Auto-HRA (7th PC)</span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} />
+                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Category</label>
+                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
+                                    <option>NPS</option><option>GPF</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">City (HRA)</label>
+                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
+                                    <option value="X">X (Metro)</option><option value="Y">Y (City)</option><option value="Z">Z (Rural)</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1 col-span-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Increment Month</label>
+                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
+                                    <option>No Increment</option><option>January</option><option>July</option><option>Both</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Custom Columns */}
+                        <div className="pt-4 border-t border-slate-100">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Custom Columns</label>
+                            <div className="flex gap-2 mb-2">
+                                <input type="text" id="newColInput" className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-500" placeholder="Add custom column..." />
+                                <button onClick={() => { const el = document.getElementById('newColInput'); if (el.value) { addCustomColumn(el.value); el.value = ''; } }}
+                                    className="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition-colors">+</button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
                                 {customColumns.map(col => (
-                                    <div key={col.id} className="flex justify-between items-center text-xs bg-gray-100 p-1 rounded">
-                                        <span>{col.label}</span>
-                                        <button onClick={() => removeCustomColumn(col.id)} className="text-red-500 font-bold hover:bg-gray-200 px-1 rounded">×</button>
-                                    </div>
+                                    <span key={col.id} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md border border-slate-200">
+                                        {col.label}
+                                        <button onClick={() => removeCustomColumn(col.id)} className="text-slate-400 hover:text-red-500">×</button>
+                                    </span>
                                 ))}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            {/* --- INPUTS --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="border-2 border-green-600 rounded-xl bg-green-100 shadow-xl overflow-hidden">
-                    <div className="bg-green-200 p-4 border-b-2 border-green-300 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-green-900 flex items-center gap-2">
-                            DUE (सध्या दिले जाणारे वेतन )
-                        </h2>
+            {/* --- INPUTS GRID --- */}
+            <div className="w-full grid grid-cols-2 gap-8 mb-12">
+
+                {/* === DUE SECTION (Green/Teal Theme) === */}
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col h-full">
+                    {/* Header */}
+                    <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 border-b border-emerald-700 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                                <span className="text-xl">💰</span>
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white tracking-wide">DUE AMOUNT</h2>
+                                <p className="text-[10px] font-medium text-emerald-100 uppercase tracking-widest opacity-90">सध्या दिले जाणारे वेतन</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="p-6">
-                        <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div className="p-6 bg-slate-50/50 flex-grow">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
                             {renderComponentInputs('Due', 'due', 'daRate', 'DA Rate %')}
                             {renderComponentInputs('Due', 'due', 'hraRate', 'HRA Rate %')}
@@ -665,155 +750,109 @@ function ArrearsCalculator() {
                             ))}
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-green-300 gap-2">
-                            <button
-                                onClick={() => setShowDuePromotion(!showDuePromotion)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
-                            >
-                                <span className={showDuePromotion ? "rotate-180 transition-transform" : "transition-transform"}>▼</span>
-                                {showDuePromotion ? 'Hide Promotion' : 'Promotion / Timebound'}
-                            </button>
-                            {showDuePromotion && (
+                        {/* Promotion Section */}
+                        <div className="bg-white rounded-xl border border-emerald-100 p-1 shadow-sm">
+                            <div className="flex justify-between items-center bg-emerald-50/50 px-4 py-3 rounded-lg border-b border-emerald-50">
                                 <button
-                                    onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 rounded-lg font-bold shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
+                                    onClick={() => setShowDuePromotion(!showDuePromotion)}
+                                    className="flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-900 transition-colors"
                                 >
-                                    <span>➕</span> Add Period
+                                    <span className={`transform transition-transform duration-300 ${showDuePromotion ? 'rotate-180' : ''}`}>▼</span>
+                                    Promotion / Timebound Details
                                 </button>
-                            )}
-                        </div>
+                                {showDuePromotion && (
+                                    <button
+                                        onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
+                                        className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-full font-bold transition-all shadow-sm flex items-center gap-1"
+                                    >
+                                        <span>+</span> Add Period
+                                    </button>
+                                )}
+                            </div>
 
-                        {showDuePromotion && (
-                            <div className="mt-6 border-2 border-green-300 rounded-xl bg-white p-4 shadow-inner">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className="text-sm font-bold text-green-800 uppercase tracking-wider">Promotion Periods</span>
-                                </div>
-                                {duePromotionPeriods.length === 0 ? (
-                                    <div className="text-sm text-green-700/60 text-center py-4 italic bg-green-50 rounded-lg border border-green-200">No promotion periods added</div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {duePromotionPeriods.map((period, index) => (
-                                            <div key={index} className="bg-green-50 p-3 rounded-lg border border-green-200 shadow-sm relative group">
-                                                <div className="flex justify-between items-center mb-2 pb-2 border-b border-green-50">
-                                                    <span className="text-xs font-bold text-green-700">Period {index + 1}</span>
-                                                    <button
-                                                        onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}
-                                                        className="text-red-400 hover:text-red-600 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 transition"
-                                                    >
-                                                        ✕
-                                                    </button>
+                            {showDuePromotion && (
+                                <div className="p-4 space-y-4">
+                                    {duePromotionPeriods.length === 0 ? (
+                                        <div className="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-100 rounded-lg">No promotion periods added yet</div>
+                                    ) : (
+                                        duePromotionPeriods.map((period, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-xl border border-emerald-200 shadow-emerald-100/50 shadow-md relative group transition-all hover:shadow-lg">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-xl"></div>
+                                                <div className="flex justify-between items-center mb-3 pl-3 border-b border-slate-50 pb-2">
+                                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded">Period {index + 1}</span>
+                                                    <button onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}
+                                                        className="text-slate-300 hover:text-red-500 transition-colors bg-white hover:bg-red-50 w-6 h-6 rounded-full flex items-center justify-center font-bold">×</button>
                                                 </div>
-                                                <div className="grid grid-cols-4 gap-3">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pl-3">
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">From</label>
-                                                        <input
-                                                            type="date"
-                                                            value={period.from}
-                                                            onChange={(e) => {
-                                                                const newDate = e.target.value;
-                                                                const updated = [...duePromotionPeriods];
-                                                                updated[index].from = newDate;
-
-                                                                // Auto-calculate DA and HRA if date is valid
-                                                                if (newDate) {
-                                                                    const [y, m] = newDate.split('-').map(Number);
-                                                                    const da = getMaharashtraDARate(m, y);
-                                                                    const hra = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                                    updated[index].daRate = da;
-                                                                    updated[index].hraRate = hra;
-                                                                }
-
-                                                                setDuePromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">From Date</label>
+                                                        <input type="date" value={period.from} onChange={(e) => {
+                                                            const newDate = e.target.value;
+                                                            const updated = [...duePromotionPeriods];
+                                                            updated[index].from = newDate;
+                                                            if (newDate) {
+                                                                const [y, m] = newDate.split('-').map(Number);
+                                                                updated[index].daRate = getMaharashtraDARate(m, y);
+                                                                updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
+                                                            }
+                                                            setDuePromotionPeriods(updated);
+                                                        }} className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Pay</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.pay}
-                                                            onChange={(e) => {
-                                                                const updated = [...duePromotionPeriods];
-                                                                updated[index].pay = parseFloat(e.target.value) || 0;
-                                                                setDuePromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Basic Pay</label>
+                                                        <input type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">DA%</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.daRate}
-                                                            onChange={(e) => {
-                                                                const updated = [...duePromotionPeriods];
-                                                                updated[index].daRate = parseFloat(e.target.value) || 0;
-                                                                setDuePromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">DA %</label>
+                                                        <input type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">HRA%</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.hraRate}
-                                                            onChange={(e) => {
-                                                                const updated = [...duePromotionPeriods];
-                                                                updated[index].hraRate = parseFloat(e.target.value) || 0;
-                                                                setDuePromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">HRA %</label>
+                                                        <input type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">TA</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.ta || ''}
-                                                            onChange={(e) => {
-                                                                const updated = [...duePromotionPeriods];
-                                                                updated[index].ta = e.target.value;
-                                                                setDuePromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">TA</label>
+                                                        <input type="number" value={period.ta || ''} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                     </div>
                                                     {customColumns.map(col => (
                                                         <div key={col.id}>
-                                                            <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{col.label}</label>
-                                                            <input
-                                                                type="number"
-                                                                value={(period.custom && period.custom[col.id]) || ''}
-                                                                onChange={(e) => {
-                                                                    const updated = [...duePromotionPeriods];
-                                                                    if (!updated[index].custom) updated[index].custom = {};
-                                                                    updated[index].custom[col.id] = e.target.value;
-                                                                    setDuePromotionPeriods(updated);
-                                                                }}
-                                                                className="form-input w-full text-xs p-1.5 border-green-200 focus:border-green-500 rounded"
-                                                            />
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{col.label}</label>
+                                                            <input type="number" value={(period.custom && period.custom[col.id]) || ''}
+                                                                onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }}
+                                                                className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <div className="border-2 border-orange-600 rounded-xl bg-orange-100 shadow-xl overflow-hidden">
-                    <div className="bg-orange-200 p-4 border-b-2 border-orange-300 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-orange-900 flex items-center gap-2">
-                            DRAWN ( पूर्वी दिलेले वेतन)
-                        </h2>
+
+                {/* === DRAWN SECTION (Orange/Red Theme) === */}
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col h-full">
+                    {/* Header */}
+                    <div className="px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 border-b border-orange-700 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                                <span className="text-xl">📉</span>
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white tracking-wide">DRAWN AMOUNT</h2>
+                                <p className="text-[10px] font-medium text-orange-100 uppercase tracking-widest opacity-90">पूर्वी दिलेले वेतन</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="p-6">
-                        <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div className="p-6 bg-slate-50/50 flex-grow">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
                             {renderComponentInputs('Drawn', 'drawn', 'daRate', 'DA Rate %')}
                             {renderComponentInputs('Drawn', 'drawn', 'hraRate', 'HRA Rate %')}
@@ -825,144 +864,89 @@ function ArrearsCalculator() {
                             ))}
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-orange-300 gap-2">
-                            <button
-                                onClick={() => setShowDrawnPromotion(!showDrawnPromotion)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-lg font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
-                            >
-                                <span className={showDrawnPromotion ? "rotate-180 transition-transform" : "transition-transform"}>▼</span>
-                                {showDrawnPromotion ? 'Hide Promotion' : 'Promotion / Timebound'}
-                            </button>
-                            {showDrawnPromotion && (
+                        {/* Promotion Section */}
+                        <div className="bg-white rounded-xl border border-orange-100 p-1 shadow-sm">
+                            <div className="flex justify-between items-center bg-orange-50/50 px-4 py-3 rounded-lg border-b border-orange-50">
                                 <button
-                                    onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-orange-600 text-orange-700 hover:bg-orange-50 rounded-lg font-bold shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200 text-sm"
+                                    onClick={() => setShowDrawnPromotion(!showDrawnPromotion)}
+                                    className="flex items-center gap-2 text-sm font-bold text-orange-800 hover:text-orange-900 transition-colors"
                                 >
-                                    <span>➕</span> Add Period
+                                    <span className={`transform transition-transform duration-300 ${showDrawnPromotion ? 'rotate-180' : ''}`}>▼</span>
+                                    Promotion / Timebound Details
                                 </button>
-                            )}
-                        </div>
+                                {showDrawnPromotion && (
+                                    <button
+                                        onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
+                                        className="text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-3 py-1.5 rounded-full font-bold transition-all shadow-sm flex items-center gap-1"
+                                    >
+                                        <span>+</span> Add Period
+                                    </button>
+                                )}
+                            </div>
 
-                        {showDrawnPromotion && (
-                            <div className="mt-6 border-2 border-orange-300 rounded-xl bg-white p-4 shadow-inner">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className="text-sm font-bold text-orange-800 uppercase tracking-wider">Promotion Periods</span>
-                                </div>
-                                {drawnPromotionPeriods.length === 0 ? (
-                                    <div className="text-sm text-orange-700/60 text-center py-4 italic bg-orange-50 rounded-lg border border-orange-200">No promotion periods added</div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {drawnPromotionPeriods.map((period, index) => (
-                                            <div key={index} className="bg-orange-50 p-3 rounded-lg border border-orange-200 shadow-sm relative group">
-                                                <div className="flex justify-between items-center mb-2 pb-2 border-b border-orange-50">
-                                                    <span className="text-xs font-bold text-orange-700">Period {index + 1}</span>
-                                                    <button
-                                                        onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}
-                                                        className="text-red-400 hover:text-red-600 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 transition"
-                                                    >
-                                                        ✕
-                                                    </button>
+                            {showDrawnPromotion && (
+                                <div className="p-4 space-y-4">
+                                    {drawnPromotionPeriods.length === 0 ? (
+                                        <div className="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-100 rounded-lg">No promotion periods added yet</div>
+                                    ) : (
+                                        drawnPromotionPeriods.map((period, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-xl border border-orange-200 shadow-orange-100/50 shadow-md relative group transition-all hover:shadow-lg">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 rounded-l-xl"></div>
+                                                <div className="flex justify-between items-center mb-3 pl-3 border-b border-slate-50 pb-2">
+                                                    <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded">Period {index + 1}</span>
+                                                    <button onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}
+                                                        className="text-slate-300 hover:text-red-500 transition-colors bg-white hover:bg-red-50 w-6 h-6 rounded-full flex items-center justify-center font-bold">×</button>
                                                 </div>
-                                                <div className="grid grid-cols-4 gap-3">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pl-3">
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">From</label>
-                                                        <input
-                                                            type="date"
-                                                            value={period.from}
-                                                            onChange={(e) => {
-                                                                const newDate = e.target.value;
-                                                                const updated = [...drawnPromotionPeriods];
-                                                                updated[index].from = newDate;
-
-                                                                // Auto-calculate DA and HRA if date is valid
-                                                                if (newDate) {
-                                                                    const [y, m] = newDate.split('-').map(Number);
-                                                                    const da = getMaharashtraDARate(m, y);
-                                                                    const hra = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                                    updated[index].daRate = da;
-                                                                    updated[index].hraRate = hra;
-                                                                }
-
-                                                                setDrawnPromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">From Date</label>
+                                                        <input type="date" value={period.from} onChange={(e) => {
+                                                            const newDate = e.target.value;
+                                                            const updated = [...drawnPromotionPeriods];
+                                                            updated[index].from = newDate;
+                                                            if (newDate) {
+                                                                const [y, m] = newDate.split('-').map(Number);
+                                                                updated[index].daRate = getMaharashtraDARate(m, y);
+                                                                updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
+                                                            }
+                                                            setDrawnPromotionPeriods(updated);
+                                                        }} className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Pay</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.pay}
-                                                            onChange={(e) => {
-                                                                const updated = [...drawnPromotionPeriods];
-                                                                updated[index].pay = parseFloat(e.target.value) || 0;
-                                                                setDrawnPromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Basic Pay</label>
+                                                        <input type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">DA%</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.daRate}
-                                                            onChange={(e) => {
-                                                                const updated = [...drawnPromotionPeriods];
-                                                                updated[index].daRate = parseFloat(e.target.value) || 0;
-                                                                setDrawnPromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">DA %</label>
+                                                        <input type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">HRA%</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.hraRate}
-                                                            onChange={(e) => {
-                                                                const updated = [...drawnPromotionPeriods];
-                                                                updated[index].hraRate = parseFloat(e.target.value) || 0;
-                                                                setDrawnPromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">HRA %</label>
+                                                        <input type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">TA</label>
-                                                        <input
-                                                            type="number"
-                                                            value={period.ta || ''}
-                                                            onChange={(e) => {
-                                                                const updated = [...drawnPromotionPeriods];
-                                                                updated[index].ta = e.target.value;
-                                                                setDrawnPromotionPeriods(updated);
-                                                            }}
-                                                            className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                        />
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">TA</label>
+                                                        <input type="number" value={period.ta || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }}
+                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                     </div>
                                                     {customColumns.map(col => (
                                                         <div key={col.id}>
-                                                            <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{col.label}</label>
-                                                            <input
-                                                                type="number"
-                                                                value={(period.custom && period.custom[col.id]) || ''}
-                                                                onChange={(e) => {
-                                                                    const updated = [...drawnPromotionPeriods];
-                                                                    if (!updated[index].custom) updated[index].custom = {};
-                                                                    updated[index].custom[col.id] = e.target.value;
-                                                                    setDrawnPromotionPeriods(updated);
-                                                                }}
-                                                                className="form-input w-full text-xs p-1.5 border-orange-200 focus:border-orange-500 rounded"
-                                                            />
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{col.label}</label>
+                                                            <input type="number" value={(period.custom && period.custom[col.id]) || ''}
+                                                                onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }}
+                                                                className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -970,25 +954,29 @@ function ArrearsCalculator() {
 
 
 
-            <div className="flex flex-col items-center justify-center mb-8 gap-2">
-                <button onClick={generatePDF} className="bg-blue-600 text-white font-bold py-3 px-10 rounded-lg shadow-lg hover:bg-blue-700 transition transform hover:scale-105 flex items-center gap-2 text-lg">
-                    <span>📥</span> Download PDF Statement
+            {/* --- ACTION FOOTER --- */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 flex justify-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-none md:shadow-none md:p-0 md:mt-12 md:mb-20">
+                <button onClick={generatePDF} className="group relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-4 px-12 rounded-full shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 text-lg overflow-hidden">
+                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></span>
+                    <span className="text-2xl">📥</span>
+                    <span>Download PDF Statement</span>
                 </button>
             </div>
 
-            {/* --- ON SCREEN PREVIEW (Ref for Header Capture) --- */}
-            <div className="card overflow-hidden bg-gray-100 p-4">
-                <div className="overflow-x-auto">
-                    <div className="bg-white p-8 text-black" style={{ width: '2200px', fontFamily: 'Arial, sans-serif' }}>
+            {/* --- ON SCREEN PREVIEW (Hidden / For Capture) --- */}
+            <div className="card overflow-hidden bg-slate-100 p-4 rounded-xl border border-slate-200 opacity-50 hover:opacity-100 transition-opacity">
+                <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">PDF Generation Preview (Internal)</p>
+                <div className="overflow-x-auto rounded-lg border border-slate-300 shadow-inner bg-slate-200/50 p-2">
+                    <div className="bg-white p-8 text-black mx-auto transform origin-top left-0 scale-50 md:scale-75 lg:scale-100 transition-transform" style={{ width: '2200px', fontFamily: 'Arial, sans-serif' }}>
 
                         {/* HEADER SECTION (Captured as Image for Marathi Support) */}
-                        <div ref={headerRef} style={{ padding: '10px', background: 'white' }}>
-                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center' }}>
+                        <div ref={headerRef} style={{ padding: '20px', background: 'white' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                                <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
                                     {basicInfo.orderNo}
                                 </h2>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
                                 <div style={{ flex: 1, textAlign: 'left' }}>NAME: <span style={{ fontWeight: 'normal' }}>{basicInfo.empName}</span></div>
                                 <div style={{ flex: 1, textAlign: 'center' }}>DESIGNATION: <span style={{ fontWeight: 'normal' }}>{basicInfo.designation}</span></div>
                                 <div style={{ flex: 1, textAlign: 'right' }}>PERIOD: <span style={{ fontWeight: 'normal' }}>{basicInfo.fromMonth} TO {basicInfo.toMonth}</span></div>
@@ -1007,7 +995,7 @@ function ArrearsCalculator() {
                                     {basicInfo.category === 'NPS' ? <><col style={{ width: '5%' }} /><col style={{ width: '5%' }} /></> : <col style={{ width: '10%' }} />}
                                 </colgroup>
                                 <thead>
-                                    <tr style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                    <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
                                         <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>SR</th>
                                         <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>MONTH</th>
                                         <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DUE</th>
@@ -1020,7 +1008,7 @@ function ArrearsCalculator() {
                                             </>
                                         )}
                                     </tr>
-                                    <tr style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                    <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
                                         {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
                                         {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
                                         {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
@@ -1030,7 +1018,7 @@ function ArrearsCalculator() {
                                     {calculationResults.map((row, idx) => {
                                         const nps14 = Math.round(row.diff.total * 0.14);
                                         return (
-                                            <tr key={idx} style={{ textAlign: 'center' }}>
+                                            <tr key={idx} style={{ textAlign: 'center', color: '#000' }}>
                                                 <td style={{ border: '1px solid black', padding: '6px' }}>{idx + 1}</td>
                                                 <td style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>
                                                     {row.label}
@@ -1063,7 +1051,7 @@ function ArrearsCalculator() {
                                             </tr>
                                         );
                                     })}
-                                    <tr style={{ fontWeight: 'bold', background: '#e0e0e0' }}>
+                                    <tr style={{ fontWeight: 'bold', background: '#e0e0e0', color: '#000' }}>
                                         <td colSpan={2} style={{ border: '1px solid black', padding: '8px', textAlign: 'center' }}>TOTAL</td>
                                         <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.pay, 0)}</td>
                                         <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.da, 0)}</td>
@@ -1092,7 +1080,6 @@ function ArrearsCalculator() {
                                     </tr>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
                 </div>

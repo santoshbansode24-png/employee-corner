@@ -16,10 +16,11 @@ export default defineConfig({
         secure: false
       },
       '/reimbursement-gen': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:8501',
         changeOrigin: true,
         secure: false,
-        ws: true // Enable WebSocket support for Streamlit
+        ws: true, // Enable WebSocket support for Streamlit
+        rewrite: (path) => path.replace(/^\/reimbursement-gen/, '')
       }
     }
   },
