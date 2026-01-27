@@ -42,6 +42,7 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     target: 'http://127.0.0.1:8501',
     changeOrigin: true,
     ws: true, // Enable Websockets for Streamlit
+    proxyTimeout: 60000, // Wait 60s for Streamlit to respond (prevent 504 Gateway Timeout)
     pathRewrite: {
         '^/': '/reimbursement-gen/', // Add base path back because Express strips it
     },

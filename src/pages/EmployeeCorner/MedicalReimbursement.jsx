@@ -29,8 +29,10 @@ function MedicalReimbursement() {
                             onLoad={handleLoad}
                         />
                         {isLoading && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                                <p className="text-gray-600 font-medium">Initializing Secure Server...</p>
+                                <p className="text-gray-400 text-sm mt-2">This may take a moment on first load.</p>
                             </div>
                         )}
                     </div>
