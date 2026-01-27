@@ -20,7 +20,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true, // Enable WebSocket support for Streamlit
-        rewrite: (path) => path.replace(/^\/reimbursement-gen/, '')
       }
     }
   },

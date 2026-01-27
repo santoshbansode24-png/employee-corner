@@ -13,6 +13,7 @@ function Dashboard() {
                 { name: 'Arrears Statement', path: '/employee/arrears', icon: '📜', desc: 'Difference Statement' },
                 { name: 'Pay Scale Viewer', path: '/employee/payscale', icon: '📊', desc: '7th CPC Matrix' },
                 { name: 'Form-16 Calculator', path: '/employee/form16', icon: '📄', desc: 'Income Tax Computation' },
+                { name: 'Medical Reimbursement', path: '/employee/medical', icon: '🏥', desc: 'Generate Reimbursement Bill' },
 
             ]
         },

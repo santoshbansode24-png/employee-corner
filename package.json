@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "server": "node server.js",
     "medical": ".venv\\Scripts\\python.exe -m streamlit run medical_gen/main.py --server.headless true --server.address 0.0.0.0",
-    "start": "concurrently \"npm run server\" \"npm run dev\" \"npm run medical\""
+    "start": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

@@ -3,6 +3,11 @@ import MedicalCalculation from './MedicalCalculation'
 
 function MedicalReimbursement() {
     const [activeTab, setActiveTab] = useState('generate')
+    const [isLoading, setIsLoading] = useState(true)
+
+    const handleLoad = () => {
+        setIsLoading(false)
+    }
 
     return (
         <div className="w-full animate-fade-in">
@@ -21,7 +26,13 @@ function MedicalReimbursement() {
                             style={{ border: 'none', display: 'block', width: '100%', height: '1200px' }}
                             allow="camera; microphone; geolocation; clipboard-read; clipboard-write; display-capture"
                             sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-downloads allow-modals allow-top-navigation"
+                            onLoad={handleLoad}
                         />
+                        {isLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

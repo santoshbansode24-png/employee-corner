@@ -1,0 +1,7 @@
+2026-01-22 16:10:16.756126: Starting pre_process_template with 2 items
+2026-01-22 16:10:16.775239: Searching for Pathology Table in 25 tables...
+2026-01-22 16:10:16.792153: Found Pathology Table at index 24
+2026-01-22 16:10:16.795888: Footer Index: 17
+2026-01-22 16:10:16.796412: Processing Item 0 at Row 1
+2026-01-22 16:10:16.798901: Processing Item 1 at Row 2
+2026-01-22 16:10:16.814472: Saved temp path to medical_gen\temp_prefilled_pathology.docx

@@ -52,8 +52,14 @@ app.use('/reimbursement-gen', createProxyMiddleware({
 // ... (existing imports)
 
 // --- START STREAMLIT SERVER (Medical Reimbursement) ---
-const PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
 const STREAMLIT_PORT = 8501;
+// Detect .venv Python on Windows
+let PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
+const venvPython = path.join(__dirname, '.venv', 'Scripts', 'python.exe');
+if (process.platform === 'win32' && fs.existsSync(venvPython)) {
+    PYTHON_CMD = venvPython;
+    console.log(`Using venv Python: ${PYTHON_CMD}`);
+}
 
 console.log('🚀 Starting Streamlit Background Service...');
 const pythonProcess = spawn(PYTHON_CMD, [
