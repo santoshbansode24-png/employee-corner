@@ -2,6 +2,7 @@
 fastReruns = true
 
 [server]
+fileWatcherType = "none"
 enableCORS = false
 enableXsrfProtection = false
 headless = true

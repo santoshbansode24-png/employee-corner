@@ -75,7 +75,22 @@ pythonProcess.stdout.on('data', (data) => console.log(`[Streamlit]: ${data}`));
 pythonProcess.stderr.on('data', (data) => console.error(`[Streamlit ERR]: ${data}`));
 
 // Clean up python process on exit
+// Clean up python process on exit
 process.on('exit', () => pythonProcess.kill());
+
+// --- WARMUP ---
+// Ping Streamlit after 2 seconds to ensure it starts processing and isn't "lazy"
+import http from 'http';
+setTimeout(() => {
+    console.log('🔥 Warming up Streamlit instance...');
+    http.get('http://127.0.0.1:8501', (res) => {
+        console.log(`✅ Warmup successful: ${res.statusCode}`);
+        // Consume response to free memory
+        res.resume();
+    }).on('error', (e) => {
+        console.log(`⚠️ Warmup retry needed: ${e.message}`);
+    });
+}, 2000);
 // -----------------------------------------------------
 
 // --- Helper Functions ---

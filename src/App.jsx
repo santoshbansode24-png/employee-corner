@@ -40,7 +40,15 @@ function AppContent() {
                 <Sidebar />
                 <main className="content-area">
                     {/* Keep-Alive Wrapper for Medical Reimbursement */}
-                    <div style={{ display: isMedicalActive ? 'block' : 'none' }}>
+                    <div style={{
+                        display: 'block',
+                        visibility: isMedicalActive ? 'visible' : 'hidden',
+                        position: isMedicalActive ? 'relative' : 'absolute',
+                        left: isMedicalActive ? 'auto' : '-9999px',
+                        width: '100%',
+                        height: isMedicalActive ? 'auto' : '0', // Zero height when hidden to avoid scroll space
+                        overflow: 'hidden'
+                    }}>
                         <MedicalReimbursement />
                     </div>
 
