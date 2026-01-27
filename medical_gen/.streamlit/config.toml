@@ -1,3 +1,6 @@
+[runner]
+fastReruns = true
+
 [server]
 enableCORS = false
 enableXsrfProtection = false

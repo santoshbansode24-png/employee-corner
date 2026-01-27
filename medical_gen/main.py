@@ -1,11 +1,11 @@
 import streamlit as st
-from docxtpl import DocxTemplate
+
 import datetime
 import os
 import subprocess
 import sys
 import shutil
-import pandas as pd
+
 try:
     import config
 except ImportError:
@@ -1009,6 +1009,7 @@ if current_step == 5:
                      # Fallback
                      template_path = os.path.join(script_dir, "template.docx")
 
+                from docxtpl import DocxTemplate
                 doc = DocxTemplate(template_path)
                 
                 context = {
