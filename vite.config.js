@@ -11,12 +11,12 @@ export default defineConfig({
     allowedHosts: ['veeruapp.in'],
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
         secure: false
       },
       '/reimbursement-gen': {
-        target: 'http://localhost:8501',
+        target: 'http://127.0.0.1:8501',
         changeOrigin: true,
         secure: false,
         ws: true, // Enable WebSocket support for Streamlit

@@ -25,10 +25,28 @@ import MedicalReimbursement from './pages/EmployeeCorner/MedicalReimbursement'
 function App() {
     return (
         <Router>
-            <div className="app-container">
-                <div className="main-content">
-                    <Sidebar />
-                    <main className="content-area">
+            <AppContent />
+        </Router>
+    )
+}
+
+function AppContent() {
+    const location = useLocation()
+    const isMedicalActive = location.pathname === '/employee/medical'
+
+    return (
+        <div className="app-container">
+            <div className="main-content">
+                <Sidebar />
+                <main className="content-area">
+                    {/* Keep-Alive Wrapper for Medical Reimbursement */}
+                    <div style={{ display: isMedicalActive ? 'block' : 'none' }}>
+                        <MedicalReimbursement />
+                    </div>
+
+                    {/* Standard Routes for other pages */}
+                    {/* Hide other routes when Medical is active to avoid scrollbar/layout issues */}
+                    <div style={{ display: isMedicalActive ? 'none' : 'block' }}>
                         <Routes>
                             <Route path="/" element={<Dashboard />} />
 
@@ -38,7 +56,8 @@ function App() {
                             <Route path="/employee/payscale" element={<PayScaleViewer />} />
 
                             <Route path="/employee/arrears" element={<ArrearsCalculator />} />
-                            <Route path="/employee/medical" element={<MedicalReimbursement />} />
+                            {/* Medical Reimbursement Route REMOVED from here to prevent duplicate mounting */}
+                            {/* <Route path="/employee/medical" element={<MedicalReimbursement />} /> */}
 
                             {/* Financial Calculators Routes */}
                             <Route path="/financial/sip" element={<SIPCalculator />} />
@@ -55,10 +74,10 @@ function App() {
                             <Route path="/tools/pdf-merge" element={<PDFMerge />} />
                             <Route path="/tools/pdf-split" element={<PDFSplit />} />
                         </Routes>
-                    </main>
-                </div>
+                    </div>
+                </main>
             </div>
-        </Router>
+        </div>
     )
 }
 
