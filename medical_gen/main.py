@@ -53,40 +53,58 @@ st.markdown("""
             font-size: 1rem;
         }
         
-        /* NAVIGATION RADIO AS TABS */
-        div.row-widget.stRadio > div {
+        /* NAVIGATION RADIO AS TABS (Simulating st.tabs) */
+        div.row-widget.stRadio > div[role="radiogroup"] {
             flex-direction: row;
             background-color: white;
             padding: 5px;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             gap: 5px;
-            justify-content: space-between; 
+            overflow-x: auto; /* Handle overflow nicely */
+            border: 1px solid #e2e8f0;
         }
         
-        div.row-widget.stRadio > div > label {
+        /* HIDE RADIO CIRCLE */
+        div.row-widget.stRadio > div[role="radiogroup"] > label > div:first-child {
+            display: none !important;
+            width: 0 !important;
+        }
+
+        /* STYLE LABELS AS TABS */
+        div.row-widget.stRadio > div[role="radiogroup"] > label {
             background-color: transparent;
             border: 1px solid transparent;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
             font-weight: 600;
             color: #64748b;
-            width: 100%;
             text-align: center;
             transition: all 0.2s;
             margin-right: 0 !important;
+            cursor: pointer;
+            white-space: nowrap;
+            flex: 1; /* Distribute evenly */
         }
         
-        div.row-widget.stRadio > div > label:hover {
+        div.row-widget.stRadio > div[role="radiogroup"] > label:hover {
             background-color: #f1f5f9;
             color: #1e293b;
         }
-        
-        /* Selected Radio state (Hack: targeting based on internal checked state styles usually requires JS, 
-           but Streamlit adds class or attribute. For simple CSS, we rely on the default radio highlight 
-           but customized). 
-           Actually, better to rely on Streamlit's default pill style if we can.
+
+        /* SELECTED TAB STATE */
+        /* We use [data-checked="true"] if available in newer Streamlit versions, 
+           or rely on the internal input state. 
+           Since CSS :has() is widely supported now: 
         */
+        div.row-widget.stRadio > div[role="radiogroup"] > label:has(input:checked) {
+             background-color: #eff6ff !important; /* Light Blue */
+             color: #2563eb !important; /* Royal Blue */
+             border: 1px solid #bfdbfe !important;
+             box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Fallback for older browsers (optional) - The radio input itself is hidden but handles state */
 
         /* INPUT FIELDS - FINAL ULTRA-WHITE FIX */
         /* 1. Target the high-level Streamlit wrappers */
