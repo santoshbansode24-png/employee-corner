@@ -489,6 +489,18 @@ with st.container():
                     def get_s(k, d=""): return st.session_state.get(k, d)
                     def get_f(k, d=0.0): return float(st.session_state.get(k, d))
 
+                    # Retrieve Totals from Session State (calculated in previous tabs)
+                    # We use get() with 0.0 default to avoid NameErrors if tabs weren't visited
+                    stay_total = safe_float(st.session_state.get('stay_grand_total', 0.0))
+                    med_total = safe_float(st.session_state.get('total_medicine_charges', 0.0))
+                    path_total = safe_float(st.session_state.get('pathology_charges_total', 0.0))
+                    
+                    # Form D Total (Bill)
+                    form_d_total = safe_float(st.session_state.get('total_hospital_bill_amount', 0.0))
+                    
+                    # Recalculate Grand Claim based on retrieved values
+                    grand_claim = form_d_total + med_total
+                    
                     # Construct Context from Session State (since local vars are out of scope)
                     context = {
                         # Employee & Patient
