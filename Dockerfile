@@ -103,6 +103,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY --from=frontend-builder /app/dist ./dist
 
 COPY medical_gen ./medical_gen
+COPY .streamlit ./.streamlit
 COPY server.js ./
 
 # Create public directory (will be populated at runtime if needed)
