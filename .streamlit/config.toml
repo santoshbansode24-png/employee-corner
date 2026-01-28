@@ -8,7 +8,6 @@ enableCORS = false
 enableXsrfProtection = false
 headless = true
 enableWebsocketCompression = false
-baseUrlPath = "/reimbursement-gen"
 runOnSave = false
 
 [browser]
