@@ -242,12 +242,10 @@ def calculate_grand_total_stay():
 def nav_next(curr_index):
     if curr_index < len(NAV_TABS) - 1:
         st.session_state['nav_active_tab'] = NAV_TABS[curr_index + 1]
-        st.rerun()
 
 def nav_prev(curr_index):
     if curr_index > 0:
         st.session_state['nav_active_tab'] = NAV_TABS[curr_index - 1]
-        st.rerun()
 
 # --- TOP NAVIGATION (Radio as Tabs) ---
 # We use radio but style it horizontally. 
@@ -604,11 +602,9 @@ div.stButton > button[kind="primary"]:focus {
 with col_p:
     if current_idx > 0:
         # Check if we are not on first tab
-        if st.button("⬅️ Previous", type="primary", use_container_width=True, key="btn_nav_prev"):
-            nav_prev(current_idx)
+        st.button("⬅️ Previous", type="primary", use_container_width=True, key="btn_nav_prev", on_click=nav_prev, args=(current_idx,))
 
 with col_n:
     if current_idx < len(NAV_TABS) - 1:
         # Check if we are not on last tab
-        if st.button("Next ➡️", type="primary", use_container_width=True, key="btn_nav_next"):
-            nav_next(current_idx)
+        st.button("Next ➡️", type="primary", use_container_width=True, key="btn_nav_next", on_click=nav_next, args=(current_idx,))
