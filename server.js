@@ -46,10 +46,15 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     target: 'http://127.0.0.1:8501',
     changeOrigin: true,
     ws: true, // Enable Websockets for Streamlit
-    proxyTimeout: 60000, // Wait 60s for Streamlit to respond (prevent 504 Gateway Timeout)
+    proxyTimeout: 60000,
     pathRewrite: {
-        '^/': '/reimbursement-gen/', // Add base path back because Express strips it
+        // Rewrite /reimbursement-gen/foo -> /reimbursement-gen/foo
+        // Streamlit expects the path to START with /reimbursement-gen because of baseUrlPath
+        // So we do NOT strip it. We map it 1:1. 
+        // '^/reimbursement-gen': '/reimbursement-gen', // optional, manual mapping
     },
+    // Fix: Sometimes path rewriting can be tricky. Let's trust the default behaviour for now
+    // but ensure the WS upgrade knows where to go.
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
         res.status(500).send('Proxy Error');
@@ -78,7 +83,12 @@ const pythonProcess = spawn(PYTHON_CMD, [
     '-m', 'streamlit', 'run',
     'medical_gen/main.py',
     '--server.port', '8501',
+    '--server.address', '127.0.0.1', // Force IPv4 binding for proxy reliability
     '--server.headless', 'true',
+    '--server.enableCORS', 'false',
+    '--server.enableXsrfProtection', 'false',
+    '--server.enableWebsocketCompression', 'false',
+    '--browser.gatherUsageStats', 'false',
     // Set base path so Streamlit knows it is being served under /reimbursement-gen
     '--server.baseUrlPath', '/reimbursement-gen'
 ]);
