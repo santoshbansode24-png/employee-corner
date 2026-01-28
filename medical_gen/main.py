@@ -472,36 +472,44 @@ with st.container():
              
 
 # --- BOTTOM NAVIGATION BUTTONS ---
+# --- BOTTOM NAVIGATION BUTTONS ---
 st.markdown("---")
 # Create 3 columns: Prev, Spacer, Next
 col_p, col_gap, col_n = st.columns([1, 4, 1])
 
-# CSS for Premium Blue Buttons
+# CSS for Primary Buttons (Global Premium Theme)
 st.markdown("""
 <style>
-/* Target the buttons in the bottom columns */
-div[data-testid="column"]:nth-of-type(1) button,
-div[data-testid="column"]:nth-of-type(3) button {
+/* Style ALL Primary Buttons to be Premium Blue Gradient */
+div.stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
     color: white !important;
     border: none !important;
     font-weight: bold;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
 }
-div[data-testid="column"]:nth-of-type(1) button:hover,
-div[data-testid="column"]:nth-of-type(3) button:hover {
+div.stButton > button[kind="primary"]:hover {
     box-shadow: 0 6px 8px rgba(0,0,0,0.2);
     transform: translateY(-2px);
+    color: white !important;
+}
+/* Focus outline fix */
+div.stButton > button[kind="primary"]:focus {
+    color: white !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5) !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 with col_p:
     if current_idx > 0:
-        if st.button("⬅️ Previous", use_container_width=True):
+        # Check if we are not on first tab
+        if st.button("⬅️ Previous", type="primary", use_container_width=True, key="btn_nav_prev"):
             nav_prev(current_idx)
 
 with col_n:
     if current_idx < len(NAV_TABS) - 1:
-        if st.button("Next ➡️", use_container_width=True):
+        # Check if we are not on last tab
+        if st.button("Next ➡️", type="primary", use_container_width=True, key="btn_nav_next"):
             nav_next(current_idx)
