@@ -84,32 +84,47 @@ st.markdown("""
         }
 
         /* INPUT FIELDS - COMPACT & PREMIUM */
+        /* INPUT FIELDS - AGGRESSIVE WHITE BACKGROUND FORCING */
+        /* Target the outermost container */
         div[data-baseweb="input"] {
-            background-color: #ffffff !important; /* Explicit White */
-            border: 1px solid #cbd5e1 !important; /* Stronger Border */
-            border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-        }
-        div[data-baseweb="input"]:focus-within {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
             background-color: #ffffff !important;
+            border: 1px solid #94a3b8 !important; /* Slate-400 for high visibility */
+            border-radius: 6px !important;
         }
-        /* Inner input element overrides */
-        input.st-ae {
+
+        /* Target the BaseInput container */
+        div[data-baseweb="base-input"],
+        div[data-testid="stTextInput"] > div > div,
+        div[data-testid="stNumberInput"] > div > div {
+             background-color: #ffffff !important;
+        }
+
+        /* Target the actual input element */
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        .stDateInput input,
+        div[data-baseweb="input"] input {
             background-color: #ffffff !important;
+            color: #0f172a !important; /* Dark Slate text */
         }
         
-        /* DATE INPUT & SELECTBOX Fixes */
-        div[data-baseweb="select"] > div {
-             background-color: #ffffff !important;
-             border: 1px solid #cbd5e1 !important;
+        /* Selectbox specific */
+        div[data-baseweb="select"] > div, 
+        div[data-baseweb="select"] span {
+            background-color: #ffffff !important;
         }
-        /* Reduce padding inside inputs for compactness */
-        div[data-baseweb="input"] input {
-            padding: 8px 12px !important; 
-            font-size: 0.95rem;
+
+        /* Focus states */
+        div[data-baseweb="input"]:focus-within {
+            border-color: #2563eb !important; /* Royal Blue */
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+        }
+        
+        /* Text Area (Formatted Address) */
+        textarea {
+            background-color: #ffffff !important;
+            border: 1px solid #94a3b8 !important;
         }
         
         /* LABELS */
