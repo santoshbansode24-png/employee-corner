@@ -485,8 +485,89 @@ with st.container():
                      family_members.append({'name':n, 'rel':r, 'age':a})
 
         if st.button("📄 Generate Reimbursement PDF", type="primary", use_container_width=True):
-             # Original Generation Logic...
-             pass # Kept simplified in this plan block, implementation will contain full code.
+             with st.spinner("Processing..."):
+                try:
+                    # Helper to get from session state safely
+                    def get_s(k, d=""): return st.session_state.get(k, d)
+                    def get_f(k, d=0.0): return float(st.session_state.get(k, d))
+
+                    # Construct Context from Session State (since local vars are out of scope)
+                    context = {
+                        # Employee & Patient
+                        'emp_name_english': get_s('emp_name_english'),
+                        'emp_designation_english': get_s('emp_designation_english'),
+                        'basic_pay': get_s('basic_pay'),
+                        'patient_name': get_s('patient_name') or get_s('patient_name_english'),
+                        
+                        # Totals
+                        'total_claim_amount': grand_claim,
+                        'grand_total_claim': grand_claim,
+                        'medicine_charges': med_total,
+                        'pathology_charges': path_total,
+                        'stay_grand_total': stay_total,
+                        
+                        # Form D Charges (Bill)
+                        'admission_charges': get_f('admission_charges'),
+                        'total_staying_charges': get_f('total_staying_charges'),
+                        'surgeon_charges': get_f('surgeon_charges'),
+                        'asst_surgeon_charges': get_f('asst_surgeon_charges'),
+                        'anesthesia_charges': get_f('anesthesia_charges'),
+                        'ot_charges': get_f('ot_charges'),
+                        'ot_assistant_charges': get_f('ot_assistant_charges'),
+                        'rmo_charges': get_f('rmo_charges'),
+                        'nursing_charges': get_f('nursing_charges'),
+                        'iv_infusion_charges': get_f('iv_infusion_charges'),
+                        'doctor_visit_charges': get_f('doctor_visit_charges'),
+                        'special_visit_charges': get_f('special_visit_charges'),
+                        'monitor_charges': get_f('monitor_charges'),
+                        'oxygen_charges': get_f('oxygen_charges'),
+                        'radiology_charges': get_f('radiology_charges'),
+                        'ecg_charges': get_f('ecg_charges'),
+                        'bsl_charges': get_f('bsl_charges'),
+                        'other_charges': get_f('other_charges'),
+                        
+                        # Tables
+                        'medicine_receipts': st.session_state.get('medicine_receipts', []),
+                        'pathology_receipts': st.session_state.get('pathology_receipts', []),
+                    }
+                    
+                    # File Generation
+                    script_dir = os.path.dirname(__file__)
+                    template_path = os.path.join(script_dir, "template_cloned.docx")
+                    if not os.path.exists(template_path):
+                            template_path = os.path.join(script_dir, "template.docx")
+
+                    from docxtpl import DocxTemplate
+                    doc = DocxTemplate(template_path)
+                    
+                    doc.render(context)
+                    temp_docx = os.path.join(script_dir, "temp_filled_form.docx")
+                    doc.save(temp_docx)
+                    
+                    # Convert to PDF
+                    libre_office_path = "soffice"
+                    if sys.platform == "win32":
+                        # Attempt standard paths if not in PATH
+                        possible_paths = [
+                            r"C:\Program Files\LibreOffice\program\soffice.exe",
+                            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe"
+                        ]
+                        for p in possible_paths:
+                            if os.path.exists(p):
+                                libre_office_path = p
+                                break
+                    
+                    subprocess.run([libre_office_path, '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', script_dir, temp_docx], check=True)
+                    
+                    pdf_path = os.path.join(script_dir, "temp_filled_form.pdf")
+                    
+                    with open(pdf_path, "rb") as f:
+                         st.download_button("⬇️ Download PDF", f, file_name="Medical_Claim.pdf", mime="application/pdf")
+                         
+                except Exception as e:
+                    st.error(f"Generation Error: {e}") 
+                    if "offic" in str(e).lower():
+                        st.warning("Ensure LibreOffice is installed on the server for PDF conversion.")
              
 
 # --- BOTTOM NAVIGATION BUTTONS ---
