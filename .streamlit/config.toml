@@ -7,13 +7,12 @@ fileWatcherType = "none"
 enableCORS = false
 enableXsrfProtection = false
 headless = true
-enableWebsocketCompression = true
+enableWebsocketCompression = false
 baseUrlPath = "/reimbursement-gen"
 runOnSave = false
 
 [browser]
 gatherUsageStats = false
-serverAddress = "employeecorner.veeruapp.in"
 
 [theme]
 base = "light"

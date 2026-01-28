@@ -50,6 +50,13 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     pathRewrite: {
         '^/': '/reimbursement-gen/', // Add base path back because Express strips it
     },
+    onError: (err, req, res) => {
+        console.error('Proxy Error:', err);
+        res.status(500).send('Proxy Error');
+    },
+    onProxyReqWs: (proxyReq, req, socket, options, head) => {
+        console.log('WS Connection Upgrade');
+    }
 }));
 
 
