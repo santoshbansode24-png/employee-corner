@@ -47,14 +47,22 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     changeOrigin: true,
     ws: true, // Enable Websockets for Streamlit
     proxyTimeout: 60000,
-    pathRewrite: {
-        '^/': '/reimbursement-gen/', // Add base path back because Express strips it
+    pathRewrite: async function (path, req) {
+        // Express strips the mount point, so 'path' is relative (e.g., / or /_stcore/stream)
+        // Streamlit expects the full path including baseUrlPath
+        // Fix: Simply append the path. If path is '/', result is '/reimbursement-gen/' (Prevent redirect loop)
+        const newPath = '/reimbursement-gen' + path;
+        console.log(`[Proxy Rewrite] ${path} -> ${newPath}`);
+        return newPath;
     },
     // Fix: Sometimes path rewriting can be tricky. Let's trust the default behaviour for now
     // but ensure the WS upgrade knows where to go.
     onError: (err, req, res) => {
         console.error('Proxy Error:', err);
         res.status(500).send('Proxy Error');
+    },
+    onProxyReq: (proxyReq, req, res) => {
+        console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyReq.path}`);
     },
     onProxyReqWs: (proxyReq, req, socket, options, head) => {
         console.log('WS Connection Upgrade');
