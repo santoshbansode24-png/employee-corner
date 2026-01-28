@@ -46,8 +46,9 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     target: 'http://127.0.0.1:8501',
     changeOrigin: true,
     ws: true, // Enable Websockets for Streamlit
+    xfwd: true, // Critical for Railway: Adds X-Forwarded-Host/Proto headers so Streamlit knows it's HTTPS
     proxyTimeout: 60000,
-    pathRewrite: async function (path, req) {
+    pathRewrite: function (path, req) { // Removed 'async' to be safe
         // Express strips the mount point, so 'path' is relative (e.g., / or /_stcore/stream)
         // Streamlit expects the full path including baseUrlPath
         // Fix: Simply append the path. If path is '/', result is '/reimbursement-gen/' (Prevent redirect loop)
@@ -88,7 +89,7 @@ const pythonProcess = spawn(PYTHON_CMD, [
     '-m', 'streamlit', 'run',
     'medical_gen/main.py',
     '--server.port', '8501',
-    '--server.address', '127.0.0.1', // Force IPv4 binding for proxy reliability
+    '--server.address', '0.0.0.0', // Universal binding (Fixes Docker connectivity issues)
     '--server.headless', 'true',
     '--server.enableCORS', 'false',
     '--server.enableXsrfProtection', 'false',
