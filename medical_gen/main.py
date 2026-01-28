@@ -86,45 +86,36 @@ st.markdown("""
         /* INPUT FIELDS - COMPACT & PREMIUM */
         /* INPUT FIELDS - AGGRESSIVE WHITE BACKGROUND FORCING */
         /* Target the outermost container */
-        div[data-baseweb="input"] {
+        /* INPUT FIELDS - FINAL ULTRA-WHITE FIX */
+        /* 1. Target the high-level Streamlit wrappers */
+        .stTextInput > div > div,
+        .stNumberInput > div > div, 
+        .stSelectbox > div > div {
             background-color: #ffffff !important;
-            border: 1px solid #94a3b8 !important; /* Slate-400 for high visibility */
-            border-radius: 6px !important;
+            border: 1px solid #94a3b8 !important;
         }
 
-        /* Target the BaseInput container */
-        div[data-baseweb="base-input"],
-        div[data-testid="stTextInput"] > div > div,
-        div[data-testid="stNumberInput"] > div > div {
+        /* 2. Target the BaseWeb Low-level components */
+        div[data-baseweb="input"],
+        div[data-baseweb="base-input"], 
+        div[data-baseweb="select"] > div {
              background-color: #ffffff !important;
         }
 
-        /* Target the actual input element */
+        /* 3. Target the actual INPUT tag */
+        input, 
+        input:focus,
         input[type="text"],
-        input[type="number"],
-        input[type="date"],
-        .stDateInput input,
-        div[data-baseweb="input"] input {
+        input[type="number"] {
             background-color: #ffffff !important;
-            color: #0f172a !important; /* Dark Slate text */
-        }
-        
-        /* Selectbox specific */
-        div[data-baseweb="select"] > div, 
-        div[data-baseweb="select"] span {
-            background-color: #ffffff !important;
+            color: #000000 !important;
         }
 
-        /* Focus states */
-        div[data-baseweb="input"]:focus-within {
-            border-color: #2563eb !important; /* Royal Blue */
+        /* Focus State for Wrappers */
+        .stTextInput > div > div:focus-within,
+        .stNumberInput > div > div:focus-within {
+            border-color: #2563eb !important; 
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
-        }
-        
-        /* Text Area (Formatted Address) */
-        textarea {
-            background-color: #ffffff !important;
-            border: 1px solid #94a3b8 !important;
         }
         
         /* LABELS */
