@@ -501,13 +501,35 @@ with st.container():
                     # Recalculate Grand Claim based on retrieved values
                     grand_claim = form_d_total + med_total
                     
+                    # Helper for Date Formatting
+                    def fmt_date(k):
+                        d = st.session_state.get(k)
+                        return d.strftime("%d-%m-%Y") if isinstance(d, datetime.date) else ""
+
                     # Construct Context from Session State (since local vars are out of scope)
                     context = {
-                        # Employee & Patient
+                        # Employee Details
                         'emp_name_english': get_s('emp_name_english'),
                         'emp_designation_english': get_s('emp_designation_english'),
                         'basic_pay': get_s('basic_pay'),
+                        'emp_name_marathi': get_s('emp_name_designation_marathi'),
+                        'office_name_marathi': get_s('office_name_marathi'),
+                        'res_address': get_s('res_address_english'),
+                        'appointment_date': fmt_date('appointment_date'),
+                        
+                        # Patient Details
                         'patient_name': get_s('patient_name') or get_s('patient_name_english'),
+                        'patient_name_marathi': get_s('patient_name'),
+                        'patient_name_english': get_s('patient_name_english'),
+                        'relation': get_s('patient_relation'),
+                        'patient_age': get_s('patient_age'),
+                        'place_of_illness': get_s('place_of_illness'),
+                        
+                        # Hospital Info
+                        'hospital_name': get_s('hospital_name_english'),
+                        'doctor_name': get_s('treating_doctor_name_english'),
+                        'admit_from': fmt_date('admit_date_from'),
+                        'admit_to': fmt_date('admit_date_to'),
                         
                         # Totals
                         'total_claim_amount': grand_claim,
@@ -539,6 +561,7 @@ with st.container():
                         # Tables
                         'medicine_receipts': st.session_state.get('medicine_receipts', []),
                         'pathology_receipts': st.session_state.get('pathology_receipts', []),
+                        'family_members': family_members, # From local scope above
                     }
                     
                     # File Generation
