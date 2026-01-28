@@ -13,7 +13,11 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import compression from 'compression';
+
 const app = express();
+// Enable Gzip compression
+app.use(compression());
 // Railway provides PORT env var, fallback to 5001 locally
 const PORT = process.env.PORT || 5001;
 

@@ -1,0 +1,20 @@
+[runner]
+fastReruns = true
+magicEnabled = false
+
+[server]
+fileWatcherType = "none"
+enableCORS = false
+enableXsrfProtection = false
+headless = true
+enableWebsocketCompression = true
+baseUrlPath = "/reimbursement-gen"
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+serverAddress = "employeecorner.veeruapp.in"
+
+[theme]
+base = "light"
+font = "sans serif"

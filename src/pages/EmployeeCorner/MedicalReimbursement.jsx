@@ -20,6 +20,7 @@ function MedicalReimbursement() {
                     <div className="w-full">
                         <iframe
                             src="/reimbursement-gen/?embed=true"
+                            loading="eager"
                             title="Medical Reimbursement Form"
                             width="100%"
                             height="1200px"
