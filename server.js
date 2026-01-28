@@ -48,10 +48,7 @@ app.use('/reimbursement-gen', createProxyMiddleware({
     ws: true, // Enable Websockets for Streamlit
     proxyTimeout: 60000,
     pathRewrite: {
-        // Rewrite /reimbursement-gen/foo -> /reimbursement-gen/foo
-        // Streamlit expects the path to START with /reimbursement-gen because of baseUrlPath
-        // So we do NOT strip it. We map it 1:1. 
-        // '^/reimbursement-gen': '/reimbursement-gen', // optional, manual mapping
+        '^/': '/reimbursement-gen/', // Add base path back because Express strips it
     },
     // Fix: Sometimes path rewriting can be tricky. Let's trust the default behaviour for now
     // but ensure the WS upgrade knows where to go.
