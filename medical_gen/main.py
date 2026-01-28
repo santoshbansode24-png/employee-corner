@@ -85,14 +85,26 @@ st.markdown("""
 
         /* INPUT FIELDS - COMPACT & PREMIUM */
         div[data-baseweb="input"] {
-            background-color: white;
-            border: 1px solid #e2e8f0;
+            background-color: #ffffff !important; /* Explicit White */
+            border: 1px solid #cbd5e1 !important; /* Stronger Border */
             border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             transition: all 0.2s;
         }
         div[data-baseweb="input"]:focus-within {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            background-color: #ffffff !important;
+        }
+        /* Inner input element overrides */
+        input.st-ae {
+            background-color: #ffffff !important;
+        }
+        
+        /* DATE INPUT & SELECTBOX Fixes */
+        div[data-baseweb="select"] > div {
+             background-color: #ffffff !important;
+             border: 1px solid #cbd5e1 !important;
         }
         /* Reduce padding inside inputs for compactness */
         div[data-baseweb="input"] input {
