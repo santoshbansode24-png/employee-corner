@@ -250,7 +250,7 @@ if 'persistent_history' not in st.session_state:
 
 for key in st.session_state:
     # Exclude internal internal keys that we don't want to lock
-    if key not in ['nav_active_tab', 'form_data', 'persistent_history', 'state_initialized']:
+    if key not in ['nav_active_tab', 'form_data', 'persistent_history', 'state_initialized', 'btn_nav_next', 'btn_nav_prev']:
         st.session_state['persistent_history'][key] = st.session_state[key]
 
 # 2. Restore values from history back to session state
