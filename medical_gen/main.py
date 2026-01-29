@@ -313,8 +313,8 @@ with st.container():
             c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
             c1.date_input("Date Range", key=f"{prefix}_range", value=[], format="DD/MM/YYYY", 
                         on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"), label_visibility="collapsed")
-            c2.text_input("Days", key=f"{prefix}_days", placeholder="Days", label_visibility="collapsed")
-            c3.text_input("Rate", key=f"{prefix}_rates", placeholder="Rate", label_visibility="collapsed")
+            c2.text_input("Days", key=f"{prefix}_days", placeholder="Days", label_visibility="collapsed", on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"))
+            c3.text_input("Rate", key=f"{prefix}_rates", placeholder="Rate", label_visibility="collapsed", on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"))
             c4.text_input("Total", key=f"{prefix}_total", placeholder="Total", label_visibility="collapsed")
             st.divider()
 
@@ -506,37 +506,86 @@ with st.container():
                         d = st.session_state.get(k)
                         return d.strftime("%d-%m-%Y") if isinstance(d, datetime.date) else ""
 
+                    def get_range_dates(k):
+                        # Returns (from, to) strings
+                        rng = st.session_state.get(k)
+                        if rng and isinstance(rng, list):
+                            if len(rng) == 2:
+                                return rng[0].strftime("%d-%m-%Y"), rng[1].strftime("%d-%m-%Y")
+                            elif len(rng) == 1:
+                                return rng[0].strftime("%d-%m-%Y"), rng[0].strftime("%d-%m-%Y")
+                        return "", ""
+
                     # Construct Context from Session State (since local vars are out of scope)
                     context = {
-                        # Employee Details
+                        # --- EMPLOYEE DETAILS ---
                         'emp_name_english': get_s('emp_name_english'),
                         'emp_designation_english': get_s('emp_designation_english'),
                         'basic_pay': get_s('basic_pay'),
-                        'emp_name_marathi': get_s('emp_name_designation_marathi'),
-                        'office_name_marathi': get_s('office_name_marathi'),
-                        'res_address': get_s('res_address_english'),
-                        'appointment_date': fmt_date('appointment_date'),
                         
-                        # Patient Details
+                        # Marathi & Template Variances
+                        'emp_name_designation_marathi': get_s('emp_name_designation_marathi'),
+                        'emp_name_marathi': get_s('emp_name_designation_marathi'), # Alias
+                        'emp_designation_marathi': '', # If separate field needed, currently merged in name
+                        
+                        'office_name_marathi': get_s('office_name_marathi'),
+                        'emp_office_name_marathi': get_s('office_name_marathi'), # Inspect shows this key
+                        'office_name_english': get_s('office_name_marathi'), # Fallback
+                        
+                        'res_address': get_s('res_address_english'),
+                        'res_address_english': get_s('res_address_english'),
+                        'res_address_marathi': get_s('res_address_english'), # Fallback
+                        
+                        'appointment_date': fmt_date('appointment_date'),
+                        'retirement_date': '', # Optional/Not captured
+                        
+                        # --- PATIENT DETAILS ---
                         'patient_name': get_s('patient_name') or get_s('patient_name_english'),
                         'patient_name_marathi': get_s('patient_name'),
                         'patient_name_english': get_s('patient_name_english'),
+                        
                         'relation': get_s('patient_relation'),
+                        'patient_relation': get_s('patient_relation'),
+                        'patient_relation_marathi': get_s('patient_relation'), # Fallback
+                        
                         'patient_age': get_s('patient_age'),
                         'place_of_illness': get_s('place_of_illness'),
-                        
-                        # Hospital Info
+                        'work_place_marathi': get_s('office_name_marathi'), # Fallback for "Place of work" if 3/4 is blank
+                        'cert_place': get_s('place_of_illness'), # Fallback for certificate place
+                        'cert_date': datetime.datetime.now().strftime("%d-%m-%Y"),
+
+                        # --- HOSPITAL INFO ---
                         'hospital_name': get_s('hospital_name_english'),
-                        'doctor_name': get_s('treating_doctor_name_english'),
-                        'admit_from': fmt_date('admit_date_from'),
-                        'admit_to': fmt_date('admit_date_to'),
+                        'hospital_name_english': get_s('hospital_name_english'),
+                        'hospital_name_marathi': get_s('hospital_name_english'), # Fallback
+                        'hosp_name_marathi': get_s('hospital_name_english'), # Alias seen in inspect
                         
-                        # Totals
+                        'doctor_name': get_s('treating_doctor_name_english'),
+                        'treating_doctor_name_english': get_s('treating_doctor_name_english'),
+                        'dr_name_marathi': get_s('treating_doctor_name_english'), # Fallback
+                        
+                        'consult_doctor_hospital': get_s('hospital_name_english'), # Likely for "Consulting Room/Hospital"
+                        
+                        'admit_from': fmt_date('admit_date_from'),
+                        'admit_date_from': fmt_date('admit_date_from'),
+                        
+                        'admit_to': fmt_date('admit_date_to'),
+                        'admit_date_to': fmt_date('admit_date_to'),
+                        
+                        # --- TOTALS ---
                         'total_claim_amount': grand_claim,
                         'grand_total_claim': grand_claim,
+                        'grand_total_admissible_amount': grand_claim, # Placeholder
+                        
                         'medicine_charges': med_total,
+                        'medicine_charges_90_percent': med_total * 0.9,
+                        
                         'pathology_charges': path_total,
+                        'external_lab_charges': path_total, # Alias
+                        'external_lab_charges_90_percent': path_total * 0.9,
+                        
                         'stay_grand_total': stay_total,
+                        'total_room_rent_admissible': stay_total, # Placeholder
                         
                         # Form D Charges (Bill)
                         'admission_charges': get_f('admission_charges'),
@@ -558,10 +607,34 @@ with st.container():
                         'bsl_charges': get_f('bsl_charges'),
                         'other_charges': get_f('other_charges'),
                         
+                        'total_hospital_bill_amount': form_d_total,
+                        'total_hospital_bill_inc_lab': form_d_total + path_total, # Assuming this sum
+                        'total_hospital_bill_90_percent': form_d_total * 0.9,
+
+                        # Ward Details
+                        'gw_days': get_s('gw_days'), 'gw_rates': get_s('gw_rates'), 'gw_total': get_s('gw_total'),
+                        'gw_dates': f"{get_range_dates('gw_range')[0]} to {get_range_dates('gw_range')[1]}", # Combined string
+                        
+                        'semi_days': get_s('semi_days'), 'semi_rate': get_s('semi_rates'), 'semi_total': get_s('semi_total'),
+                        'semi_dates': f"{get_range_dates('semi_range')[0]} to {get_range_dates('semi_range')[1]}",
+
+                        'pvt_days': get_s('pvt_days'), 'pvt_rates': get_s('pvt_rates'), 'pvt_total': get_s('pvt_total'),
+                        'pvt_dates': f"{get_range_dates('pvt_range')[0]} to {get_range_dates('pvt_range')[1]}",
+
+                        'icu_days': get_s('icu_days'), 'icu_rates': get_s('icu_rates'), 'icu_total': get_s('icu_total'),
+                        'icu_dates': f"{get_range_dates('icu_range')[0]} to {get_range_dates('icu_range')[1]}",
+                        
                         # Tables
                         'medicine_receipts': st.session_state.get('medicine_receipts', []),
                         'pathology_receipts': st.session_state.get('pathology_receipts', []),
-                        'family_members': family_members, # From local scope above
+                        
+                        # Family Members Flattened (1-5)
+                        'mem_name1': get_s('m_name_1'), 'mem_rel1': get_s('m_rel_1'), 'mem_age1': get_s('m_age_1'), 'mem_job1': '',
+                        'mem_name2': get_s('m_name_2'), 'mem_rel2': get_s('m_rel_2'), 'mem_age2': get_s('m_age_2'), 'mem_job2': '',
+                        'mem_name3': get_s('m_name_3'), 'mem_rel3': get_s('m_rel_3'), 'mem_age3': get_s('m_age_3'), 'mem_job3': '',
+                        'mem_name4': get_s('m_name_4'), 'mem_rel4': get_s('m_rel_4'), 'mem_age4': get_s('m_age_4'), 'mem_job4': '',
+                        'mem_name5': get_s('m_name_5'), 'mem_rel5': get_s('m_rel_5'), 'mem_age5': get_s('m_age_5'), 'mem_job5': '',
+                        'family_members': family_members,
                     }
                     
                     # File Generation
