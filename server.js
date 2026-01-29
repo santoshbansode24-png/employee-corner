@@ -50,22 +50,22 @@ const streamlitProxy = createProxyMiddleware({
     xfwd: true,
     proxyTimeout: 60000,
     pathRewrite: function (path, req) {
-        // Logic: Ensure the path sent to Streamlit starts with /reimbursement-gen
+        // STRATEGY CHANGE: Strip the prefix.
+        // Streamlit runs at root (http://127.0.0.1:8501/)
+        // Request: /reimbursement-gen/foo -> Proxy -> /foo
 
-        // Case 1: HTTP Request via app.use() -> Express strips mount point -> path is relative (e.g., /_stcore/stream)
-        // We need to prepend /reimbursement-gen
+        let newPath = path;
 
-        // Case 2: WS Request via server.on('upgrade') -> Path is full (e.g., /reimbursement-gen/_stcore/stream)
-        // we DO NOT want to prepend.
-
-        // Robust Check:
-        if (path.startsWith('/reimbursement-gen')) {
-            console.log(`[Proxy Rewrite (No Change)] ${path}`);
-            return path;
+        // Verify if we are processing a raw URL (like in Upgrade) or relative (Express)
+        // If path starts with /reimbursement-gen, strip it
+        if (newPath.startsWith('/reimbursement-gen')) {
+            newPath = newPath.replace('/reimbursement-gen', '');
         }
 
-        const newPath = '/reimbursement-gen' + path;
-        console.log(`[Proxy Rewrite] ${path} -> ${newPath}`);
+        // Ensure we don't end up with empty string, default to /
+        if (newPath === '') newPath = '/';
+
+        console.log(`[Proxy Strip] ${path} -> ${newPath}`);
         return newPath;
     },
     onError: (err, req, res) => {
@@ -108,8 +108,8 @@ const pythonProcess = spawn(PYTHON_CMD, [
     '--server.enableCORS', 'false',
     '--server.enableXsrfProtection', 'false',
     '--server.enableWebsocketCompression', 'false',
-    '--browser.gatherUsageStats', 'false',
-    '--server.baseUrlPath', '/reimbursement-gen'
+    '--browser.gatherUsageStats', 'false'
+    // REMOVED: --server.baseUrlPath. We now serve at ROOT and strip prefix in proxy.
 ]);
 
 pythonProcess.stdout.on('data', (data) => console.log(`[Streamlit]: ${data}`));
