@@ -383,7 +383,7 @@ with st.container():
         def room_row(label, prefix, title_marathi):
             st.markdown(f"**{label}** <span style='color:gray; font-size:0.8em'>({title_marathi})</span>", unsafe_allow_html=True)
             c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-            c1.date_input("Date Range", key=f"{prefix}_range", value=[], format="DD/MM/YYYY", 
+            c1.date_input("Date Range", key=f"{prefix}_range", format="DD/MM/YYYY", 
                         on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"), label_visibility="collapsed")
             c2.text_input("Days", key=f"{prefix}_days", placeholder="Days", label_visibility="collapsed", on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"))
             c3.text_input("Rate", key=f"{prefix}_rates", placeholder="Rate", label_visibility="collapsed", on_change=update_days, args=(f"{prefix}_range", f"{prefix}_days", f"{prefix}_rates", f"{prefix}_total"))
