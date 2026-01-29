@@ -243,10 +243,30 @@ def init_keys():
         if key not in st.session_state:
             st.session_state[key] = default_val
 
-# Run init only once per session to prevent any overwriting risks (though logic is safe)
+# --- ROBUST PERSISTENCE: SNAPSHOT & MERGE ---
+# 1. Capture current values into persistent history BEFORE they might get cleared by navigation
+if 'persistent_history' not in st.session_state:
+    st.session_state['persistent_history'] = {}
+
+for key in st.session_state:
+    # Exclude internal internal keys that we don't want to lock
+    if key not in ['nav_active_tab', 'form_data', 'persistent_history', 'state_initialized']:
+        st.session_state['persistent_history'][key] = st.session_state[key]
+
+# 2. Restore values from history back to session state
+# This ensures that even if a widget was unmounted (and its key removed), it gets populated back
+for key, val in st.session_state['persistent_history'].items():
+    st.session_state[key] = val
+
+# 3. Ensure defaults exist for anything still missing (new session)
 if 'state_initialized' not in st.session_state:
     init_keys()
     st.session_state['state_initialized'] = True
+else:
+    # Run init_keys anyway to ensure defaults for any NEW keys we might add in future code
+    # This is safe because it only sets if key NOT in session_state, and we just restored everything.
+    init_keys()
+
 
 # Defining Tabs as a constant list
 NAV_TABS = [
@@ -260,6 +280,7 @@ NAV_TABS = [
 # Ensure navigation state exists
 if 'nav_active_tab' not in st.session_state:
     st.session_state['nav_active_tab'] = NAV_TABS[0]
+
 
 # --- HELPER FUNCTIONS ---
 def safe_float(val):
