@@ -469,7 +469,7 @@ with st.container():
         c_d1, c_d2 = st.columns(2)
         with c_d1:
             admission = st.number_input("Admission Charges", key="admission_charges")
-            staying = st.number_input("Staying Charges (Auto)", value=float(st.session_state.get('stay_grand_total',0)), disabled=True, key="total_staying_charges")
+            staying = st.number_input("Staying Charges (Auto)", disabled=True, key="total_staying_charges")
             surgeon = st.number_input("Surgeon Charges", key="surgeon_charges")
             asst = st.number_input("Asst. Surgeon", key="asst_surgeon_charges")
             anesthesia = st.number_input("Anesthesia", key="anesthesia_charges")
