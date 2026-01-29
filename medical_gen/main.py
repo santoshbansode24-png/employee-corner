@@ -715,11 +715,9 @@ with st.container():
                     
                     # File Generation
                     script_dir = os.path.dirname(__file__)
-                    template_path = os.path.join(script_dir, "template_fixed.docx")
+                    template_path = os.path.join(script_dir, "template_cloned.docx")
                     if not os.path.exists(template_path):
-                         template_path = os.path.join(script_dir, "template_cloned.docx")
-                         if not os.path.exists(template_path):
-                                template_path = os.path.join(script_dir, "template.docx")
+                           template_path = os.path.join(script_dir, "template.docx")
 
                     from docxtpl import DocxTemplate
                     doc = DocxTemplate(template_path)
