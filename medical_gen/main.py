@@ -198,6 +198,53 @@ st.markdown("""
 if 'form_data' not in st.session_state:
     st.session_state['form_data'] = {}
 
+# Initialize ALL widget keys to prevent data loss on tab switch
+def init_keys():
+    defaults = {
+        # Tab 1: Employee & Patient
+        'emp_name_designation_marathi': '', 'office_name_marathi': '', 
+        'emp_name_english': '', 'emp_designation_english': '', 
+        'basic_pay': '', 'appointment_date': None, 'res_address_english': '',
+        'patient_name_english': '', 'patient_name': '', 
+        'patient_relation': '', 'patient_age': '', 'place_of_illness': '',
+        'hospital_name_english': '', 'treating_doctor_name_english': '',
+        'admit_date_from': None, 'admit_date_to': None,
+
+        # Tab 2: Hospital Stay (Ranges initialized as empty lists)
+        'gw_range': [], 'gw_days': '', 'gw_rates': '', 'gw_total': '',
+        'semi_range': [], 'semi_days': '', 'semi_rates': '', 'semi_total': '',
+        'pvt_range': [], 'pvt_days': '', 'pvt_rates': '', 'pvt_total': '',
+        'icu_range': [], 'icu_days': '', 'icu_rates': '', 'icu_total': '',
+        'stay_grand_total': 0,
+
+        # Tab 3: Lists (Already handled, but good to be explicit)
+        'pathology_receipts': [], 'medicine_receipts': [],
+
+        # Tab 4: Form D Charges
+        'admission_charges': 0.0, 'total_staying_charges': 0.0,
+        'surgeon_charges': 0.0, 'asst_surgeon_charges': 0.0,
+        'anesthesia_charges': 0.0, 'ot_charges': 0.0,
+        'ot_assistant_charges': 0.0, 'rmo_charges': 0.0,
+        'nursing_charges': 0.0, 'iv_infusion_charges': 0.0,
+        'doctor_visit_charges': 0.0, 'special_visit_charges': 0.0,
+        'monitor_charges': 0.0, 'oxygen_charges': 0.0,
+        'radiology_charges': 0.0, 'ecg_charges': 0.0,
+        'bsl_charges': 0.0, 'other_charges': 0.0,
+        'total_hospital_bill_amount': 0.0
+    }
+    
+    # Family Members (1-5)
+    for i in range(1, 6):
+        defaults[f'm_name_{i}'] = ''
+        defaults[f'm_rel_{i}'] = ''
+        defaults[f'm_age_{i}'] = ''
+
+    for key, default_val in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_val
+
+init_keys()
+
 # Defining Tabs as a constant list
 NAV_TABS = [
     "👤 Employee & Patient", 
