@@ -243,7 +243,10 @@ def init_keys():
         if key not in st.session_state:
             st.session_state[key] = default_val
 
-init_keys()
+# Run init only once per session to prevent any overwriting risks (though logic is safe)
+if 'state_initialized' not in st.session_state:
+    init_keys()
+    st.session_state['state_initialized'] = True
 
 # Defining Tabs as a constant list
 NAV_TABS = [
@@ -765,3 +768,8 @@ with col_n:
     if current_idx < len(NAV_TABS) - 1:
         # Check if we are not on last tab
         st.button("Next ➡️", type="primary", use_container_width=True, key="btn_nav_next", on_click=nav_next, args=(current_idx,))
+
+# --- DEBUG FOOTER ---
+with st.expander("🛠️ Debug Information (Developer Only)", expanded=False):
+    st.write("Current Session State:")
+    st.json(dict(st.session_state))
