@@ -685,15 +685,19 @@ with st.container():
 
                         # Ward Details
                         'gw_days': get_s('gw_days'), 'gw_rates': get_s('gw_rates'), 'gw_total': get_s('gw_total'),
+                        'gw_total_95_percent': safe_float(get_s('gw_total', 0)) * 0.95,
                         'gw_dates': f"{get_range_dates('gw_range')[0]} to {get_range_dates('gw_range')[1]}", # Combined string
                         
                         'semi_days': get_s('semi_days'), 'semi_rate': get_s('semi_rates'), 'semi_total': get_s('semi_total'),
+                        'semi_total_90_percent': safe_float(get_s('semi_total', 0)) * 0.90,
                         'semi_dates': f"{get_range_dates('semi_range')[0]} to {get_range_dates('semi_range')[1]}",
 
                         'pvt_days': get_s('pvt_days'), 'pvt_rates': get_s('pvt_rates'), 'pvt_total': get_s('pvt_total'),
+                        'pvt_total_75_percent': safe_float(get_s('pvt_total', 0)) * 0.75,
                         'pvt_dates': f"{get_range_dates('pvt_range')[0]} to {get_range_dates('pvt_range')[1]}",
 
                         'icu_days': get_s('icu_days'), 'icu_rates': get_s('icu_rates'), 'icu_total': get_s('icu_total'),
+                        'icu_total_100_percent': safe_float(get_s('icu_total', 0)) * 1.0,
                         'icu_dates': f"{get_range_dates('icu_range')[0]} to {get_range_dates('icu_range')[1]}",
                         
                         # Tables
