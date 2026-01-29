@@ -581,7 +581,7 @@ with st.container():
                     def get_range_dates(k):
                         # Returns (from, to) strings
                         rng = st.session_state.get(k)
-                        if rng and isinstance(rng, list):
+                        if rng and isinstance(rng, (list, tuple)):
                             if len(rng) == 2:
                                 return rng[0].strftime("%d-%m-%Y"), rng[1].strftime("%d-%m-%Y")
                             elif len(rng) == 1:
