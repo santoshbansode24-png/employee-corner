@@ -86,8 +86,8 @@ const DA_RATES_MAHARASHTRA = [
 const HRA_RATES_Z = [
     { start: '2016-01-01', end: '2018-12-31', rate: 0 },
     { start: '2019-01-01', end: '2021-06-30', rate: 8 },
-    { start: '2021-07-01', end: '2024-06-30', rate: 9 },
-    { start: '2024-07-01', end: '2099-12-31', rate: 10 },
+    { start: '2021-07-01', end: '2023-12-31', rate: 9 },
+    { start: '2024-01-01', end: '2099-12-31', rate: 10 },
 ];
 
 const getMaharashtraHRARate = (month, year, category) => {
@@ -350,8 +350,18 @@ function ArrearsCalculator() {
                     dueCustomTotal += val;
                 });
 
+                // Minimum HRA Logic
+                const getMinHRA = (category) => {
+                    if (category === 'X') return 5400;
+                    if (category === 'Y') return 3600;
+                    if (category === 'Z') return 1800;
+                    return 0;
+                };
+                const minHRA = getMinHRA(basicInfo.cityCategory);
+
                 const dueDAAmt = Math.round(duePay * dueDARate / 100);
-                const dueHRAAmt = Math.round(duePay * dueHRA / 100);
+                let dueHRAAmt = Math.round(duePay * dueHRA / 100);
+                if (dueHRAAmt < minHRA) dueHRAAmt = minHRA;
                 const dueTotal = duePay + dueDAAmt + dueHRAAmt + dueTA + dueCustomTotal;
 
                 // Drawn
@@ -387,7 +397,8 @@ function ArrearsCalculator() {
                 });
 
                 const drawnDAAmt = Math.round(drawnPay * drawnDARate / 100);
-                const drawnHRAAmt = Math.round(drawnPay * drawnHRA / 100);
+                let drawnHRAAmt = Math.round(drawnPay * drawnHRA / 100);
+                if (drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
                 const drawnTotal = drawnPay + drawnDAAmt + drawnHRAAmt + drawnTA + drawnCustomTotal;
 
                 // Difference
