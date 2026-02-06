@@ -2,6 +2,57 @@ import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+// MUI IMPORTS
+import {
+    Box, Grid, Card, CardContent, TextField, Button, Typography,
+    IconButton, Switch, FormControlLabel, Select, MenuItem, Divider,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Container, InputAdornment
+} from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Download, Add, Close, Visibility, ExpandMore, AccountBalance, TrendingDown, AccessTime } from '@mui/icons-material';
+
+// --- COMPACT THEME ---
+const compactTheme = createTheme({
+    typography: {
+        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontSize: 12,
+        h6: { fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em' },
+        subtitle2: { fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' },
+    },
+    components: {
+        MuiTextField: { defaultProps: { size: 'small', variant: 'outlined', InputLabelProps: { shrink: true, style: { fontSize: '0.75rem', fontWeight: 600 } } } },
+        MuiSelect: { defaultProps: { size: 'small' } },
+        MuiButton: { defaultProps: { size: 'small', disableElevation: true }, styleOverrides: { root: { borderRadius: 6, textTransform: 'none', fontWeight: 600 } } },
+        MuiCard: { styleOverrides: { root: { borderRadius: 12, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0' } } },
+        MuiTableCell: { styleOverrides: { root: { padding: '6px 12px', borderColor: '#f1f5f9' }, head: { backgroundColor: '#f8fafc', fontWeight: 700, color: '#475569' } } },
+    },
+    palette: {
+        primary: { main: '#2563eb' },
+        success: { main: '#10b981', light: '#ecfdf5', contrastText: '#065f46' }, // For Due
+        warning: { main: '#f97316', light: '#fff7ed', contrastText: '#9a3412' }, // For Drawn
+        text: { primary: '#1e293b', secondary: '#64748b' }
+    }
+});
+
+// Helper for safe local date formatting (YYYY-MM-DD)
+const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset();
+    const dateLocal = new Date(d.getTime() - (offset * 60 * 1000));
+    return dateLocal.toISOString().split('T')[0];
+};
+
+// Helper for safe local month formatting (YYYY-MM)
+const formatMonth = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset();
+    const dateLocal = new Date(d.getTime() - (offset * 60 * 1000));
+    return dateLocal.toISOString().slice(0, 7);
+};
 
 // --- CONSTANTS & DATA ---
 const MONTHS = [
@@ -379,7 +430,27 @@ function ArrearsCalculator() {
         const setter = type === 'due' ? setDueComponents : setDrawnComponents;
         setter(prev => {
             const list = [...(prev[compKey] || [])];
-            list[index] = { ...list[index], [field]: value };
+            let newItem = { ...list[index], [field]: value };
+
+            // AUTO-CALC LOGIC: Recalculate rates when 'From' month changes
+            if (field === 'from' && value) {
+                const dateObj = new Date(value + "-01"); // value is YYYY-MM
+                if (!isNaN(dateObj.getTime())) {
+                    const m = dateObj.getMonth() + 1;
+                    const y = dateObj.getFullYear();
+
+                    // Auto-DA
+                    if (compKey === 'daRate' && toggles.autoDAMaharashtra) {
+                        newItem.amount = getMaharashtraDARate(m, y);
+                    }
+                    // Auto-HRA
+                    if (compKey === 'hraRate' && toggles.autoHRAMaharashtra) {
+                        newItem.amount = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
+                    }
+                }
+            }
+
+            list[index] = newItem;
             return { ...prev, [compKey]: list };
         });
     };
@@ -550,542 +621,463 @@ function ArrearsCalculator() {
 
     const renderComponentInputs = (title, type, compKey, label) => {
         const comps = (type === 'due' ? dueComponents[compKey] : drawnComponents[compKey]) || [];
-
-        // Dynamic header color based on section type
-        const headerColorClass = type === 'due' ? 'text-emerald-700' : 'text-orange-700';
-        const borderColorClass = type === 'due' ? 'border-l-4 border-emerald-500' : 'border-l-4 border-orange-500';
+        const isDue = type === 'due';
+        const borderColor = isDue ? 'success.main' : 'warning.main';
 
         return (
-            <div className={`mb-4 bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-md ${borderColorClass}`}>
-                <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                    <span className={`font-bold text-[11px] uppercase tracking-wider ${headerColorClass}`}>{label}</span>
-                    {toggles.promotionEnabled && (
-                        <button className="text-[10px] bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded shadow-sm hover:text-blue-600 hover:border-blue-300 transition-colors" onClick={() => alert('Feature: Split Period')}>
-                            + Split
-                        </button>
-                    )}
-                </div>
-                <div className="p-3 space-y-2">
-                    {comps.map((item, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                            <div className="relative flex-grow">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">₹</span>
-                                <input
+            <Grid item xs={12} sm={6}>
+                <Card sx={{ height: '100%', borderLeft: 4, borderColor: borderColor, overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ px: 2, py: 1, bgcolor: '#f8fafc', borderBottom: 1, borderColor: '#e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ color: isDue ? 'success.dark' : 'warning.dark' }}>{label}</Typography>
+                        {toggles.promotionEnabled && (
+                            <Button size="small" startIcon={<Add sx={{ fontSize: 16 }} />} onClick={() => alert('Feature: Split Period')} sx={{ fontSize: '0.7rem', py: 0, minWidth: 'auto', height: 24 }}>
+                                Split
+                            </Button>
+                        )}
+                    </Box>
+                    <CardContent sx={{ p: 2, flexGrow: 1, '&:last-child': { pb: 2 } }}>
+                        {comps.map((item, idx) => (
+                            <Box key={idx} sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: idx < comps.length - 1 ? 2 : 0 }}>
+                                <TextField
+                                    fullWidth
                                     type="number"
+                                    placeholder="0"
                                     value={item.amount}
                                     onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
-                                    className="w-full pl-6 pr-3 py-1.5 text-sm font-semibold text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all"
-                                    placeholder="0"
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start"><Typography variant="body2" fontWeight={600} color="text.secondary">₹</Typography></InputAdornment>,
+                                        style: { fontWeight: 700 }
+                                    }}
                                 />
-                            </div>
-                            {toggles.promotionEnabled && (
-                                <>
-                                    <input type="month" value={item.from} onChange={(e) => updateComponent(type, compKey, idx, 'from', e.target.value)} className="w-28 text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                                    <span className="text-slate-300 font-light">to</span>
-                                    <input type="month" value={item.to} onChange={(e) => updateComponent(type, compKey, idx, 'to', e.target.value)} className="w-28 text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                                </>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
+                                {toggles.promotionEnabled && (
+                                    <>
+                                        <Box sx={{ width: 120 }}>
+                                            <DatePicker
+                                                selected={item.from ? new Date(item.from + "-01") : null}
+                                                onChange={(date) => updateComponent(type, compKey, idx, 'from', formatMonth(date))}
+                                                dateFormat="yyyy-MM" showMonthYearPicker
+                                                customInput={<TextField fullWidth label="From" />}
+                                            />
+                                        </Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>to</Typography>
+                                        <Box sx={{ width: 120 }}>
+                                            <DatePicker
+                                                selected={item.to ? new Date(item.to + "-01") : null}
+                                                onChange={(date) => updateComponent(type, compKey, idx, 'to', formatMonth(date))}
+                                                dateFormat="yyyy-MM" showMonthYearPicker
+                                                customInput={<TextField fullWidth label="To" />}
+                                            />
+                                        </Box>
+                                    </>
+                                )}
+                            </Box>
+                        ))}
+                    </CardContent>
+                </Card>
+            </Grid>
         );
     };
 
     return (
-        <div className="animate-fade-in min-h-screen bg-slate-50 py-10 px-4 md:px-8 font-sans text-slate-800">
-            {/* --- MAIN HEADER & CONFIGURATION CARD --- */}
-            <div className="w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden mb-8">
-                {/* Header */}
-                <div className="px-6 py-6 border-b border-slate-100 bg-gradient-to-br from-white to-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-blue-600 p-3 rounded-xl shadow-lg shadow-blue-200">
-                            <span className="text-2xl text-white">🏛️</span>
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Arrears Calculator</h1>
-                            <p className="text-sm font-medium text-slate-500">Government Salary Due-Drawn Statement Generator</p>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Unified Settings Panel */}
-                <div className="p-6 md:p-8 grid grid-cols-2 gap-8">
-                    {/* Column 1: Employee Details */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="bg-blue-100 text-blue-700 p-1.5 rounded-md text-xs font-bold">01</span>
-                            <h3 className="font-bold text-slate-700 uppercase tracking-wider text-sm">Employee Details</h3>
-                        </div>
+        <ThemeProvider theme={compactTheme}>
+            <Box sx={{ minHeight: '100vh', bgcolor: '#f1f5f9', py: 4, px: { xs: 2, md: 4 } }}>
+                <Container maxWidth="xl">
+                    {/* --- MAIN HEADER & CONFIGURATION CARD --- */}
+                    <Card sx={{ mb: 4, overflow: 'visible' }}>
+                        {/* Header */}
+                        <Box sx={{ p: 2.5, background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)', borderBottom: 1, borderColor: '#e2e8f0', display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 1, borderRadius: 2, boxShadow: 2, display: 'flex' }}>
+                                <AccountBalance fontSize="medium" />
+                            </Box>
+                            <Box>
+                                <Typography variant="h6" color="text.primary">Arrears Calculator</Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mt: 0.5 }}>
+                                    Government Salary Due-Drawn Statement Generator
+                                </Typography>
+                            </Box>
+                        </Box>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Name</label>
-                                <input type="text" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                                    value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Designation</label>
-                                <input type="text" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                                    value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
-                            </div>
-                        </div>
+                        <CardContent sx={{ p: 3 }}>
+                            <Grid container spacing={4}>
+                                {/* Column 1: Employee Details */}
+                                <Grid item xs={12} sm={6}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                        <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>01</Box>
+                                        <Typography variant="subtitle2">Employee Details</Typography>
+                                    </Box>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">From Month</label>
-                                <input type="date" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                                    value={basicInfo.fromMonth} onChange={e => updateBasicInfo('fromMonth', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">To Month</label>
-                                <input type="date" className="w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                                    value={basicInfo.toMonth} onChange={e => updateBasicInfo('toMonth', e.target.value)} />
-                            </div>
-                        </div>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12}>
+                                            <TextField fullWidth label="Name" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <TextField fullWidth label="Designation" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <DatePicker
+                                                selected={basicInfo.fromMonth ? new Date(basicInfo.fromMonth) : null}
+                                                onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
+                                                dateFormat="yyyy-MM-dd"
+                                                customInput={<TextField fullWidth label="From Month" />}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <DatePicker
+                                                selected={basicInfo.toMonth ? new Date(basicInfo.toMonth) : null}
+                                                onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
+                                                dateFormat="yyyy-MM-dd"
+                                                customInput={<TextField fullWidth label="To Month" />}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            <TextField fullWidth multiline rows={2} label="GR / Order Title" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
 
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">GR / Order Title</label>
-                            <textarea className="w-full text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm h-16 resize-none"
-                                value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
-                        </div>
-                    </div>
+                                {/* Column 2: Configuration */}
+                                <Grid item xs={12} sm={6} sx={{ borderLeft: { sm: 1 }, borderColor: { sm: 'grey.300' }, pl: { sm: 4 } }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                        <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>02</Box>
+                                        <Typography variant="subtitle2">Configuration</Typography>
+                                    </Box>
 
-                    {/* Column 2: Configuration */}
-                    <div className="space-y-6 border-l border-slate-100 pl-8">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="bg-indigo-100 text-indigo-700 p-1.5 rounded-md text-xs font-bold">02</span>
-                            <h3 className="font-bold text-slate-700 uppercase tracking-wider text-sm">Configuration</h3>
-                        </div>
+                                    <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 2, border: 1, borderColor: '#e2e8f0', mb: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Auto-DA (Maharashtra)</Typography>
+                                            <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Auto-HRA (7th PC)</Typography>
+                                            <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
+                                        </Box>
+                                    </Box>
 
-                        {/* Toggles Panel */}
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-600">Auto-DA (Maharashtra)</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
-                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-600">Auto-HRA (7th PC)</span>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} />
-                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                                </label>
-                            </div>
-                        </div>
+                                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="Category" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
+                                                <MenuItem value="NPS">NPS</MenuItem><MenuItem value="GPF">GPF</MenuItem>
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="City (HRA)" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
+                                                <MenuItem value="X">X (Metro)</MenuItem><MenuItem value="Y">Y (City)</MenuItem><MenuItem value="Z">Z (Rural)</MenuItem>
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="Increment" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
+                                                <MenuItem value="No Increment">None</MenuItem>
+                                                <MenuItem value="January">Jan</MenuItem>
+                                                <MenuItem value="July">July</MenuItem>
+                                                <MenuItem value="Both">Both</MenuItem>
+                                            </TextField>
+                                        </Grid>
+                                    </Grid>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Category</label>
-                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
-                                    <option>NPS</option><option>GPF</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">City (HRA)</label>
-                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
-                                    <option value="X">X (Metro)</option><option value="Y">Y (City)</option><option value="Z">Z (Rural)</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1 col-span-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Increment Month</label>
-                                <select className="w-full text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-blue-500" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
-                                    <option>No Increment</option><option>January</option><option>July</option><option>Both</option>
-                                </select>
-                            </div>
-                        </div>
+                                    <Divider sx={{ my: 2 }} />
 
-                        {/* Custom Columns */}
-                        <div className="pt-4 border-t border-slate-100">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Custom Columns</label>
-                            <div className="flex gap-2 mb-2">
-                                <input type="text" id="newColInput" className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-500" placeholder="Add custom column..." />
-                                <button onClick={() => { const el = document.getElementById('newColInput'); if (el.value) { addCustomColumn(el.value); el.value = ''; } }}
-                                    className="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition-colors">+</button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {customColumns.map(col => (
-                                    <span key={col.id} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md border border-slate-200">
-                                        {col.label}
-                                        <button onClick={() => removeCustomColumn(col.id)} className="text-slate-400 hover:text-red-500">×</button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={1}>CUSTOM COLUMNS</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                            <TextField id="newColInput" placeholder="Add column..." fullWidth />
+                                            <Button variant="contained" sx={{ minWidth: 40, p: 0 }} onClick={() => { const el = document.getElementById('newColInput'); if (el.value) { addCustomColumn(el.value); el.value = ''; } }}>+</Button>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {customColumns.map(col => (
+                                                <Box key={col.id} sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: 1, borderColor: '#e2e8f0', fontSize: '0.7rem', fontWeight: 700, color: '#475569' }}>
+                                                    {col.label}
+                                                    <IconButton size="small" onClick={() => removeCustomColumn(col.id)} sx={{ ml: 0.5, p: 0.2 }}><Close sx={{ fontSize: 12 }} /></IconButton>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
 
-                    </div>
-                </div>
-            </div>
+                    {/* --- INPUTS GRID --- */}
+                    <Grid container spacing={4} sx={{ mb: 8 }}>
+                        {/* === DUE SECTION (Green Theme) === */}
+                        <Grid item xs={12} sm={6}>
+                            <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
+                                {/* Header */}
+                                <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><AccountBalance fontSize="small" /></Box>
+                                    <Box>
+                                        <Typography variant="subtitle2" color="inherit" sx={{ letterSpacing: 1 }}>DUE AMOUNT</Typography>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>देय रक्कम</Typography>
+                                    </Box>
+                                </Box>
+                                <CardContent sx={{ pt: 4, px: 3 }}>
+                                    <Grid container spacing={2}>
+                                        {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
+                                        {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance')}
+                                        {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label))}
+                                    </Grid>
 
-            {/* --- INPUTS GRID --- */}
-            <div className="w-full grid grid-cols-2 gap-8 mb-12">
+                                    {/* Promotion Section (Restored) */}
+                                    <Divider sx={{ my: 3 }} />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography variant="subtitle2" color="primary">Promotion / Timebound Details</Typography>
+                                        <Button startIcon={<Add />} size="small" variant="outlined" onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>Add Period</Button>
+                                    </Box>
+                                    {duePromotionPeriods.map((period, index) => (
+                                        <Paper key={index} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'success.light', border: '1px solid', borderColor: 'success.main', position: 'relative' }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                                                <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #bbf7d0' }}>Period {index + 1}</Typography>
+                                                <IconButton size="small" color="error" onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
+                                            </Box>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
+                                                        const newDate = formatDate(date);
+                                                        const updated = [...duePromotionPeriods];
+                                                        updated[index].from = newDate;
+                                                        if (newDate) {
+                                                            const dateObj = new Date(newDate);
+                                                            const m = dateObj.getMonth() + 1;
+                                                            const y = dateObj.getFullYear();
+                                                            updated[index].daRate = getMaharashtraDARate(m, y);
+                                                            updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
+                                                        }
+                                                        setDuePromotionPeriods(updated);
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" />
+                                                </Grid>
+                                                <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                {customColumns.map(col => (
+                                                    <Grid item xs={6} md={3} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                ))}
+                                            </Grid>
+                                        </Paper>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </Grid>
 
-                {/* === DUE SECTION (Green/Teal Theme) === */}
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col h-full">
-                    {/* Header */}
-                    <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 border-b border-emerald-700 flex justify-between items-center shadow-md z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                                <span className="text-xl">💰</span>
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-white tracking-wide">DUE AMOUNT</h2>
-                                <p className="text-[10px] font-medium text-emerald-100 uppercase tracking-widest opacity-90">सध्या दिले जाणारे वेतन</p>
-                            </div>
-                        </div>
-                    </div>
+                        {/* === DRAWN SECTION (Orange/Red Theme) === */}
+                        <Grid item xs={12} sm={6}>
+                            <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
+                                {/* Header */}
+                                <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><TrendingDown fontSize="small" /></Box>
+                                    <Box>
+                                        <Typography variant="subtitle2" color="inherit" sx={{ letterSpacing: 1 }}>DRAWN AMOUNT</Typography>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>पूर्वी दिलेले वेतन</Typography>
+                                    </Box>
+                                </Box>
+                                <CardContent sx={{ pt: 4, px: 3 }}>
+                                    <Grid container spacing={2}>
+                                        {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
+                                        {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance')}
+                                        {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label))}
+                                    </Grid>
 
-                    <div className="p-6 bg-slate-50/50 flex-grow">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
-                            {renderComponentInputs('Due', 'due', 'daRate', 'DA Rate %')}
-                            {renderComponentInputs('Due', 'due', 'hraRate', 'HRA Rate %')}
-                            {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance (TA)')}
-                            {customColumns.map(col => (
-                                <React.Fragment key={col.id}>
-                                    {renderComponentInputs('Due', 'due', col.id, col.label)}
-                                </React.Fragment>
-                            ))}
-                        </div>
+                                    {/* Promotion Section (Restored) */}
+                                    <Divider sx={{ my: 3 }} />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography variant="subtitle2" color="warning.main">Promotion / Timebound Details</Typography>
+                                        <Button startIcon={<Add />} size="small" variant="outlined" color="warning" onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>Add Period</Button>
+                                    </Box>
+                                    {drawnPromotionPeriods.map((period, index) => (
+                                        <Paper key={index} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'warning.light', border: '1px solid', borderColor: 'warning.main', position: 'relative' }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                                                <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #fed7aa' }}>Period {index + 1}</Typography>
+                                                <IconButton size="small" color="error" onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
+                                            </Box>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
+                                                        const newDate = formatDate(date);
+                                                        const updated = [...drawnPromotionPeriods];
+                                                        updated[index].from = newDate;
+                                                        if (newDate) {
+                                                            const dateObj = new Date(newDate);
+                                                            const m = dateObj.getMonth() + 1;
+                                                            const y = dateObj.getFullYear();
+                                                            updated[index].daRate = getMaharashtraDARate(m, y);
+                                                            updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
+                                                        }
+                                                        setDrawnPromotionPeriods(updated);
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" />
+                                                </Grid>
+                                                <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                {customColumns.map(col => (
+                                                    <Grid item xs={6} md={3} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                ))}
+                                            </Grid>
+                                        </Paper>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
 
-                        {/* Promotion Section */}
-                        <div className="bg-white rounded-xl border border-emerald-100 p-1 shadow-sm">
-                            <div className="flex justify-between items-center bg-emerald-50/50 px-4 py-3 rounded-lg border-b border-emerald-50">
-                                <button
-                                    onClick={() => setShowDuePromotion(!showDuePromotion)}
-                                    className="flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-900 transition-colors"
-                                >
-                                    <span className={`transform transition-transform duration-300 ${showDuePromotion ? 'rotate-180' : ''}`}>▼</span>
-                                    Promotion / Timebound Details
-                                </button>
-                                {showDuePromotion && (
-                                    <button
-                                        onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
-                                        className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-full font-bold transition-all shadow-sm flex items-center gap-1"
-                                    >
-                                        <span>+</span> Add Period
-                                    </button>
-                                )}
-                            </div>
 
-                            {showDuePromotion && (
-                                <div className="p-4 space-y-4">
-                                    {duePromotionPeriods.length === 0 ? (
-                                        <div className="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-100 rounded-lg">No promotion periods added yet</div>
-                                    ) : (
-                                        duePromotionPeriods.map((period, index) => (
-                                            <div key={index} className="bg-white p-4 rounded-xl border border-emerald-200 shadow-emerald-100/50 shadow-md relative group transition-all hover:shadow-lg">
-                                                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-xl"></div>
-                                                <div className="flex justify-between items-center mb-3 pl-3 border-b border-slate-50 pb-2">
-                                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded">Period {index + 1}</span>
-                                                    <button onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}
-                                                        className="text-slate-300 hover:text-red-500 transition-colors bg-white hover:bg-red-50 w-6 h-6 rounded-full flex items-center justify-center font-bold">×</button>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pl-3">
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">From Date</label>
-                                                        <input type="date" value={period.from} onChange={(e) => {
-                                                            const newDate = e.target.value;
-                                                            const updated = [...duePromotionPeriods];
-                                                            updated[index].from = newDate;
-                                                            if (newDate) {
-                                                                const [y, m] = newDate.split('-').map(Number);
-                                                                updated[index].daRate = getMaharashtraDARate(m, y);
-                                                                updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                            }
-                                                            setDuePromotionPeriods(updated);
-                                                        }} className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Basic Pay</label>
-                                                        <input type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">DA %</label>
-                                                        <input type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">HRA %</label>
-                                                        <input type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">TA</label>
-                                                        <input type="number" value={period.ta || ''} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                    </div>
-                                                    {customColumns.map(col => (
-                                                        <div key={col.id}>
-                                                            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{col.label}</label>
-                                                            <input type="number" value={(period.custom && period.custom[col.id]) || ''}
-                                                                onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }}
-                                                                className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-emerald-500" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
+
+
+                    {/* --- ACTION FOOTER --- */}
+                    <Box sx={{ position: 'sticky', bottom: 24, display: 'flex', justifyContent: 'center', zIndex: 100 }}>
+                        <Button variant="contained" size="large" startIcon={<Download />} onClick={generatePDF}
+                            sx={{
+                                borderRadius: 8, px: 5, py: 1.5, fontSize: '1rem', fontWeight: 700,
+                                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                                boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.5)',
+                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 15px 30px -5px rgba(37, 99, 235, 0.6)' },
+                                transition: 'all 0.2s ease-in-out'
+                            }}>
+                            Download PDF Statement
+                        </Button>
+                    </Box>
+
+                    {/* --- ON SCREEN PREVIEW (Hidden / For Capture) --- */}
+                    <Box sx={{ mt: 4, p: 2, bgcolor: 'grey.100', borderRadius: 2, border: '1px solid', borderColor: 'grey.300', opacity: 0.5, '&:hover': { opacity: 1 }, transition: 'opacity 0.3s' }}>
+                        <Typography variant="caption" display="block" align="center" sx={{ fontWeight: 'bold', color: 'grey.500', mb: 2, letterSpacing: 2, textTransform: 'uppercase' }}>
+                            PDF Generation Preview (Internal)
+                        </Typography>
+                        <Box sx={{ overflowX: 'auto', p: 1, bgcolor: 'grey.200', borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}>
+                            <Box sx={{
+                                bgcolor: 'white',
+                                p: 4,
+                                color: 'black',
+                                mx: 'auto',
+                                transformOrigin: 'top left',
+                                transform: { xs: 'scale(0.5)', md: 'scale(0.75)', lg: 'scale(1)' },
+                                transition: 'transform 0.3s',
+                                width: '2200px',
+                                fontFamily: 'Arial, sans-serif'
+                            }}>
+
+                                {/* HEADER SECTION (Captured as Image for Marathi Support) */}
+                                <div ref={headerRef} style={{ padding: '20px', background: 'white' }}>
+                                    <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
+                                            {basicInfo.orderNo}
+                                        </h2>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>NAME: <span style={{ fontWeight: 'normal' }}>{basicInfo.empName}</span></div>
+                                        <div style={{ flex: 1, textAlign: 'center' }}>DESIGNATION: <span style={{ fontWeight: 'normal' }}>{basicInfo.designation}</span></div>
+                                        <div style={{ flex: 1, textAlign: 'right' }}>PERIOD: <span style={{ fontWeight: 'normal' }}>{basicInfo.fromMonth} TO {basicInfo.toMonth}</span></div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
 
-                {/* === DRAWN SECTION (Orange/Red Theme) === */}
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col h-full">
-                    {/* Header */}
-                    <div className="px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 border-b border-orange-700 flex justify-between items-center shadow-md z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                                <span className="text-xl">📉</span>
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-white tracking-wide">DRAWN AMOUNT</h2>
-                                <p className="text-[10px] font-medium text-orange-100 uppercase tracking-widest opacity-90">पूर्वी दिलेले वेतन</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-6 bg-slate-50/50 flex-grow">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
-                            {renderComponentInputs('Drawn', 'drawn', 'daRate', 'DA Rate %')}
-                            {renderComponentInputs('Drawn', 'drawn', 'hraRate', 'HRA Rate %')}
-                            {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance (TA)')}
-                            {customColumns.map(col => (
-                                <React.Fragment key={col.id}>
-                                    {renderComponentInputs('Drawn', 'drawn', col.id, col.label)}
-                                </React.Fragment>
-                            ))}
-                        </div>
-
-                        {/* Promotion Section */}
-                        <div className="bg-white rounded-xl border border-orange-100 p-1 shadow-sm">
-                            <div className="flex justify-between items-center bg-orange-50/50 px-4 py-3 rounded-lg border-b border-orange-50">
-                                <button
-                                    onClick={() => setShowDrawnPromotion(!showDrawnPromotion)}
-                                    className="flex items-center gap-2 text-sm font-bold text-orange-800 hover:text-orange-900 transition-colors"
-                                >
-                                    <span className={`transform transition-transform duration-300 ${showDrawnPromotion ? 'rotate-180' : ''}`}>▼</span>
-                                    Promotion / Timebound Details
-                                </button>
-                                {showDrawnPromotion && (
-                                    <button
-                                        onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
-                                        className="text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 px-3 py-1.5 rounded-full font-bold transition-all shadow-sm flex items-center gap-1"
-                                    >
-                                        <span>+</span> Add Period
-                                    </button>
-                                )}
-                            </div>
-
-                            {showDrawnPromotion && (
-                                <div className="p-4 space-y-4">
-                                    {drawnPromotionPeriods.length === 0 ? (
-                                        <div className="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-100 rounded-lg">No promotion periods added yet</div>
-                                    ) : (
-                                        drawnPromotionPeriods.map((period, index) => (
-                                            <div key={index} className="bg-white p-4 rounded-xl border border-orange-200 shadow-orange-100/50 shadow-md relative group transition-all hover:shadow-lg">
-                                                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 rounded-l-xl"></div>
-                                                <div className="flex justify-between items-center mb-3 pl-3 border-b border-slate-50 pb-2">
-                                                    <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded">Period {index + 1}</span>
-                                                    <button onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}
-                                                        className="text-slate-300 hover:text-red-500 transition-colors bg-white hover:bg-red-50 w-6 h-6 rounded-full flex items-center justify-center font-bold">×</button>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pl-3">
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">From Date</label>
-                                                        <input type="date" value={period.from} onChange={(e) => {
-                                                            const newDate = e.target.value;
-                                                            const updated = [...drawnPromotionPeriods];
-                                                            updated[index].from = newDate;
-                                                            if (newDate) {
-                                                                const [y, m] = newDate.split('-').map(Number);
-                                                                updated[index].daRate = getMaharashtraDARate(m, y);
-                                                                updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                            }
-                                                            setDrawnPromotionPeriods(updated);
-                                                        }} className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Basic Pay</label>
-                                                        <input type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">DA %</label>
-                                                        <input type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">HRA %</label>
-                                                        <input type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">TA</label>
-                                                        <input type="number" value={period.ta || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }}
-                                                            className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                    </div>
-                                                    {customColumns.map(col => (
-                                                        <div key={col.id}>
-                                                            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{col.label}</label>
-                                                            <input type="number" value={(period.custom && period.custom[col.id]) || ''}
-                                                                onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }}
-                                                                className="w-full text-xs font-bold text-slate-700 border border-slate-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-orange-500" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-
-            {/* --- ACTION FOOTER --- */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 flex justify-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-none md:shadow-none md:p-0 md:mt-12 md:mb-20">
-                <button onClick={generatePDF} className="group relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-4 px-12 rounded-full shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 text-lg overflow-hidden">
-                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></span>
-                    <span className="text-2xl">📥</span>
-                    <span>Download PDF Statement</span>
-                </button>
-            </div>
-
-            {/* --- ON SCREEN PREVIEW (Hidden / For Capture) --- */}
-            <div className="card overflow-hidden bg-slate-100 p-4 rounded-xl border border-slate-200 opacity-50 hover:opacity-100 transition-opacity">
-                <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">PDF Generation Preview (Internal)</p>
-                <div className="overflow-x-auto rounded-lg border border-slate-300 shadow-inner bg-slate-200/50 p-2">
-                    <div className="bg-white p-8 text-black mx-auto transform origin-top left-0 scale-50 md:scale-75 lg:scale-100 transition-transform" style={{ width: '2200px', fontFamily: 'Arial, sans-serif' }}>
-
-                        {/* HEADER SECTION (Captured as Image for Marathi Support) */}
-                        <div ref={headerRef} style={{ padding: '20px', background: 'white' }}>
-                            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                                <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
-                                    {basicInfo.orderNo}
-                                </h2>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
-                                <div style={{ flex: 1, textAlign: 'left' }}>NAME: <span style={{ fontWeight: 'normal' }}>{basicInfo.empName}</span></div>
-                                <div style={{ flex: 1, textAlign: 'center' }}>DESIGNATION: <span style={{ fontWeight: 'normal' }}>{basicInfo.designation}</span></div>
-                                <div style={{ flex: 1, textAlign: 'right' }}>PERIOD: <span style={{ fontWeight: 'normal' }}>{basicInfo.fromMonth} TO {basicInfo.toMonth}</span></div>
-                            </div>
-                        </div>
-
-                        {/* TABLE SECTION (Visual Only - PDF uses AutoTable) */}
-                        <div>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '3%' }} />
-                                    <col style={{ width: '8%' }} />
-                                    <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                    <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                    <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                    {basicInfo.category === 'NPS' ? <><col style={{ width: '5%' }} /><col style={{ width: '5%' }} /></> : <col style={{ width: '10%' }} />}
-                                </colgroup>
-                                <thead>
-                                    <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
-                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>SR</th>
-                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>MONTH</th>
-                                        <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DUE</th>
-                                        <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DRAWN</th>
-                                        <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DIFFERENCE</th>
-                                        {basicInfo.category === 'NPS' && (
-                                            <>
-                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DCPS<br />10%</th>
-                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>NPS<br />14%</th>
-                                            </>
-                                        )}
-                                    </tr>
-                                    <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
-                                        {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                        {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                        {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {calculationResults.map((row, idx) => {
-                                        const nps14 = Math.round(row.diff.total * 0.14);
-                                        return (
-                                            <tr key={idx} style={{ textAlign: 'center', color: '#000' }}>
-                                                <td style={{ border: '1px solid black', padding: '6px' }}>{idx + 1}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>
-                                                    {row.label}
-                                                    {row.isIncrementMonth && <span style={{ marginLeft: '5px', fontSize: '10px', border: '1px solid black', padding: '1px 4px', borderRadius: '3px' }}>INC</span>}
-                                                </td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.pay}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.da}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.hra}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.ta}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.custom[c.id]}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.due.total}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.pay}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.da}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.hra}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.ta}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.custom[c.id]}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.drawn.total}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.pay}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.da}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.hra}</td>
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.ta}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.custom[c.id]}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.diff.total}</td>
+                                {/* TABLE SECTION (Visual Only - PDF uses AutoTable) */}
+                                <div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', tableLayout: 'fixed' }}>
+                                        <colgroup>
+                                            <col style={{ width: '3%' }} />
+                                            <col style={{ width: '8%' }} />
+                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
+                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
+                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
+                                            {basicInfo.category === 'NPS' ? <><col style={{ width: '5%' }} /><col style={{ width: '5%' }} /></> : <col style={{ width: '10%' }} />}
+                                        </colgroup>
+                                        <thead>
+                                            <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
+                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>SR</th>
+                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>MONTH</th>
+                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DUE</th>
+                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DRAWN</th>
+                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DIFFERENCE</th>
                                                 {basicInfo.category === 'NPS' && (
                                                     <>
-                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{row.dcps}</td>
-                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{nps14}</td>
+                                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DCPS<br />10%</th>
+                                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>NPS<br />14%</th>
                                                     </>
                                                 )}
                                             </tr>
-                                        );
-                                    })}
-                                    <tr style={{ fontWeight: 'bold', background: '#e0e0e0', color: '#000' }}>
-                                        <td colSpan={2} style={{ border: '1px solid black', padding: '8px', textAlign: 'center' }}>TOTAL</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.pay, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.da, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.hra, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.ta, 0)}</td>
-                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.due.custom[c.id] || 0), 0)}</td>)}
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.total, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.pay, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.da, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.hra, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.ta, 0)}</td>
-                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.drawn.custom[c.id] || 0), 0)}</td>)}
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.total, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.pay, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.da, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.hra, 0)}</td>
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.ta, 0)}</td>
-                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.diff.custom[c.id] || 0), 0)}</td>)}
-                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.total, 0)}</td>
-                                        {basicInfo.category === 'NPS' && (
-                                            <>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.dcps, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)}</td>
-                                            </>
-                                        )}
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                            <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
+                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
+                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
+                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {calculationResults.map((row, idx) => {
+                                                const nps14 = Math.round(row.diff.total * 0.14);
+                                                return (
+                                                    <tr key={idx} style={{ textAlign: 'center', color: '#000' }}>
+                                                        <td style={{ border: '1px solid black', padding: '6px' }}>{idx + 1}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>
+                                                            {row.label}
+                                                            {row.isIncrementMonth && <span style={{ marginLeft: '5px', fontSize: '10px', border: '1px solid black', padding: '1px 4px', borderRadius: '3px' }}>INC</span>}
+                                                        </td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.pay}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.da}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.hra}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.ta}</td>
+                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.custom[c.id]}</td>)}
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.due.total}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.pay}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.da}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.hra}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.ta}</td>
+                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.custom[c.id]}</td>)}
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.drawn.total}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.pay}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.da}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.hra}</td>
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.ta}</td>
+                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.custom[c.id]}</td>)}
+                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.diff.total}</td>
+                                                        {basicInfo.category === 'NPS' && (
+                                                            <>
+                                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{row.dcps}</td>
+                                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{nps14}</td>
+                                                            </>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                            <tr style={{ fontWeight: 'bold', background: '#e0e0e0', color: '#000' }}>
+                                                <td colSpan={2} style={{ border: '1px solid black', padding: '8px', textAlign: 'center' }}>TOTAL</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.pay, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.da, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.hra, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.ta, 0)}</td>
+                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.due.custom[c.id] || 0), 0)}</td>)}
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.total, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.pay, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.da, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.hra, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.ta, 0)}</td>
+                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.drawn.custom[c.id] || 0), 0)}</td>)}
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.total, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.pay, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.da, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.hra, 0)}</td>
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.ta, 0)}</td>
+                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.diff.custom[c.id] || 0), 0)}</td>)}
+                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.total, 0)}</td>
+                                                {basicInfo.category === 'NPS' && (
+                                                    <>
+                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.dcps, 0)}</td>
+                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)}</td>
+                                                    </>
+                                                )}
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Container>
+            </Box >
+        </ThemeProvider >
     );
-}
+};
 
 export default ArrearsCalculator;
