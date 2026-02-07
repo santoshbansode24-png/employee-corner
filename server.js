@@ -122,6 +122,166 @@ process.on('exit', () => pythonProcess.kill());
 // ... (Helper Functions, unchanged)
 // ... (Logic for LIBREOFFICE, DA Rates, Endpoints... unchanged)
 
+// --- JPG to PDF Endpoint ---
+app.post('/api/jpg-to-pdf', upload.array('images'), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
+        }
+
+        // Create a new PDF document
+        const pdfDoc = await PDFDocument.create();
+
+        // Process each uploaded image
+        for (const file of req.files) {
+            // Convert image to JPEG using sharp (handles PNG, JPG, etc.)
+            const imageBuffer = await sharp(file.path)
+                .jpeg({ quality: 90 })
+                .toBuffer();
+
+            // Embed image in PDF
+            const image = await pdfDoc.embedJpg(imageBuffer);
+            const imageDims = image.scale(1);
+
+            // Add a page with the image dimensions
+            const page = pdfDoc.addPage([imageDims.width, imageDims.height]);
+            page.drawImage(image, {
+                x: 0,
+                y: 0,
+                width: imageDims.width,
+                height: imageDims.height,
+            });
+
+            // Clean up uploaded file
+            fs.unlinkSync(file.path);
+        }
+
+        // Save the PDF
+        const pdfBytes = await pdfDoc.save();
+
+        // Send PDF as response
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=images.pdf');
+        res.send(Buffer.from(pdfBytes));
+
+    } catch (error) {
+        console.error('JPG to PDF Error:', error);
+        res.status(500).json({ error: 'Failed to convert images to PDF' });
+    }
+});
+
+// --- Word to PDF Endpoint (requires LibreOffice) ---
+app.post('/api/word-to-pdf', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const inputPath = req.file.path;
+        const outputDir = path.dirname(inputPath);
+        const outputName = path.basename(inputPath, path.extname(inputPath)) + '.pdf';
+        const outputPath = path.join(outputDir, outputName);
+
+        // LibreOffice command for conversion
+        // Windows: "C:\Program Files\LibreOffice\program\soffice.exe"
+        // Linux/Mac: libreoffice
+        const libreOfficePath = process.platform === 'win32'
+            ? 'C:\\Program Files\\LibreOffice\\program\\soffice.exe'
+            : 'libreoffice';
+
+        const command = `"${libreOfficePath}" --headless --convert-to pdf --outdir "${outputDir}" "${inputPath}"`;
+
+        exec(command, (error, stdout, stderr) => {
+            // Clean up input file
+            fs.unlinkSync(inputPath);
+
+            if (error) {
+                console.error('LibreOffice conversion error:', error);
+                return res.status(500).json({
+                    error: 'Conversion failed. Please ensure LibreOffice is installed.',
+                    details: stderr
+                });
+            }
+
+            // Check if output file exists
+            if (!fs.existsSync(outputPath)) {
+                return res.status(500).json({ error: 'PDF file was not generated' });
+            }
+
+            // Send the PDF file
+            res.download(outputPath, outputName, (err) => {
+                // Clean up output file after sending
+                if (fs.existsSync(outputPath)) {
+                    fs.unlinkSync(outputPath);
+                }
+                if (err) {
+                    console.error('Error sending file:', err);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Word to PDF Error:', error);
+        res.status(500).json({ error: 'Failed to convert Word document to PDF' });
+    }
+});
+
+// --- PDF to JPG Endpoint ---
+app.post('/api/pdf-to-jpg', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Launch Puppeteer browser
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+
+        // Navigate directly to the PDF file
+        await page.goto(`file://${req.file.path}`, {
+            waitUntil: 'networkidle0'
+        });
+
+        // Set viewport to capture full page
+        await page.setViewport({
+            width: 1200,
+            height: 1600,
+            deviceScaleFactor: 2
+        });
+
+        // Wait a bit for PDF to render
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Take screenshot
+        const screenshot = await page.screenshot({
+            type: 'jpeg',
+            quality: 90,
+            fullPage: false
+        });
+
+        await browser.close();
+
+        // Clean up uploaded file
+        fs.unlinkSync(req.file.path);
+
+        // Send JPG as response
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Content-Disposition', 'attachment; filename=converted.jpg');
+        res.send(screenshot);
+
+    } catch (error) {
+        console.error('PDF to JPG Error:', error);
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({ error: 'Failed to convert PDF to JPG' });
+    }
+});
+
 // 503: // --- Serve React Build (Production) ---
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {

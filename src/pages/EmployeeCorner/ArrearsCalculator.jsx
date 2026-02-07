@@ -599,10 +599,10 @@ function ArrearsCalculator() {
 
         let startY = 15;
 
-        // 1. HEADER GENERATION (Image Based - Fixes Marathi Text Issue)
+        // 1. HEADER GENERATION (High Quality Image)
         if (headerRef.current) {
-            // Capture header with high scale for clarity
-            const canvas = await html2canvas(headerRef.current, { scale: 3 });
+            // Capture header with HIGHER scale for clarity
+            const canvas = await html2canvas(headerRef.current, { scale: 4, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
             const imgProps = doc.getImageProperties(imgData);
 
@@ -610,8 +610,9 @@ function ArrearsCalculator() {
             const imgWidth = pageWidth - 20;
             const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
-            doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-            startY = 10 + imgHeight + 5; // Set table to start below image
+            // Use FAST compression to reduce artifacts
+            doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight, undefined, 'FAST');
+            startY = 10 + imgHeight + 1; // Set table to start below image (REDUCED BUFFER FROM 5 to 1)
         }
 
         // 2. TABLE GENERATION (Vector Based - Crystal Clear Font)
@@ -696,39 +697,155 @@ function ArrearsCalculator() {
         bodyData.push(totalRow);
 
         // 4. GENERATE TABLE
+
+        // Define Column Ranges for Coloring
+        const dueStart = 2; // SR=0, MONTH=1, DUE START=2
+        const dueEnd = 2 + (5 + customColumns.length) - 1; // 2 + count - 1
+
+        const drawnStart = dueEnd + 1;
+        const drawnEnd = drawnStart + (5 + customColumns.length) - 1;
+
+        const diffStart = drawnEnd + 1;
+        const diffEnd = diffStart + (5 + customColumns.length) - 1;
+
         doc.autoTable({
             startY: startY,
             head: headRows,
             body: bodyData,
             theme: 'grid',
+            margin: { top: 10, right: 10, bottom: 10, left: 10 }, // Align table with header image (x=10, width=PageWidth-20)
             headStyles: {
-                fillColor: [41, 128, 185], // Professional Blue
+                fillColor: [52, 73, 94], // Default Dark Grey (covers SR, MONTH)
                 textColor: 255,
                 fontStyle: 'bold',
                 halign: 'center',
                 valign: 'middle',
-                fontSize: 11 // Readable Font Size for Header
+                fontSize: 10,
+                lineWidth: 0.1,
+                lineColor: [0, 0, 0]
             },
             styles: {
-                fontSize: 9, // Reduced for better fit
+                fontSize: 9,
                 cellPadding: 1.5,
                 valign: 'middle',
+                halign: 'center', // Center align all text
                 lineColor: [0, 0, 0],
                 lineWidth: 0.1,
-                overflow: 'linebreak'
+                overflow: 'linebreak',
+                textColor: [50, 50, 50]
             },
             columnStyles: {
-                1: { cellWidth: 22 }, // MONTH (Reduced)
-                // Highlight Total Columns with light gray (adjust indices dynamically)
-                [6 + customColumns.length]: { fontStyle: 'bold', fillColor: [245, 245, 245] },
-                [11 + (customColumns.length * 2)]: { fontStyle: 'bold', fillColor: [245, 245, 245] },
-                [16 + (customColumns.length * 3)]: { fontStyle: 'bold', fillColor: [245, 245, 245] },
+                0: { cellWidth: 10 }, // SR
+                1: { cellWidth: 22 }, // MONTH
+
+                // Bold Total Columns
+                [dueEnd]: { fontStyle: 'bold' },
+                [drawnEnd]: { fontStyle: 'bold' },
+                [diffEnd]: { fontStyle: 'bold' },
             },
             didParseCell: function (data) {
-                // Style the TOTAL row at the bottom
-                if (data.row.index === bodyData.length - 1) {
-                    data.cell.styles.fontStyle = 'bold';
-                    data.cell.styles.fillColor = [220, 220, 220]; // Darker Gray for Total Row
+                // --- BODY STYLING ---
+                if (data.section === 'body') {
+                    // Total Row Styling (Dark Grey)
+                    if (data.row.index === bodyData.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [220, 220, 220];
+                        data.cell.styles.textColor = [0, 0, 0];
+                        return;
+                    }
+
+                    // Section Background Colors (Light Tints)
+                    // Due Section (Light Green)
+                    if (data.column.index >= dueStart && data.column.index <= dueEnd) {
+                        data.cell.styles.fillColor = [235, 250, 240];
+                    }
+                    // Drawn Section (Light Orange)
+                    else if (data.column.index >= drawnStart && data.column.index <= drawnEnd) {
+                        data.cell.styles.fillColor = [254, 245, 230];
+                    }
+                    // Difference Section (Light Blue)
+                    else if (data.column.index >= diffStart && data.column.index <= diffEnd) {
+                        data.cell.styles.fillColor = [235, 245, 251];
+                    }
+                }
+
+                // --- HEADER STYLING ---
+                if (data.section === 'head') {
+                    // Due Header (Green)
+                    if (data.column.index >= dueStart && data.column.index <= dueEnd) {
+                        data.cell.styles.fillColor = [25, 115, 60]; // Darker Green for B&W Print
+                    }
+                    // Drawn Header (Orange)
+                    else if (data.column.index >= drawnStart && data.column.index <= drawnEnd) {
+                        data.cell.styles.fillColor = [200, 100, 10]; // Darker Orange/Rust for B&W Print
+                    }
+                    // Difference Header (Blue)
+                    else if (data.column.index >= diffStart && data.column.index <= diffEnd) {
+                        data.cell.styles.fillColor = [20, 80, 140]; // Darker Blue for B&W Print
+                    }
+                    // NPS Headers (Dark Grey/Black)
+                    else if (data.column.index > diffEnd) {
+                        data.cell.styles.fillColor = [44, 62, 80];
+                    }
+                }
+            },
+            didDrawCell: function (data) {
+                // Determine column indices for section ends
+                // Due Range
+                const dueEndIdx = 2 + (5 + customColumns.length) - 1;
+                // Drawn Range
+                const drawnEndIdx = dueEndIdx + (5 + customColumns.length);
+                // Diff Range
+                const diffEndIdx = drawnEndIdx + (5 + customColumns.length);
+
+                const sections = [
+                    { start: 0, end: 1 }, // SR and Month Section
+                    { start: 2, end: dueEndIdx }, // Due Section
+                    { start: dueEndIdx + 1, end: drawnEndIdx }, // Drawn Section
+                    { start: drawnEndIdx + 1, end: diffEndIdx }, // Difference Section
+                    { start: diffEndIdx + 1, end: diffEndIdx + 2 } // DCPS and NPS Section
+                ];
+
+                const isHeader = data.section === 'head';
+                const isBody = data.section === 'body';
+                const isLastRow = data.row.index === bodyData.length - 1;
+                const colIdx = data.column.index;
+
+                if (isHeader || isBody) {
+                    sections.forEach(sec => {
+                        if (colIdx >= sec.start && colIdx <= sec.end) {
+                            doc.setDrawColor(0, 0, 0);
+                            doc.setLineWidth(0.5); // Thicker line for section box
+
+                            // Right Border (End Column)
+                            if (colIdx === sec.end) {
+                                doc.line(data.cell.x + data.cell.width, data.cell.y, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+                            }
+                            // Left Border (Start Column)
+                            if (colIdx === sec.start) {
+                                doc.line(data.cell.x, data.cell.y, data.cell.x, data.cell.y + data.cell.height);
+                            }
+                            // Top Border (Header Only) - REMOVE or Make THINNER if user dislikes "Dark Bold"
+                            // User said: "I DONT WANT THIS DARK BOLD LINE THERE"
+                            // So we remove the bold top border for headers.
+
+                            // Bottom Border (Header Separator & Last Body Row)
+                            if (isHeader) {
+                                // Draw bold line at bottom of header (Separator)
+                                if (data.row.index === headRows.length - 1) {
+                                    doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+                                }
+                                // Draw bold line at top of header (Table Top)
+                                if (data.row.index === 0) {
+                                    doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y);
+                                }
+                            }
+
+                            if (isBody && isLastRow) {
+                                doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+                            }
+                        }
+                    });
                 }
             }
         });
@@ -744,7 +861,7 @@ function ArrearsCalculator() {
         const borderColor = isDue ? 'success.main' : 'warning.main';
 
         return (
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Card sx={{ height: '100%', borderLeft: 4, borderColor: borderColor, overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
                     <Box sx={{ px: 2, py: 1, bgcolor: '#f8fafc', borderBottom: 1, borderColor: '#e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="subtitle2" sx={{ color: isDue ? 'success.dark' : 'warning.dark' }}>{label}</Typography>
@@ -953,7 +1070,7 @@ function ArrearsCalculator() {
                     {/* --- INPUTS GRID --- */}
                     <Grid container spacing={4} sx={{ mb: 8 }}>
                         {/* === DUE SECTION (Green Theme) === */}
-                        <Grid item xs={12} sm={6}>
+                        <Grid item xs={12} md={6}>
                             <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1015,7 +1132,7 @@ function ArrearsCalculator() {
                         </Grid>
 
                         {/* === DRAWN SECTION (Orange/Red Theme) === */}
-                        <Grid item xs={12} sm={6}>
+                        <Grid item xs={12} md={6}>
                             <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1113,13 +1230,13 @@ function ArrearsCalculator() {
                             }}>
 
                                 {/* HEADER SECTION (Captured as Image for Marathi Support) */}
-                                <div ref={headerRef} style={{ padding: '20px', background: 'white' }}>
-                                    <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                                        <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
+                                <div ref={headerRef} style={{ padding: '0px', background: 'white' }}>
+                                    <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                        <h2 style={{ fontSize: '30px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
                                             {basicInfo.orderNo}
                                         </h2>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '5px' }}>
                                         <div style={{ flex: 1, textAlign: 'left' }}>NAME: <span style={{ fontWeight: 'normal' }}>{basicInfo.empName}</span></div>
                                         <div style={{ flex: 1, textAlign: 'center' }}>DESIGNATION: <span style={{ fontWeight: 'normal' }}>{basicInfo.designation}</span></div>
                                         <div style={{ flex: 1, textAlign: 'right' }}>PERIOD: <span style={{ fontWeight: 'normal' }}>{basicInfo.fromMonth} TO {basicInfo.toMonth}</span></div>
