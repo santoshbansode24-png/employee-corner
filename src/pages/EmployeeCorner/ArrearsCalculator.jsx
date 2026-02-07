@@ -11,7 +11,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Container, InputAdornment
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Download, Add, Close, Visibility, ExpandMore, AccountBalance, TrendingDown, AccessTime } from '@mui/icons-material';
+import { Download, Add, Close, Visibility, ExpandMore, AccountBalance, TrendingDown, AccessTime, ChevronLeft, ChevronRight } from '@mui/icons-material';
 
 // --- COMPACT THEME ---
 const compactTheme = createTheme({
@@ -144,6 +144,29 @@ const getMonthYearList = (startStr, endStr) => {
     return list;
 };
 
+// --- CUSTOM DATEPICKER HEADER ---
+const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
+    const years = [];
+    const currentYear = new Date().getFullYear();
+    for (let i = 2015; i <= currentYear + 5; i++) years.push(i);
+    const months = MONTHS;
+
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1, py: 0.5 }}>
+            <IconButton onClick={decreaseMonth} disabled={prevMonthButtonDisabled} size="small"><ChevronLeft fontSize="small" /></IconButton>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+                <select value={months[date.getMonth()]} onChange={({ target: { value } }) => changeMonth(months.indexOf(value))} style={{ border: 'none', fontWeight: 'bold', background: 'transparent', cursor: 'pointer', fontSize: '0.9rem' }}>
+                    {months.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={date.getFullYear()} onChange={({ target: { value } }) => changeYear(parseInt(value))} style={{ border: 'none', fontWeight: 'bold', background: 'transparent', cursor: 'pointer', fontSize: '0.9rem' }}>
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+            </Box>
+            <IconButton onClick={increaseMonth} disabled={nextMonthButtonDisabled} size="small"><ChevronRight fontSize="small" /></IconButton>
+        </Box>
+    );
+};
+
 function ArrearsCalculator() {
     // Basic Info 
     const [basicInfo, setBasicInfo] = useState({
@@ -189,7 +212,8 @@ function ArrearsCalculator() {
     const [showDrawnPromotion, setShowDrawnPromotion] = useState(false);
 
     // Dynamic Columns State
-    const [customColumns, setCustomColumns] = useState([]); // Array of { id: string, label: string }
+    const [customColumns, setCustomColumns] = useState([]); // Array of { id: string, label: string, type: 'fixed'|'basic_percent', percent: number }
+    const [newColumn, setNewColumn] = useState({ label: '', type: 'fixed', percent: '' });
 
     // Two refs: one for the header (image capture), one for visual table (optional)
     const headerRef = useRef(null);
@@ -217,23 +241,69 @@ function ArrearsCalculator() {
         calculateArrears();
     }, [basicInfo, toggles, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods]);
 
-    // --- EFFECT: AUTO-UPDATE DA ---
+    // --- EFFECT: AUTO-UPDATE RATES (DA & HRA) ---
     useEffect(() => {
-        if (toggles.autoDAMaharashtra && basicInfo.fromMonth) {
-            const [year, month] = basicInfo.fromMonth.split('-').map(Number);
-            const rate = getMaharashtraDARate(month, year);
-            setDueComponents(prev => {
-                const list = [...prev.daRate];
-                if (list[0]) list[0].amount = rate;
-                return { ...prev, daRate: list };
-            });
-            setDrawnComponents(prev => {
-                const list = [...prev.daRate];
-                if (list[0]) list[0].amount = rate;
-                return { ...prev, daRate: list };
-            });
-        }
-    }, [basicInfo.fromMonth, toggles.autoDAMaharashtra]);
+        if (!basicInfo.fromMonth) return;
+
+        const [year, month] = basicInfo.fromMonth.split('-').map(Number);
+
+        // Calculate Rates
+        const daRate = getMaharashtraDARate(month, year);
+        const hraRate = getMaharashtraHRARate(month, year, basicInfo.cityCategory);
+
+        // Update Due Components
+        setDueComponents(prev => {
+            const newComps = { ...prev };
+
+            // Update DA
+            if (toggles.autoDAMaharashtra) {
+                const list = [...(newComps.daRate || [])];
+                if (list.length > 0) {
+                    list[0] = { ...list[0], amount: daRate };
+                    newComps.daRate = list;
+                }
+            }
+
+            // Update HRA
+            if (toggles.autoHRAMaharashtra) {
+                const list = [...(newComps.hraRate || [])];
+                if (list.length > 0) {
+                    list[0] = { ...list[0], amount: hraRate };
+                    newComps.hraRate = list;
+                }
+            }
+
+            return newComps;
+        });
+
+        // Update Drawn Components
+        setDrawnComponents(prev => {
+            const newComps = { ...prev };
+
+            // Update DA
+            if (toggles.autoDAMaharashtra) {
+                const list = [...(newComps.daRate || [])];
+                if (list.length > 0) {
+                    list[0] = { ...list[0], amount: daRate };
+                    newComps.daRate = list;
+                }
+            }
+
+            // Update HRA
+            if (toggles.autoHRAMaharashtra) {
+                const list = [...(newComps.hraRate || [])];
+                if (list.length > 0) {
+                    list[0] = { ...list[0], amount: hraRate };
+                    newComps.hraRate = list;
+                }
+            }
+
+            return newComps;
+        });
+
+    }, [basicInfo.fromMonth, basicInfo.cityCategory, toggles.autoDAMaharashtra, toggles.autoHRAMaharashtra]);
+
+
 
     // --- EFFECT: SYNC PROMOTION HRA WITH CITY CATEGORY ---
     useEffect(() => {
@@ -274,6 +344,12 @@ function ArrearsCalculator() {
             let runningPay = (dueComponents.pay && dueComponents.pay.length > 0) ? parseFloat(dueComponents.pay[0].amount) || 0 : 0;
             let runningDrawnPay = (drawnComponents.pay && drawnComponents.pay.length > 0) ? parseFloat(drawnComponents.pay[0].amount) || 0 : 0;
 
+            // Running Overrides for Promotion Periods
+            let runningDueTA = null;
+            let runningDrawnTA = null;
+            const runningDueCustom = {};
+            const runningDrawnCustom = {};
+
             months.forEach((m, index) => {
                 const { month, year, label } = m;
                 const dateStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -296,8 +372,20 @@ function ArrearsCalculator() {
 
                 // --- CHECK PROMOTION PERIODS (DUE) ---
                 const duePromotionPeriod = duePromotionPeriods.find(p => p.from && p.from.startsWith(dateStr));
-                if (duePromotionPeriod && duePromotionPeriod.pay > 0) {
-                    runningPay = duePromotionPeriod.pay;
+                if (duePromotionPeriod) {
+                    if (duePromotionPeriod.pay > 0) runningPay = duePromotionPeriod.pay;
+                    // Update Sticky TA if present
+                    if (duePromotionPeriod.ta !== undefined && duePromotionPeriod.ta !== '') {
+                        runningDueTA = parseFloat(duePromotionPeriod.ta) || 0;
+                    }
+                    // Update Sticky Custom if present
+                    if (duePromotionPeriod.custom) {
+                        Object.keys(duePromotionPeriod.custom).forEach(key => {
+                            if (duePromotionPeriod.custom[key] !== undefined && duePromotionPeriod.custom[key] !== '') {
+                                runningDueCustom[key] = parseFloat(duePromotionPeriod.custom[key]) || 0;
+                            }
+                        });
+                    }
                 }
 
                 // --- DRAWN PAY LOGIC ---
@@ -316,8 +404,20 @@ function ArrearsCalculator() {
 
                 // --- CHECK PROMOTION PERIODS (DRAWN) ---
                 const drawnPromotionPeriod = drawnPromotionPeriods.find(p => p.from && p.from.startsWith(dateStr));
-                if (drawnPromotionPeriod && drawnPromotionPeriod.pay > 0) {
-                    runningDrawnPay = drawnPromotionPeriod.pay;
+                if (drawnPromotionPeriod) {
+                    if (drawnPromotionPeriod.pay > 0) runningDrawnPay = drawnPromotionPeriod.pay;
+                    // Update Sticky TA if present
+                    if (drawnPromotionPeriod.ta !== undefined && drawnPromotionPeriod.ta !== '') {
+                        runningDrawnTA = parseFloat(drawnPromotionPeriod.ta) || 0;
+                    }
+                    // Update Sticky Custom if present
+                    if (drawnPromotionPeriod.custom) {
+                        Object.keys(drawnPromotionPeriod.custom).forEach(key => {
+                            if (drawnPromotionPeriod.custom[key] !== undefined && drawnPromotionPeriod.custom[key] !== '') {
+                                runningDrawnCustom[key] = parseFloat(drawnPromotionPeriod.custom[key]) || 0;
+                            }
+                        });
+                    }
                 }
 
                 // --- CALCULATE TOTALS ---
@@ -328,23 +428,28 @@ function ArrearsCalculator() {
                 // Due
                 let dueDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(dueComponents.daRate, month, year);
                 let dueHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(dueComponents.hraRate, month, year);
-                let dueTA = getValueForMonth(dueComponents.ta, month, year);
 
-                // Override DA and HRA rates if promotion periods specify them
+                // TA Logic: Use Sticky -> Fallback to Standard
+                let dueTA = runningDueTA !== null ? runningDueTA : getValueForMonth(dueComponents.ta, month, year);
+
+                // Override DA and HRA rates if promotion periods specify them (Only for this period, or sticky too? Standard is Sticky for Pay, usually Rates are period specific unless defined otherwise. Let's keep Rates period specific for now as per previous logic, but TA is definitely sticky requested)
+                // Actually user asked for TA/Custom. Rates usually auto-calc.
                 if (duePromotionPeriod) {
                     if (duePromotionPeriod.daRate > 0) dueDARate = duePromotionPeriod.daRate;
                     if (duePromotionPeriod.hraRate > 0) dueHRA = duePromotionPeriod.hraRate;
-                    if (duePromotionPeriod.ta !== undefined && duePromotionPeriod.ta !== '') dueTA = parseFloat(duePromotionPeriod.ta) || 0;
                 }
 
                 // Custom Columns Due
                 let dueCustomTotal = 0;
                 const dueCustomValues = {};
                 customColumns.forEach(col => {
-                    let val = getValueForMonth(dueComponents[col.id] || [], month, year);
-                    // Override if promotion period has value
-                    if (duePromotionPeriod && duePromotionPeriod.custom && duePromotionPeriod.custom[col.id] !== undefined && duePromotionPeriod.custom[col.id] !== '') {
-                        val = parseFloat(duePromotionPeriod.custom[col.id]) || 0;
+                    let val = 0;
+                    if (col.type === 'basic_percent') {
+                        val = Math.round(duePay * (col.percent / 100));
+                    } else if (col.type === 'basic_da_percent') {
+                        val = Math.round((duePay + dueDAAmt) * (col.percent / 100));
+                    } else {
+                        val = runningDueCustom[col.id] !== undefined ? runningDueCustom[col.id] : getValueForMonth(dueComponents[col.id] || [], month, year);
                     }
                     dueCustomValues[col.id] = val;
                     dueCustomTotal += val;
@@ -367,32 +472,29 @@ function ArrearsCalculator() {
                 // Drawn
                 let drawnDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(drawnComponents.daRate, month, year);
                 let drawnHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(drawnComponents.hraRate, month, year);
-                let drawnTA = getValueForMonth(drawnComponents.ta, month, year);
 
-                // Custom Columns Drawn
-                let drawnCustomTotal = 0;
-                const drawnCustomValues = {};
-                customColumns.forEach(col => {
-                    const val = getValueForMonth(drawnComponents[col.id] || [], month, year);
-                    drawnCustomValues[col.id] = val;
-                    drawnCustomTotal += val;
-                });
+                // TA Logic Drawn
+                let drawnTA = runningDrawnTA !== null ? runningDrawnTA : getValueForMonth(drawnComponents.ta, month, year);
 
                 // Override Drawn DA and HRA rates if promotion period specifies them
                 if (drawnPromotionPeriod) {
                     if (drawnPromotionPeriod.daRate > 0) drawnDARate = drawnPromotionPeriod.daRate;
                     if (drawnPromotionPeriod.hraRate > 0) drawnHRA = drawnPromotionPeriod.hraRate;
-                    if (drawnPromotionPeriod.ta !== undefined && drawnPromotionPeriod.ta !== '') drawnTA = parseFloat(drawnPromotionPeriod.ta) || 0;
                 }
 
-                // Re-calculate custom totals with overrides
-                drawnCustomTotal = 0;
+                // Custom Columns Drawn
+                let drawnCustomTotal = 0;
+                const drawnCustomValues = {};
                 customColumns.forEach(col => {
-                    let val = drawnCustomValues[col.id]; // Initial value from main components
-                    if (drawnPromotionPeriod && drawnPromotionPeriod.custom && drawnPromotionPeriod.custom[col.id] !== undefined && drawnPromotionPeriod.custom[col.id] !== '') {
-                        val = parseFloat(drawnPromotionPeriod.custom[col.id]) || 0;
-                        drawnCustomValues[col.id] = val; // Update the map
+                    let val = 0;
+                    if (col.type === 'basic_percent') {
+                        val = Math.round(drawnPay * (col.percent / 100));
+                    } else if (col.type === 'basic_da_percent') {
+                        val = Math.round((drawnPay + drawnDAAmt) * (col.percent / 100));
+                    } else {
+                        val = runningDrawnCustom[col.id] !== undefined ? runningDrawnCustom[col.id] : getValueForMonth(drawnComponents[col.id] || [], month, year);
                     }
+                    drawnCustomValues[col.id] = val;
                     drawnCustomTotal += val;
                 });
 
@@ -466,17 +568,23 @@ function ArrearsCalculator() {
         });
     };
 
-    const addCustomColumn = (label) => {
-        if (!label) return;
-        const id = 'col_' + Date.now();
-        setCustomColumns([...customColumns, { id, label }]);
+    const addCustomColumn = () => {
+        if (!newColumn.label) return;
+        const id = newColumn.label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+        setCustomColumns([...customColumns, {
+            id,
+            label: newColumn.label,
+            type: newColumn.type,
+            percent: parseFloat(newColumn.percent) || 0
+        }]);
 
-        // Initialize state for this column in both Due and Drawn
-        // Default to one period covering current range
+        // Initialize state for this column in both Due and Drawn (only needed if fixed, but safe to add anyway)
         const defaultPeriod = [{ from: basicInfo.fromMonth, to: basicInfo.toMonth, amount: 0 }];
-
         setDueComponents(prev => ({ ...prev, [id]: defaultPeriod }));
         setDrawnComponents(prev => ({ ...prev, [id]: defaultPeriod }));
+
+        // Reset Form
+        setNewColumn({ label: '', type: 'fixed', percent: '' });
     };
 
     const removeCustomColumn = (id) => {
@@ -667,6 +775,7 @@ function ArrearsCalculator() {
                                                 selected={item.from ? new Date(item.from + "-01") : null}
                                                 onChange={(date) => updateComponent(type, compKey, idx, 'from', formatMonth(date))}
                                                 dateFormat="yyyy-MM" showMonthYearPicker
+                                                renderCustomHeader={CustomHeader}
                                                 customInput={<TextField fullWidth label="From" />}
                                             />
                                         </Box>
@@ -676,6 +785,7 @@ function ArrearsCalculator() {
                                                 selected={item.to ? new Date(item.to + "-01") : null}
                                                 onChange={(date) => updateComponent(type, compKey, idx, 'to', formatMonth(date))}
                                                 dateFormat="yyyy-MM" showMonthYearPicker
+                                                renderCustomHeader={CustomHeader}
                                                 customInput={<TextField fullWidth label="To" />}
                                             />
                                         </Box>
@@ -694,10 +804,9 @@ function ArrearsCalculator() {
         <ThemeProvider theme={compactTheme}>
             <Box sx={{ minHeight: '100vh', bgcolor: '#f1f5f9', py: 4, px: { xs: 2, md: 4 } }}>
                 <Container maxWidth="xl">
-                    {/* --- MAIN HEADER & CONFIGURATION CARD --- */}
-                    <Card sx={{ mb: 4, overflow: 'visible' }}>
-                        {/* Header */}
-                        <Box sx={{ p: 2.5, background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)', borderBottom: 1, borderColor: '#e2e8f0', display: 'flex', gap: 2, alignItems: 'center' }}>
+                    {/* --- MAIN HEADER --- */}
+                    <Card sx={{ mb: 3, overflow: 'visible' }}>
+                        <Box sx={{ p: 2.5, background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)', display: 'flex', gap: 2, alignItems: 'center' }}>
                             <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 1, borderRadius: 2, boxShadow: 2, display: 'flex' }}>
                                 <AccountBalance fontSize="medium" />
                             </Box>
@@ -708,36 +817,39 @@ function ArrearsCalculator() {
                                 </Typography>
                             </Box>
                         </Box>
+                    </Card>
 
-                        <CardContent sx={{ p: 3 }}>
-                            <Grid container spacing={4}>
-                                {/* Column 1: Employee Details */}
-                                <Grid item xs={12} sm={6}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                        <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>01</Box>
-                                        <Typography variant="subtitle2">Employee Details</Typography>
-                                    </Box>
-
+                    <Grid container spacing={3} mb={4}>
+                        {/* Column 1: Employee Details */}
+                        <Grid item xs={12} md={6}>
+                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 2, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>01</Box>
+                                    <Typography variant="subtitle2">Employee Details</Typography>
+                                </Box>
+                                <CardContent sx={{ p: 3, flexGrow: 1 }}>
                                     <Grid container spacing={2}>
-                                        <Grid item xs={12}>
+                                        <Grid item xs={12} sm={6}>
                                             <TextField fullWidth label="Name" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid item xs={12} sm={6}>
                                             <TextField fullWidth label="Designation" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid item xs={12} sm={6}>
                                             <DatePicker
                                                 selected={basicInfo.fromMonth ? new Date(basicInfo.fromMonth) : null}
                                                 onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
                                                 dateFormat="yyyy-MM-dd"
+                                                renderCustomHeader={CustomHeader}
                                                 customInput={<TextField fullWidth label="From Month" />}
                                             />
                                         </Grid>
-                                        <Grid item xs={12}>
+                                        <Grid item xs={12} sm={6}>
                                             <DatePicker
                                                 selected={basicInfo.toMonth ? new Date(basicInfo.toMonth) : null}
                                                 onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
                                                 dateFormat="yyyy-MM-dd"
+                                                renderCustomHeader={CustomHeader}
                                                 customInput={<TextField fullWidth label="To Month" />}
                                             />
                                         </Grid>
@@ -745,15 +857,18 @@ function ArrearsCalculator() {
                                             <TextField fullWidth multiline rows={2} label="GR / Order Title" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
                                         </Grid>
                                     </Grid>
-                                </Grid>
+                                </CardContent>
+                            </Card>
+                        </Grid>
 
-                                {/* Column 2: Configuration */}
-                                <Grid item xs={12} sm={6} sx={{ borderLeft: { sm: 1 }, borderColor: { sm: 'grey.300' }, pl: { sm: 4 } }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                        <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>02</Box>
-                                        <Typography variant="subtitle2">Configuration</Typography>
-                                    </Box>
-
+                        {/* Column 2: Configuration */}
+                        <Grid item xs={12} md={6}>
+                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 2, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>02</Box>
+                                    <Typography variant="subtitle2">Configuration</Typography>
+                                </Box>
+                                <CardContent sx={{ p: 3, flexGrow: 1 }}>
                                     <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 2, border: 1, borderColor: '#e2e8f0', mb: 2 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="caption" fontWeight={700} color="text.secondary">Auto-DA (Maharashtra)</Typography>
@@ -790,23 +905,50 @@ function ArrearsCalculator() {
 
                                     <Box>
                                         <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={1}>CUSTOM COLUMNS</Typography>
-                                        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                                            <TextField id="newColInput" placeholder="Add column..." fullWidth />
-                                            <Button variant="contained" sx={{ minWidth: 40, p: 0 }} onClick={() => { const el = document.getElementById('newColInput'); if (el.value) { addCustomColumn(el.value); el.value = ''; } }}>+</Button>
+                                        <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+                                            <TextField
+                                                value={newColumn.label}
+                                                onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })}
+                                                placeholder="Name (e.g. NPA)"
+                                                size="small"
+                                                sx={{ flex: 1 }}
+                                            />
+                                            <Select
+                                                value={newColumn.type}
+                                                onChange={(e) => setNewColumn({ ...newColumn, type: e.target.value })}
+                                                size="small"
+                                                sx={{ width: 140, fontSize: '0.8rem' }}
+                                            >
+                                                <MenuItem value="fixed">Fixed ₹</MenuItem>
+                                                <MenuItem value="basic_percent">% of Basic</MenuItem>
+                                                <MenuItem value="basic_da_percent">% of Basic+DA</MenuItem>
+                                            </Select>
+                                            {newColumn.type !== 'fixed' && (
+                                                <TextField
+                                                    value={newColumn.percent}
+                                                    onChange={(e) => setNewColumn({ ...newColumn, percent: e.target.value })}
+                                                    placeholder="%"
+                                                    type="number"
+                                                    size="small"
+                                                    sx={{ width: 60 }}
+                                                />
+                                            )}
+                                            <Button variant="contained" sx={{ minWidth: 40, p: 0 }} onClick={addCustomColumn}>+</Button>
                                         </Box>
+
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                             {customColumns.map(col => (
                                                 <Box key={col.id} sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: 1, borderColor: '#e2e8f0', fontSize: '0.7rem', fontWeight: 700, color: '#475569' }}>
-                                                    {col.label}
+                                                    {col.label} {col.type !== 'fixed' && <span style={{ fontSize: '0.6rem', color: '#64748b', marginLeft: '4px' }}>({col.percent}%)</span>}
                                                     <IconButton size="small" onClick={() => removeCustomColumn(col.id)} sx={{ ml: 0.5, p: 0.2 }}><Close sx={{ fontSize: 12 }} /></IconButton>
                                                 </Box>
                                             ))}
                                         </Box>
                                     </Box>
-                                </Grid>
-                            </Grid>
-                        </CardContent>
-                    </Card>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
 
                     {/* --- INPUTS GRID --- */}
                     <Grid container spacing={4} sx={{ mb: 8 }}>
@@ -856,7 +998,7 @@ function ArrearsCalculator() {
                                                             updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
                                                         }
                                                         setDuePromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" />
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
                                                 </Grid>
                                                 <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
                                                 <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
@@ -918,7 +1060,7 @@ function ArrearsCalculator() {
                                                             updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
                                                         }
                                                         setDrawnPromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" />
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
                                                 </Grid>
                                                 <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
                                                 <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
