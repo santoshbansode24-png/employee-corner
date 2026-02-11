@@ -861,54 +861,58 @@ function ArrearsCalculator() {
         const borderColor = isDue ? 'success.main' : 'warning.main';
 
         return (
-            <Box sx={{ mb: 2.5 }}>
-                <Typography variant="caption" sx={{ color: isDue ? 'success.dark' : 'warning.dark', fontWeight: 700, display: 'block', mb: 0.5, fontSize: '0.7rem', textTransform: 'uppercase' }}>{label}</Typography>
-                {comps.map((item, idx) => (
-                    <Box key={idx} sx={{ mb: idx < comps.length - 1 ? 1 : 0 }}>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            placeholder="0"
-                            value={item.amount}
-                            onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderColor: borderColor,
-                                    borderWidth: 1.5,
-                                }
-                            }}
-                            InputProps={{
-                                startAdornment: <InputAdornment position="start"><Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: '0.75rem' }}>₹</Typography></InputAdornment>,
-                                style: { fontWeight: 600, fontSize: '0.875rem' }
-                            }}
-                        />
+            <Grid item xs={12}>
+                <Card sx={{ height: '100%', borderLeft: 4, borderColor: borderColor, overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ px: 2, py: 1, bgcolor: '#f8fafc', borderBottom: 1, borderColor: '#e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" sx={{ color: isDue ? 'success.dark' : 'warning.dark' }}>{label}</Typography>
                         {toggles.promotionEnabled && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <DatePicker
-                                        selected={item.from ? new Date(item.from + "-01") : null}
-                                        onChange={(date) => updateComponent(type, compKey, idx, 'from', formatMonth(date))}
-                                        dateFormat="yyyy-MM" showMonthYearPicker
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<TextField fullWidth label="From" size="small" />}
-                                    />
-                                </Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>to</Typography>
-                                <Box sx={{ flex: 1 }}>
-                                    <DatePicker
-                                        selected={item.to ? new Date(item.to + "-01") : null}
-                                        onChange={(date) => updateComponent(type, compKey, idx, 'to', formatMonth(date))}
-                                        dateFormat="yyyy-MM" showMonthYearPicker
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<TextField fullWidth label="To" size="small" />}
-                                    />
-                                </Box>
-                            </Box>
+                            <Button size="small" startIcon={<Add sx={{ fontSize: 16 }} />} onClick={() => alert('Feature: Split Period')} sx={{ fontSize: '0.7rem', py: 0, minWidth: 'auto', height: 24 }}>
+                                Split
+                            </Button>
                         )}
                     </Box>
-                ))}
-            </Box>
+                    <CardContent sx={{ p: 2, flexGrow: 1, '&:last-child': { pb: 2 } }}>
+                        {comps.map((item, idx) => (
+                            <Box key={idx} sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: idx < comps.length - 1 ? 2 : 0 }}>
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    placeholder="0"
+                                    value={item.amount}
+                                    onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start"><Typography variant="body2" fontWeight={600} color="text.secondary">₹</Typography></InputAdornment>,
+                                        style: { fontWeight: 700 }
+                                    }}
+                                />
+                                {toggles.promotionEnabled && (
+                                    <>
+                                        <Box sx={{ width: 120 }}>
+                                            <DatePicker
+                                                selected={item.from ? new Date(item.from + "-01") : null}
+                                                onChange={(date) => updateComponent(type, compKey, idx, 'from', formatMonth(date))}
+                                                dateFormat="yyyy-MM" showMonthYearPicker
+                                                renderCustomHeader={CustomHeader}
+                                                customInput={<TextField fullWidth label="From" />}
+                                            />
+                                        </Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>to</Typography>
+                                        <Box sx={{ width: 120 }}>
+                                            <DatePicker
+                                                selected={item.to ? new Date(item.to + "-01") : null}
+                                                onChange={(date) => updateComponent(type, compKey, idx, 'to', formatMonth(date))}
+                                                dateFormat="yyyy-MM" showMonthYearPicker
+                                                renderCustomHeader={CustomHeader}
+                                                customInput={<TextField fullWidth label="To" />}
+                                            />
+                                        </Box>
+                                    </>
+                                )}
+                            </Box>
+                        ))}
+                    </CardContent>
+                </Card>
+            </Grid>
         );
     };
 
@@ -932,22 +936,22 @@ function ArrearsCalculator() {
                         </Box>
                     </Card>
 
-                    <Grid container spacing={3} sx={{ mb: 8 }}>
+                    <Grid container spacing={3} mb={4}>
                         {/* Column 1: Employee Details */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', mb: 2 }}>
-                                <Box sx={{ p: 1, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 0.75, py: 0.25, borderRadius: 1, fontSize: '0.6rem', fontWeight: 800 }}>01</Box>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Employee Details</Typography>
+                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 2, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>01</Box>
+                                    <Typography variant="subtitle2">Employee Details</Typography>
                                 </Box>
-                                <CardContent sx={{ p: 1, flexGrow: 1 }}>
+                                <CardContent sx={{ p: 3, flexGrow: 1 }}>
                                     {/* 2 Column Layout: 3 rows */}
-                                    <Grid container spacing={0.75}>
+                                    <Grid container spacing={1.5}>
                                         <Grid item xs={6}>
-                                            <TextField fullWidth size="small" label="Name" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
+                                            <TextField fullWidth size="medium" label="Name" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
                                         </Grid>
                                         <Grid item xs={6}>
-                                            <TextField fullWidth size="small" label="Designation" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
+                                            <TextField fullWidth size="medium" label="Designation" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
                                         </Grid>
                                         <Grid item xs={6}>
                                             <DatePicker
@@ -955,7 +959,7 @@ function ArrearsCalculator() {
                                                 onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
                                                 dateFormat="yyyy-MM-dd"
                                                 renderCustomHeader={CustomHeader}
-                                                customInput={<TextField fullWidth size="small" label="From Month" />}
+                                                customInput={<TextField fullWidth size="medium" label="From Month" />}
                                             />
                                         </Grid>
                                         <Grid item xs={6}>
@@ -964,11 +968,11 @@ function ArrearsCalculator() {
                                                 onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
                                                 dateFormat="yyyy-MM-dd"
                                                 renderCustomHeader={CustomHeader}
-                                                customInput={<TextField fullWidth size="small" label="To Month" />}
+                                                customInput={<TextField fullWidth size="medium" label="To Month" />}
                                             />
                                         </Grid>
                                         <Grid item xs={12}>
-                                            <TextField fullWidth size="small" label="GR / Order Title" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
+                                            <TextField fullWidth size="medium" multiline rows={2} label="GR / Order Title" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
                                         </Grid>
                                     </Grid>
                                 </CardContent>
@@ -977,81 +981,98 @@ function ArrearsCalculator() {
 
                         {/* Column 2: Configuration */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', mb: 2 }}>
-                                <Box sx={{ p: 1, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 0.75, py: 0.25, borderRadius: 1, fontSize: '0.6rem', fontWeight: 800 }}>02</Box>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Configuration</Typography>
+                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 2, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800 }}>02</Box>
+                                    <Typography variant="subtitle2">Configuration</Typography>
                                 </Box>
-                                <CardContent sx={{ p: 1, flexGrow: 1 }}>
-                                    {/* 2 Column, 3 Row Layout */}
-                                    <Grid container spacing={0.75}>
-                                        {/* Row 1: Auto-DA and Auto-HRA */}
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderRadius: 1, p: 0.5, border: 1, borderColor: '#e2e8f0' }}>
-                                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.6rem' }}>Auto-DA</Typography>
-                                                <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderRadius: 1, p: 0.5, border: 1, borderColor: '#e2e8f0' }}>
-                                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.6rem' }}>Auto-HRA</Typography>
-                                                <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
-                                            </Box>
-                                        </Grid>
+                                <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                                    <Box sx={{ bgcolor: '#f8fafc', borderRadius: 2, p: 2, border: 1, borderColor: '#e2e8f0', mb: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Auto-DA (Maharashtra)</Typography>
+                                            <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Auto-HRA (7th PC)</Typography>
+                                            <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
+                                        </Box>
+                                    </Box>
 
-                                        {/* Row 2: Category and City */}
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="Category" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
+                                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="Category" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
                                                 <MenuItem value="NPS">NPS</MenuItem><MenuItem value="GPF">GPF</MenuItem>
                                             </TextField>
                                         </Grid>
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="City (HRA)" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="City (HRA)" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
                                                 <MenuItem value="X">X (Metro)</MenuItem><MenuItem value="Y">Y (City)</MenuItem><MenuItem value="Z">Z (Rural)</MenuItem>
                                             </TextField>
                                         </Grid>
-
-                                        {/* Row 3: Increment and Custom Columns */}
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="Increment" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
+                                        <Grid item xs={12} sm={4}>
+                                            <TextField select fullWidth label="Increment" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
                                                 <MenuItem value="No Increment">None</MenuItem>
                                                 <MenuItem value="January">Jan</MenuItem>
                                                 <MenuItem value="July">July</MenuItem>
                                                 <MenuItem value="Both">Both</MenuItem>
                                             </TextField>
                                         </Grid>
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                                <TextField
-                                                    value={newColumn.label}
-                                                    onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })}
-                                                    placeholder="Custom Col"
-                                                    size="small"
-                                                    sx={{ flex: 1, minWidth: 0 }}
-                                                />
-                                                <Button variant="contained" size="small" sx={{ minWidth: 32, px: 1 }} onClick={addCustomColumn}>+</Button>
-                                            </Box>
-                                        </Grid>
                                     </Grid>
 
-                                    {/* Custom Column Tags */}
-                                    {customColumns.length > 0 && (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.75 }}>
+                                    <Divider sx={{ my: 2 }} />
+
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={1}>CUSTOM COLUMNS</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+                                            <TextField
+                                                value={newColumn.label}
+                                                onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })}
+                                                placeholder="Name (e.g. NPA)"
+                                                size="small"
+                                                sx={{ flex: 1 }}
+                                            />
+                                            <Select
+                                                value={newColumn.type}
+                                                onChange={(e) => setNewColumn({ ...newColumn, type: e.target.value })}
+                                                size="small"
+                                                sx={{ width: 140, fontSize: '0.8rem' }}
+                                            >
+                                                <MenuItem value="fixed">Fixed ₹</MenuItem>
+                                                <MenuItem value="basic_percent">% of Basic</MenuItem>
+                                                <MenuItem value="basic_da_percent">% of Basic+DA</MenuItem>
+                                            </Select>
+                                            {newColumn.type !== 'fixed' && (
+                                                <TextField
+                                                    value={newColumn.percent}
+                                                    onChange={(e) => setNewColumn({ ...newColumn, percent: e.target.value })}
+                                                    placeholder="%"
+                                                    type="number"
+                                                    size="small"
+                                                    sx={{ width: 60 }}
+                                                />
+                                            )}
+                                            <Button variant="contained" sx={{ minWidth: 40, p: 0 }} onClick={addCustomColumn}>+</Button>
+                                        </Box>
+
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                             {customColumns.map(col => (
-                                                <Box key={col.id} sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: '#f1f5f9', px: 1, py: 0.3, borderRadius: 1, border: 1, borderColor: '#e2e8f0', fontSize: '0.65rem', fontWeight: 700, color: '#475569' }}>
-                                                    {col.label}
-                                                    <IconButton size="small" onClick={() => removeCustomColumn(col.id)} sx={{ ml: 0.3, p: 0.1 }}><Close sx={{ fontSize: 10 }} /></IconButton>
+                                                <Box key={col.id} sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: 1, borderColor: '#e2e8f0', fontSize: '0.7rem', fontWeight: 700, color: '#475569' }}>
+                                                    {col.label} {col.type !== 'fixed' && <span style={{ fontSize: '0.6rem', color: '#64748b', marginLeft: '4px' }}>({col.percent}%)</span>}
+                                                    <IconButton size="small" onClick={() => removeCustomColumn(col.id)} sx={{ ml: 0.5, p: 0.2 }}><Close sx={{ fontSize: 12 }} /></IconButton>
                                                 </Box>
                                             ))}
                                         </Box>
-                                    )}
+                                    </Box>
                                 </CardContent>
                             </Card>
                         </Grid>
+                    </Grid>
 
+                    {/* --- INPUTS GRID --- */}
+                    <Grid container spacing={4} sx={{ mb: 8 }}>
                         {/* === DUE SECTION (Green Theme) === */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ borderTop: 0, overflow: 'visible' }}>
+                            <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
                                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><AccountBalance fontSize="small" /></Box>
@@ -1060,12 +1081,14 @@ function ArrearsCalculator() {
                                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>देय रक्कम</Typography>
                                     </Box>
                                 </Box>
-                                <CardContent sx={{ pt: 5, px: 4, pb: 3 }}>
-                                    {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
-                                    {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance')}
-                                    {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label))}
+                                <CardContent sx={{ pt: 4, px: 3 }}>
+                                    <Grid container spacing={2}>
+                                        {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
+                                        {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance')}
+                                        {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label))}
+                                    </Grid>
 
                                     {/* Promotion Section (Restored) */}
                                     <Divider sx={{ my: 3 }} />
@@ -1079,8 +1102,8 @@ function ArrearsCalculator() {
                                                 <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #bbf7d0' }}>Period {index + 1}</Typography>
                                                 <IconButton size="small" color="error" onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
                                             </Box>
-                                            <Grid container spacing={1.5}>
-                                                <Grid item xs={12}>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
                                                     <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
                                                         const newDate = formatDate(date);
                                                         const updated = [...duePromotionPeriods];
@@ -1093,14 +1116,14 @@ function ArrearsCalculator() {
                                                             updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
                                                         }
                                                         setDuePromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth size="small" />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
                                                 </Grid>
-                                                <Grid item xs={12}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }} fullWidth /></Grid>
                                                 {customColumns.map(col => (
-                                                    <Grid item xs={12} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
+                                                    <Grid item xs={6} md={3} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }} fullWidth /></Grid>
                                                 ))}
                                             </Grid>
                                         </Paper>
@@ -1111,7 +1134,7 @@ function ArrearsCalculator() {
 
                         {/* === DRAWN SECTION (Orange/Red Theme) === */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ borderTop: 0, overflow: 'visible' }}>
+                            <Card sx={{ height: '100%', borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
                                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><TrendingDown fontSize="small" /></Box>
@@ -1120,12 +1143,14 @@ function ArrearsCalculator() {
                                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>पूर्वी दिलेले वेतन</Typography>
                                     </Box>
                                 </Box>
-                                <CardContent sx={{ pt: 5, px: 4, pb: 3 }}>
-                                    {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
-                                    {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance')}
-                                    {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label))}
+                                <CardContent sx={{ pt: 4, px: 3 }}>
+                                    <Grid container spacing={2}>
+                                        {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
+                                        {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
+                                        {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance')}
+                                        {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label))}
+                                    </Grid>
 
                                     {/* Promotion Section (Restored) */}
                                     <Divider sx={{ my: 3 }} />
@@ -1139,8 +1164,8 @@ function ArrearsCalculator() {
                                                 <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #fed7aa' }}>Period {index + 1}</Typography>
                                                 <IconButton size="small" color="error" onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
                                             </Box>
-                                            <Grid container spacing={1.5}>
-                                                <Grid item xs={12}>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
                                                     <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
                                                         const newDate = formatDate(date);
                                                         const updated = [...drawnPromotionPeriods];
@@ -1153,14 +1178,14 @@ function ArrearsCalculator() {
                                                             updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
                                                         }
                                                         setDrawnPromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth size="small" />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
+                                                    }} customInput={<TextField label="From Date" fullWidth />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
                                                 </Grid>
-                                                <Grid item xs={12}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
+                                                <Grid item xs={6} md={3}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
                                                 {customColumns.map(col => (
-                                                    <Grid item xs={12} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
+                                                    <Grid item xs={6} md={3} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth /></Grid>
                                                 ))}
                                             </Grid>
                                         </Paper>

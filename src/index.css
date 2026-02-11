@@ -219,7 +219,7 @@ a:hover {
 
 .content-area {
   flex: 1;
-  padding: var(--space-8);
+  padding: 0;
   overflow-y: auto;
 }
 
