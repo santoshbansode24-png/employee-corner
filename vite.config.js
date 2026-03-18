@@ -16,13 +16,6 @@ export default defineConfig({
         target: 'http://127.0.0.1:5001', // Local Server
         changeOrigin: true,
         secure: false
-      },
-      '/reimbursement-gen': {
-        // target: 'https://employeecorner.veeruapp.in', // Live Railway Server
-        target: 'http://127.0.0.1:8501', // Local Streamlit
-        changeOrigin: true,
-        secure: false,
-        ws: true, // Enable WebSocket support for Streamlit
       }
     }
   },

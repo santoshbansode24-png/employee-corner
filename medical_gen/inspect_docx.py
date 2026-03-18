@@ -13,12 +13,15 @@ def get_docx_tags(docx_path):
                 for cell in row.cells:
                     text += cell.text + "\n"
         
-        # Regex to find {{ ... }}
-        tags = re.findall(r"\{\{.*?\}\}", text)
-        print(f"Tags in {docx_path}:")
-        for t in set(tags):
-            print(t)
-            
+        # Find tags with some context
+        import re
+        # Find all text and identify lines with tags
+        lines = text.split('\n')
+        print(f"Tags with context in {docx_path}:")
+        for line in lines:
+            if "{{" in line:
+                print(f"Line: {line.strip()}")
+                
     except Exception as e:
         print(f"Error reading {docx_path}: {e}")
 

@@ -97,6 +97,9 @@ RUN npm ci --only=production
 COPY requirements.txt ./
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Ensure Python logs are output immediately (for easier debugging in Railway)
+ENV PYTHONUNBUFFERED=1
+
 
 
 # Copy built frontend from builder stage

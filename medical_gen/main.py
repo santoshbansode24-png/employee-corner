@@ -311,6 +311,59 @@ def calculate_grand_total_stay():
     icu = safe_float(st.session_state.get('icu_total', 0))
     return int(gw + semi + pvt + icu)
 
+def calculate_all_state_totals():
+    """Unified calculator to ensure consistency across UI and PDF"""
+    # 1. Staying Charges (Tab 2)
+    stay_total = float(calculate_grand_total_stay())
+    
+    # 2. Pathology & Medicine (Tab 3)
+    path_total = float(st.session_state.get('pathology_charges_total', 0.0))
+    med_total = float(st.session_state.get('total_medicine_charges', 0.0))
+    
+    # 3. Form D (Tab 4) - Procedural Charges
+    # We fetch keys directly to avoid stale local variables
+    f_d_keys = [
+        'admission_charges', 'surgeon_charges', 'asst_surgeon_charges',
+        'anesthesia_charges', 'ot_charges', 'ot_assistant_charges',
+        'rmo_charges', 'nursing_charges', 'iv_infusion_charges',
+        'doctor_visit_charges', 'special_visit_charges', 'monitor_charges',
+        'oxygen_charges', 'radiology_charges', 'ecg_charges',
+        'bsl_charges', 'other_charges'
+    ]
+    procedural_total = sum(safe_float(st.session_state.get(k, 0)) for k in f_d_keys)
+    
+    # Form D Total = Procedural + Staying
+    form_d_total = procedural_total + stay_total
+    
+    # 4. Grand Total Claim
+    grand_claim = form_d_total + med_total + path_total
+    
+    # 5. Admissible Calculations (Weighted)
+    admissible_stay = (safe_float(st.session_state.get('gw_total', 0)) * 0.95 + 
+                       safe_float(st.session_state.get('semi_total', 0)) * 0.90 + 
+                       safe_float(st.session_state.get('pvt_total', 0)) * 0.75 + 
+                       safe_float(st.session_state.get('icu_total', 0)) * 1.0)
+    
+    admissible_hospitalization = procedural_total * 0.90
+    admissible_meds = med_total * 0.90
+    admissible_path = path_total * 0.90
+    
+    grand_admissible = admissible_stay + admissible_hospitalization + admissible_meds + admissible_path
+
+    return {
+        'stay_total': stay_total,
+        'path_total': path_total,
+        'med_total': med_total,
+        'procedural_total': procedural_total,
+        'form_d_total': form_d_total,
+        'grand_claim': grand_claim,
+        'admissible_stay': admissible_stay,
+        'admissible_hospitalization': admissible_hospitalization,
+        'admissible_meds': admissible_meds,
+        'admissible_path': admissible_path,
+        'grand_admissible': grand_admissible
+    }
+
 def nav_next(curr_index):
     if curr_index < len(NAV_TABS) - 1:
         st.session_state['nav_active_tab'] = NAV_TABS[curr_index + 1]
@@ -469,6 +522,8 @@ with st.container():
         c_d1, c_d2 = st.columns(2)
         with c_d1:
             admission = st.number_input("Admission Charges", key="admission_charges")
+            # Sync Staying Charges from Tab 2
+            st.session_state['total_staying_charges'] = float(st.session_state.get('stay_grand_total', 0.0))
             staying = st.number_input("Staying Charges (Auto)", disabled=True, key="total_staying_charges")
             surgeon = st.number_input("Surgeon Charges", key="surgeon_charges")
             asst = st.number_input("Asst. Surgeon", key="asst_surgeon_charges")
@@ -489,11 +544,11 @@ with st.container():
             bsl = st.number_input("BSL Charges", key="bsl_charges")
             other = st.number_input("Other Charges", key="other_charges")
         
-        form_d_total = (
-            admission + staying + surgeon + asst + anesthesia + ot + ot_asst + rmo + nurs +
-            iv + visit + special + monitor + oxygen + rad + ecg + bsl + other
-        )
+        # Unified Calculation
+        totals = calculate_all_state_totals()
+        form_d_total = totals['form_d_total']
         st.session_state['total_hospital_bill_amount'] = form_d_total
+        
         st.markdown("---")
         st.info(f"**Grand Total (Form D):** ₹ {form_d_total:,.2f}")
 
@@ -502,24 +557,15 @@ with st.container():
     elif selected_tab == NAV_TABS[4]:
         st.markdown("### 📝 Final Review & Generate")
         
-        # Calc logic repeated...
-        stay_total = st.session_state.get('stay_grand_total', 0)
-        gw = safe_float(st.session_state.get('gw_total',0)) * 0.95
-        semi = safe_float(st.session_state.get('semi_total',0)) * 0.90
-        pvt = safe_float(st.session_state.get('pvt_total',0)) * 0.75
-        icu = safe_float(st.session_state.get('icu_total',0)) * 1.0
-        admissible_rent = gw + semi + pvt + icu
-        
-        form_d_total = st.session_state.get('total_hospital_bill_amount', 0.0)
-        form_d_excl_stay = form_d_total - stay_total
-        admissible_bill = form_d_excl_stay * 0.90
-        
-        med_total = st.session_state.get('total_medicine_charges', 0.0)
-        admissible_meds = med_total * 0.90
-        
-        grand_claim = form_d_total + med_total
-        grand_admissible = admissible_rent + admissible_bill + admissible_meds
-        
+        # Unified Calculation
+        totals = calculate_all_state_totals()
+        stay_total = totals['stay_total']
+        form_d_total = totals['form_d_total']
+        med_total = totals['med_total']
+        path_total = totals['path_total']
+        grand_claim = totals['grand_claim']
+        grand_admissible = totals['grand_admissible']
+
         st.markdown(f"""
         <div style="background:white; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px;">
             <h3 style="margin:0; color:#1e3a8a;">💰 Claim Summary</h3>
@@ -529,8 +575,16 @@ with st.container():
                 <b>₹ {form_d_total:,.2f}</b>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Total Staying Charges:</span>
+                <b>₹ {stay_total:,.2f}</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                 <span>Total Medicines:</span>
                 <b>₹ {med_total:,.2f}</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Total Pathology/Lab:</span>
+                <b>₹ {path_total:,.2f}</b>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:1.1em; color:#059669; margin-top:10px;">
                 <span><b>Total Claim Amount:</b></span>
@@ -561,17 +615,13 @@ with st.container():
                     def get_s(k, d=""): return st.session_state.get(k, d)
                     def get_f(k, d=0.0): return float(st.session_state.get(k, d))
 
-                    # Retrieve Totals from Session State (calculated in previous tabs)
-                    # We use get() with 0.0 default to avoid NameErrors if tabs weren't visited
-                    stay_total = safe_float(st.session_state.get('stay_grand_total', 0.0))
-                    med_total = safe_float(st.session_state.get('total_medicine_charges', 0.0))
-                    path_total = safe_float(st.session_state.get('pathology_charges_total', 0.0))
-                    
-                    # Form D Total (Bill)
-                    form_d_total = safe_float(st.session_state.get('total_hospital_bill_amount', 0.0))
-                    
-                    # Recalculate Grand Claim based on retrieved values
-                    grand_claim = form_d_total + med_total
+                    # Retrieve Unified Totals
+                    totals = calculate_all_state_totals()
+                    stay_total = totals['stay_total']
+                    med_total = totals['med_total']
+                    path_total = totals['path_total']
+                    form_d_total = totals['form_d_total']
+                    grand_claim = totals['grand_claim']
                     
                     # Helper for Date Formatting
                     def fmt_date(k):
@@ -647,17 +697,17 @@ with st.container():
                         # --- TOTALS ---
                         'total_claim_amount': grand_claim,
                         'grand_total_claim': grand_claim,
-                        'grand_total_admissible_amount': grand_claim, # Placeholder
+                        'grand_total_admissible_amount': totals['grand_admissible'],
                         
                         'medicine_charges': med_total,
-                        'medicine_charges_90_percent': med_total * 0.9,
+                        'medicine_charges_90_percent': totals['admissible_meds'],
                         
                         'pathology_charges': path_total,
                         'external_lab_charges': path_total, # Alias
-                        'external_lab_charges_90_percent': path_total * 0.9,
+                        'external_lab_charges_90_percent': totals['admissible_path'],
                         
                         'stay_grand_total': stay_total,
-                        'total_room_rent_admissible': stay_total, # Placeholder
+                        'total_room_rent_admissible': totals['admissible_stay'],
                         
                         # Form D Charges (Bill)
                         'admission_charges': get_f('admission_charges'),
@@ -679,9 +729,10 @@ with st.container():
                         'bsl_charges': get_f('bsl_charges'),
                         'other_charges': get_f('other_charges'),
                         
+                        'procedural_total': totals['procedural_total'],
                         'total_hospital_bill_amount': form_d_total,
                         'total_hospital_bill_inc_lab': form_d_total + path_total, # Assuming this sum
-                        'total_hospital_bill_90_percent': form_d_total * 0.9,
+                        'total_hospital_bill_90_percent': totals['admissible_hospitalization'],
 
                         # Ward Details
                         'gw_days': get_s('gw_days'), 'gw_rates': get_s('gw_rates'), 'gw_total': get_s('gw_total'),
@@ -745,6 +796,9 @@ with st.container():
                     
                     with open(pdf_path, "rb") as f:
                          st.download_button("⬇️ Download PDF", f, file_name="Medical_Claim.pdf", mime="application/pdf")
+                    
+                    with st.expander("🔍 Debug Information (Internal Context)"):
+                        st.json(context)
                          
                 except Exception as e:
                     st.error(f"Generation Error: {e}") 

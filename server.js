@@ -41,54 +41,13 @@ const upload = multer({ storage: storage });
 app.use(cors());
 app.use(express.json());
 
-// Proxy for Medical Reimbursement Streamlit App
-// Define Proxy Middleware separately so we can use it for both HTTP and WS
-const streamlitProxy = createProxyMiddleware({
-    target: 'http://127.0.0.1:8501',
-    changeOrigin: true,
-    ws: true, // Enable Websockets for Streamlit
-    xfwd: true,
-    proxyTimeout: 60000,
-    pathRewrite: function (path, req) {
-        // STRATEGY CHANGE: Strip the prefix.
-        // Streamlit runs at root (http://127.0.0.1:8501/)
-        // Request: /reimbursement-gen/foo -> Proxy -> /foo
-
-        let newPath = path;
-
-        // Verify if we are processing a raw URL (like in Upgrade) or relative (Express)
-        // If path starts with /reimbursement-gen, strip it
-        if (newPath.startsWith('/reimbursement-gen')) {
-            newPath = newPath.replace('/reimbursement-gen', '');
-        }
-
-        // Ensure we don't end up with empty string, default to /
-        if (newPath === '') newPath = '/';
-
-        console.log(`[Proxy Strip] ${path} -> ${newPath}`);
-        return newPath;
-    },
-    onError: (err, req, res) => {
-        console.error('Proxy Error:', err);
-        // Error handling for WS upgrades (req might be socket)
-        if (res && res.status) res.status(500).send('Proxy Error');
-    },
-    onProxyReq: (proxyReq, req, res) => {
-        // console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyReq.path}`);
-    },
-    onProxyReqWs: (proxyReq, req, socket, options, head) => {
-        console.log(`[WS Upgrade] ${req.url}`);
-    }
-});
-
-app.use('/reimbursement-gen', streamlitProxy);
+// Medical Reimbursement Proxy - Discontinued (Migrated to Native React)
 
 
 
 // ... (existing imports)
 
-// --- START STREAMLIT SERVER (Medical Reimbursement) ---
-const STREAMLIT_PORT = 8501;
+// --- PDF Generation Logic ---
 // Detect .venv Python on Windows
 let PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
 const venvPython = path.join(__dirname, '.venv', 'Scripts', 'python.exe');
@@ -97,26 +56,9 @@ if (process.platform === 'win32' && fs.existsSync(venvPython)) {
     console.log(`Using venv Python: ${PYTHON_CMD}`);
 }
 
-console.log('🚀 Starting Streamlit Background Service...');
-const pythonProcess = spawn(PYTHON_CMD, [
-    '-m', 'streamlit', 'run',
-    'medical_gen/main.py',
-    '--server.port', '8501',
-    '--server.address', '0.0.0.0',
-    '--server.headless', 'true',
-    // --server.enableCORS false is CRITICAL for 127.0.0.1
-    '--server.enableCORS', 'false',
-    '--server.enableXsrfProtection', 'false',
-    '--server.enableWebsocketCompression', 'false',
-    '--browser.gatherUsageStats', 'false'
-    // REMOVED: --server.baseUrlPath. We now serve at ROOT and strip prefix in proxy.
-]);
+let pythonProcess = null;
 
-pythonProcess.stdout.on('data', (data) => console.log(`[Streamlit]: ${data}`));
-pythonProcess.stderr.on('data', (data) => console.error(`[Streamlit ERR]: ${data}`));
-
-// Clean up python process on exit
-process.on('exit', () => pythonProcess.kill());
+// Previous Streamlit background process management removed.
 
 // ... (WARMUP logic, unchanged)
 // ... (Helper Functions, unchanged)
@@ -226,59 +168,50 @@ app.post('/api/word-to-pdf', upload.single('file'), async (req, res) => {
     }
 });
 
-// --- PDF to JPG Endpoint ---
-app.post('/api/pdf-to-jpg', upload.single('file'), async (req, res) => {
+// --- Medical Reimbursement PDF Generation ---
+app.post('/api/medical-reimbursement/generate', async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
+        const formData = req.body;
+        const dataPath = path.join(__dirname, 'medical_gen', `data_${Date.now()}.json`);
+        fs.writeFileSync(dataPath, JSON.stringify(formData, null, 2));
 
-        // Launch Puppeteer browser
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        const pythonScript = path.join(__dirname, 'medical_gen', 'generate_pdf_api.py');
+        const pythonProcess = spawn(PYTHON_CMD, [pythonScript, dataPath]);
+
+        let output = '';
+        let errorOutput = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            output += data.toString();
         });
 
-        const page = await browser.newPage();
-
-        // Navigate directly to the PDF file
-        await page.goto(`file://${req.file.path}`, {
-            waitUntil: 'networkidle0'
+        pythonProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
         });
 
-        // Set viewport to capture full page
-        await page.setViewport({
-            width: 1200,
-            height: 1600,
-            deviceScaleFactor: 2
+        pythonProcess.on('close', (code) => {
+            // Delete temp data file
+            if (fs.existsSync(dataPath)) fs.unlinkSync(dataPath);
+
+            if (code === 0) {
+                const pdfPath = path.join(__dirname, 'medical_gen', 'temp_filled_form.pdf');
+                if (fs.existsSync(pdfPath)) {
+                    res.download(pdfPath, 'Medical_Claim.pdf', (err) => {
+                        if (err) console.error('Error downloading PDF:', err);
+                        // Optional: unlink pdfPath after download if you want to keep it clean
+                    });
+                } else {
+                    res.status(500).json({ error: 'PDF file not found' });
+                }
+            } else {
+                console.error('Python PDF Generation Error:', errorOutput);
+                res.status(500).json({ error: 'Failed to generate PDF', details: errorOutput });
+            }
         });
-
-        // Wait a bit for PDF to render
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Take screenshot
-        const screenshot = await page.screenshot({
-            type: 'jpeg',
-            quality: 90,
-            fullPage: false
-        });
-
-        await browser.close();
-
-        // Clean up uploaded file
-        fs.unlinkSync(req.file.path);
-
-        // Send JPG as response
-        res.setHeader('Content-Type', 'image/jpeg');
-        res.setHeader('Content-Disposition', 'attachment; filename=converted.jpg');
-        res.send(screenshot);
 
     } catch (error) {
-        console.error('PDF to JPG Error:', error);
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-        res.status(500).json({ error: 'Failed to convert PDF to JPG' });
+        console.error('Medical PDF Generate Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -306,10 +239,12 @@ const server = app.listen(PORT, () => {
 
 // Explicitly handle WebSocket Upgrades
 server.on('upgrade', (req, socket, head) => {
+    /*
     if (req.url.startsWith('/reimbursement-gen')) {
         console.log(`[Upgrade] Forwarding WS request: ${req.url}`);
         streamlitProxy.upgrade(req, socket, head);
     }
+    */
 });
 
 export default app;

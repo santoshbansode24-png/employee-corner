@@ -1050,7 +1050,7 @@ function ArrearsCalculator() {
                         </Grid>
 
                         {/* === DUE SECTION (Green Theme) === */}
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={9}>
                             <Card sx={{ borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1110,7 +1110,7 @@ function ArrearsCalculator() {
                         </Grid>
 
                         {/* === DRAWN SECTION (Orange/Red Theme) === */}
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={9}>
                             <Card sx={{ borderTop: 0, overflow: 'visible' }}>
                                 {/* Header */}
                                 <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
