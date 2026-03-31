@@ -30,8 +30,7 @@ const navSections = [
             { name: "Payslip Calculator", href: "/payslip", icon: Calculator },
             { name: "Arrears Statement", href: "/arrears", icon: FileText },
             { name: "Pay Scale Viewer", href: "/payscale", icon: TrendingUp },
-            // Remaining tools will link back to old URL temporarily or show "Coming soon"
-            { name: "Pension Calculator", href: "#pension", icon: Landmark },
+            { name: "Pension Calculator", href: "/pension", icon: Landmark },
             { name: "Medical Bill", href: "#medical", icon: FileImage },
         ]
     },
@@ -39,7 +38,8 @@ const navSections = [
         title: "Financial",
         items: [
             { name: "SIP Calculator", href: "/financial/sip", icon: Coins },
-            { name: "Loan EMI", href: "#emi", icon: Building },
+            { name: "Fixed Deposit", href: "/financial/fd", icon: Landmark },
+            { name: "Loan EMI & Eligibility", href: "/financial/loan", icon: Building },
         ]
     }
 ];

@@ -15,7 +15,7 @@ export default function Dashboard() {
                 { name: "Payslip Calculator", path: "/payslip", icon: Calculator, desc: "Generate native PDF payslips", active: true },
                 { name: "Arrears Statement", path: "/arrears", icon: FileText, desc: "Detailed difference statement", active: true },
                 { name: "Pay Scale Viewer", path: "/payscale", icon: TrendingUp, desc: "7th CPC Matrix explorer", active: true },
-                { name: "Pension Calculator", path: "#pension", icon: Landmark, desc: "Retirement benefits (Coming Soon)", active: false },
+                { name: "Pension Calculator", path: "/pension", icon: Landmark, desc: "Retirement benefits & DCRG", active: true },
             ]
         },
         {
@@ -24,7 +24,16 @@ export default function Dashboard() {
             badgeColor: "bg-emerald-100 text-emerald-800",
             tools: [
                 { name: "SIP Calculator", path: "/financial/sip", icon: Coins, desc: "Systematic Investment Plan", active: true },
-                { name: "Loan EMI", path: "#emi", icon: Building, desc: "Housing/Vehicle loan (Coming Soon)", active: false },
+                { name: "Fixed Deposit", path: "/financial/fd", icon: Landmark, desc: "FD Compounding returns", active: true },
+                { name: "Loan EMI & Eligibility", path: "/financial/loan", icon: Building, desc: "EMI & Borrowing limits", active: true },
+            ],
+        },
+        {
+            title: "Utility Tools",
+            description: "Helper tools for documents and images.",
+            badgeColor: "bg-purple-100 text-purple-800",
+            tools: [
+                { name: "Medical Bill", path: "#medical", icon: FileImage, desc: "Reimbursement claims (Soon)", active: false },
             ]
         }
     ];
@@ -106,8 +115,6 @@ export default function Dashboard() {
                             </span>
                         </div>
                     </div>
-                    {/* Abstract design elements */}
-                    <div className="absolute top-0 right-0 p-12 opacity-10 blur-3xl rounded-full bg-blue-400 w-96 h-96 transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
                 </div>
 
             </div>
