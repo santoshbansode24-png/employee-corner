@@ -1,0 +1,306 @@
+/* ArrearsCalculator.css */
+.arrears-container {
+    padding: 24px;
+    background-color: #f8fafc; /* Light neutral background */
+    font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+    min-height: 100vh;
+}
+
+.arrears-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 900px) {
+    .arrears-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.arrears-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.badge-blue {
+    background-color: #eff6ff;
+    color: #2563eb;
+}
+
+.badge-purple {
+    background-color: #faf5ff;
+    color: #9333ea;
+}
+
+.card-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.grid-3x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+}
+
+.col-span-2 {
+    grid-column: span 2;
+}
+
+/* Floating Top-Border Label Input Style */
+.input-group {
+    position: relative;
+    width: 100%;
+}
+
+.input-label {
+    position: absolute;
+    top: -8px;
+    left: 10px;
+    background: #ffffff;
+    padding: 0 4px;
+    font-size: 0.75rem;
+    color: #94a3b8; /* light grey */
+    font-weight: 600;
+    z-index: 10;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: #334155;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    background: transparent;
+}
+
+.input-field:focus {
+    border-color: #3b82f6;
+}
+
+/* Select field specifics */
+select.input-field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
+}
+
+/* Switches */
+.switch-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.switch-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* Custom Col row */
+.custom-col-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.custom-col-group .input-field {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.btn-add-col {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-add-col:hover {
+    background: #1d4ed8;
+}
+
+/* Due and Drawn Bottom Cards */
+.due-card .card-header {
+    background-color: #00a65a;
+    border-bottom: none;
+    color: #ffffff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.due-card .header-title-container {
+     display: flex;
+     flex-direction: row;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+}
+
+.due-card .header-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 1px;
+}
+.due-card .header-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.drawn-card .card-header {
+    background-color: #f39c12;
+    border-bottom: none;
+    color: #ffffff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.drawn-card .header-title-container {
+     display: flex;
+     flex-direction: row;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+}
+
+.drawn-card .header-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.drawn-card .header-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.vertical-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Active border inputs */
+.due-input .input-field {
+    border: 2px solid #00a65a;
+    padding-left: 36px; /* For rupee symbol */
+}
+
+.drawn-input .input-field {
+    border: 2px solid #f39c12;
+    padding-left: 36px; /* For rupee symbol */
+}
+
+.currency-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-weight: 600;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.card-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: center;
+    background: #fff;
+}
+
+.btn-add-period {
+    background: transparent;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+}
+
+.btn-add-period:hover {
+    opacity: 0.8;
+}
+
+.btn-add-period.btn-blue {
+    color: #2563eb;
+}
+
+.btn-add-period.btn-orange {
+    color: #ea580c; /* Orange text */
+}
+
+/* DatePicker overrides */
+.react-datepicker-wrapper {
+    width: 100%;
+}

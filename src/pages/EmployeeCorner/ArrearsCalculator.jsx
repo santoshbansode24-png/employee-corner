@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import './ArrearsCalculator.css';
 // MUI IMPORTS
 import {
     Box, Grid, Card, CardContent, TextField, Button, Typography,
@@ -855,325 +856,191 @@ function ArrearsCalculator() {
         doc.save(`Arrears_${basicInfo.empName.replace(/\s+/g, '_')}.pdf`);
     };
 
-    const renderComponentInputs = (title, type, compKey, label) => {
+    const renderComponentInputs = (title, type, compKey, label, inputClass) => {
         const comps = (type === 'due' ? dueComponents[compKey] : drawnComponents[compKey]) || [];
         const isDue = type === 'due';
-        const borderColor = isDue ? 'success.main' : 'warning.main';
-
         return (
-            <Box sx={{ mb: 2.5 }}>
-                <Typography variant="caption" sx={{ color: isDue ? 'success.dark' : 'warning.dark', fontWeight: 700, display: 'block', mb: 0.5, fontSize: '0.7rem', textTransform: 'uppercase' }}>{label}</Typography>
+            <React.Fragment>
                 {comps.map((item, idx) => (
-                    <Box key={idx} sx={{ mb: idx < comps.length - 1 ? 1 : 0 }}>
-                        <TextField
-                            fullWidth
+                    <div key={idx} className={"input-group " + inputClass} style={{ marginBottom: idx < comps.length - 1 ? '10px' : '0' }}>
+                        <label className="input-label">{label}</label>
+                        <span className="currency-icon">₹</span>
+                        <input
                             type="number"
+                            className="input-field"
                             placeholder="0"
                             value={item.amount}
                             onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderColor: borderColor,
-                                    borderWidth: 1.5,
-                                }
-                            }}
-                            InputProps={{
-                                startAdornment: <InputAdornment position="start"><Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: '0.75rem' }}>₹</Typography></InputAdornment>,
-                                style: { fontWeight: 600, fontSize: '0.875rem' }
-                            }}
                         />
-                        {toggles.promotionEnabled && (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <DatePicker
-                                        selected={item.from ? new Date(item.from + "-01") : null}
-                                        onChange={(date) => updateComponent(type, compKey, idx, 'from', formatMonth(date))}
-                                        dateFormat="yyyy-MM" showMonthYearPicker
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<TextField fullWidth label="From" size="small" />}
-                                    />
-                                </Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>to</Typography>
-                                <Box sx={{ flex: 1 }}>
-                                    <DatePicker
-                                        selected={item.to ? new Date(item.to + "-01") : null}
-                                        onChange={(date) => updateComponent(type, compKey, idx, 'to', formatMonth(date))}
-                                        dateFormat="yyyy-MM" showMonthYearPicker
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<TextField fullWidth label="To" size="small" />}
-                                    />
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
+                    </div>
                 ))}
-            </Box>
+            </React.Fragment>
         );
     };
 
     return (
-
         <ThemeProvider theme={compactTheme}>
-            <Box sx={{ minHeight: '100vh', bgcolor: '#f1f5f9', py: 4 }}>
-                <Container maxWidth={false} disableGutters sx={{ pl: 1.5 }}>
-                    {/* --- MAIN HEADER --- */}
-                    <Card sx={{ mb: 3, overflow: 'visible' }}>
-                        <Box sx={{ p: 2.5, background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)', display: 'flex', gap: 2, alignItems: 'center' }}>
-                            <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 1, borderRadius: 2, boxShadow: 2, display: 'flex' }}>
-                                <AccountBalance fontSize="medium" />
-                            </Box>
-                            <Box>
-                                <Typography variant="h6" color="text.primary">Arrears Calculator</Typography>
-                                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mt: 0.5 }}>
-                                    Government Salary Due-Drawn Statement Generator
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Card>
+            <div className="arrears-container">
+                <div className="arrears-grid">
+                    
+                    {/* SECTION 1: EMPLOYEE DETAILS */}
+                    <div className="arrears-card">
+                        <div className="card-header">
+                            <span className="badge badge-blue">01</span>
+                            <h2 className="card-title">Employee Details</h2>
+                        </div>
+                        <div className="card-body grid-3x2">
+                            <div className="input-group">
+                                <label className="input-label">Name</label>
+                                <input className="input-field" type="text" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Designation</label>
+                                <input className="input-field" type="text" placeholder="सहायक प्राध्यापक" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">From Month</label>
+                                <div className="date-picker-wrapper">
+                                    <DatePicker
+                                        selected={basicInfo.fromMonth ? new Date(basicInfo.fromMonth) : null}
+                                        onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
+                                        dateFormat="yyyy-MM-dd"
+                                        renderCustomHeader={CustomHeader}
+                                        customInput={<input className="input-field" placeholder="2023-01-01" />}
+                                    />
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">To Month</label>
+                                <div className="date-picker-wrapper">
+                                    <DatePicker
+                                        selected={basicInfo.toMonth ? new Date(basicInfo.toMonth) : null}
+                                        onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
+                                        dateFormat="yyyy-MM-dd"
+                                        renderCustomHeader={CustomHeader}
+                                        customInput={<input className="input-field" placeholder="2023-06-30" />}
+                                    />
+                                </div>
+                            </div>
+                            <div className="input-group col-span-2">
+                                <label className="input-label">GR / Order Title</label>
+                                <input className="input-field" type="text" placeholder="महाराष्ट्र शासन वित्त विभाग..." value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
 
-                    <Grid container spacing={3} sx={{ mb: 8 }}>
-                        {/* Column 1: Employee Details */}
-                        <Grid item xs={12} md={6}>
-                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', mb: 2 }}>
-                                <Box sx={{ p: 1, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Box sx={{ bgcolor: 'primary.light', color: 'primary.main', px: 0.75, py: 0.25, borderRadius: 1, fontSize: '0.6rem', fontWeight: 800 }}>01</Box>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Employee Details</Typography>
-                                </Box>
-                                <CardContent sx={{ p: 1, flexGrow: 1 }}>
-                                    {/* 2 Column Layout: 3 rows */}
-                                    <Grid container spacing={0.75}>
-                                        <Grid item xs={6}>
-                                            <TextField fullWidth size="small" label="Name" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <TextField fullWidth size="small" label="Designation" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <DatePicker
-                                                selected={basicInfo.fromMonth ? new Date(basicInfo.fromMonth) : null}
-                                                onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
-                                                dateFormat="yyyy-MM-dd"
-                                                renderCustomHeader={CustomHeader}
-                                                customInput={<TextField fullWidth size="small" label="From Month" />}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <DatePicker
-                                                selected={basicInfo.toMonth ? new Date(basicInfo.toMonth) : null}
-                                                onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
-                                                dateFormat="yyyy-MM-dd"
-                                                renderCustomHeader={CustomHeader}
-                                                customInput={<TextField fullWidth size="small" label="To Month" />}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <TextField fullWidth size="small" label="GR / Order Title" value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
-                                        </Grid>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
-                        </Grid>
+                    {/* SECTION 2: CONFIGURATION */}
+                    <div className="arrears-card">
+                        <div className="card-header">
+                            <span className="badge badge-purple">02</span>
+                            <h2 className="card-title">Configuration</h2>
+                        </div>
+                        <div className="card-body grid-3x2">
+                            <div className="input-group">
+                                <label className="input-label">Auto-DA</label>
+                                <div className="switch-container">
+                                    <span className="switch-label">Auto-DA {toggles.autoDAMaharashtra ? 'ON' : 'OFF'}</span>
+                                    <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Auto-HRA</label>
+                                <div className="switch-container">
+                                    <span className="switch-label">Auto-HRA {toggles.autoHRAMaharashtra ? 'ON' : 'OFF'}</span>
+                                    <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Category</label>
+                                <select className="input-field" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
+                                    <option value="NPS">NPS</option>
+                                    <option value="GPF">GPF</option>
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">City (HRA)</label>
+                                <select className="input-field" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
+                                    <option value="X">X (Metro)</option>
+                                    <option value="Y">Y (City)</option>
+                                    <option value="Z">Z (Rural)</option>
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Increment</label>
+                                <select className="input-field" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
+                                    <option value="No Increment">None</option>
+                                    <option value="January">January</option>
+                                    <option value="July">July</option>
+                                    <option value="Both">Both</option>
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Custom Col</label>
+                                <div className="custom-col-group">
+                                    <input className="input-field" type="text" placeholder="Custom Col" value={newColumn.label} onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })} />
+                                    <button className="btn-add-col" onClick={addCustomColumn}>+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Column 2: Configuration */}
-                        <Grid item xs={12} md={6}>
-                            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', mb: 2 }}>
-                                <Box sx={{ p: 1, borderBottom: 1, borderColor: '#f1f5f9', bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Box sx={{ bgcolor: 'secondary.light', color: 'secondary.main', px: 0.75, py: 0.25, borderRadius: 1, fontSize: '0.6rem', fontWeight: 800 }}>02</Box>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Configuration</Typography>
-                                </Box>
-                                <CardContent sx={{ p: 1, flexGrow: 1 }}>
-                                    {/* 2 Column, 3 Row Layout */}
-                                    <Grid container spacing={0.75}>
-                                        {/* Row 1: Auto-DA and Auto-HRA */}
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderRadius: 1, p: 0.5, border: 1, borderColor: '#e2e8f0' }}>
-                                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.6rem' }}>Auto-DA</Typography>
-                                                <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderRadius: 1, p: 0.5, border: 1, borderColor: '#e2e8f0' }}>
-                                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.6rem' }}>Auto-HRA</Typography>
-                                                <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
-                                            </Box>
-                                        </Grid>
+                    {/* SECTION 3: DUE AMOUNT */}
+                    <div className="arrears-card due-card">
+                        <div className="card-header">
+                            <div className="header-title-container">
+                                <AccountBalance fontSize="small" />
+                                <h2 className="header-title">DUE AMOUNT</h2>
+                            </div>
+                            <p className="header-subtitle">देय रक्कम</p>
+                        </div>
+                        <div className="card-body vertical-stack">
+                            {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay', 'due-input')}
+                            {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`, 'due-input')}
+                            {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`, 'due-input')}
+                            {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance', 'due-input')}
+                            {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label, 'due-input'))}
+                        </div>
+                        <div className="card-footer">
+                            <button className="btn-add-period btn-blue" onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>PROMOTION / TIMEBOUND DETAILS [+ Add Period]</button>
+                        </div>
+                    </div>
 
-                                        {/* Row 2: Category and City */}
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="Category" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
-                                                <MenuItem value="NPS">NPS</MenuItem><MenuItem value="GPF">GPF</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="City (HRA)" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
-                                                <MenuItem value="X">X (Metro)</MenuItem><MenuItem value="Y">Y (City)</MenuItem><MenuItem value="Z">Z (Rural)</MenuItem>
-                                            </TextField>
-                                        </Grid>
+                    {/* SECTION 4: DRAWN AMOUNT */}
+                    <div className="arrears-card drawn-card">
+                        <div className="card-header">
+                            <div className="header-title-container">
+                                <TrendingDown fontSize="small" />
+                                <h2 className="header-title">DRAWN AMOUNT</h2>
+                            </div>
+                            <p className="header-subtitle">पूर्वी दिलेले वेतन</p>
+                        </div>
+                        <div className="card-body vertical-stack">
+                            {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay', 'drawn-input')}
+                            {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`, 'drawn-input')}
+                            {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`, 'drawn-input')}
+                            {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance', 'drawn-input')}
+                            {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label, 'drawn-input'))}
+                        </div>
+                        <div className="card-footer">
+                            <button className="btn-add-period btn-orange" onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>PROMOTION / TIMEBOUND DETAILS [+ Add Period]</button>
+                        </div>
+                    </div>
+                </div>
 
-                                        {/* Row 3: Increment and Custom Columns */}
-                                        <Grid item xs={6}>
-                                            <TextField select fullWidth size="small" label="Increment" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
-                                                <MenuItem value="No Increment">None</MenuItem>
-                                                <MenuItem value="January">Jan</MenuItem>
-                                                <MenuItem value="July">July</MenuItem>
-                                                <MenuItem value="Both">Both</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                                <TextField
-                                                    value={newColumn.label}
-                                                    onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })}
-                                                    placeholder="Custom Col"
-                                                    size="small"
-                                                    sx={{ flex: 1, minWidth: 0 }}
-                                                />
-                                                <Button variant="contained" size="small" sx={{ minWidth: 32, px: 1 }} onClick={addCustomColumn}>+</Button>
-                                            </Box>
-                                        </Grid>
-                                    </Grid>
-
-                                    {/* Custom Column Tags */}
-                                    {customColumns.length > 0 && (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.75 }}>
-                                            {customColumns.map(col => (
-                                                <Box key={col.id} sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: '#f1f5f9', px: 1, py: 0.3, borderRadius: 1, border: 1, borderColor: '#e2e8f0', fontSize: '0.65rem', fontWeight: 700, color: '#475569' }}>
-                                                    {col.label}
-                                                    <IconButton size="small" onClick={() => removeCustomColumn(col.id)} sx={{ ml: 0.3, p: 0.1 }}><Close sx={{ fontSize: 10 }} /></IconButton>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Grid>
-
-                        {/* === DUE SECTION (Green Theme) === */}
-                        <Grid item xs={12} md={9}>
-                            <Card sx={{ borderTop: 0, overflow: 'visible' }}>
-                                {/* Header */}
-                                <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><AccountBalance fontSize="small" /></Box>
-                                    <Box>
-                                        <Typography variant="subtitle2" color="inherit" sx={{ letterSpacing: 1 }}>DUE AMOUNT</Typography>
-                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>देय रक्कम</Typography>
-                                    </Box>
-                                </Box>
-                                <CardContent sx={{ pt: 5, px: 4, pb: 3 }}>
-                                    {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay')}
-                                    {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance')}
-                                    {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label))}
-
-                                    {/* Promotion Section (Restored) */}
-                                    <Divider sx={{ my: 3 }} />
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Typography variant="subtitle2" color="primary">Promotion / Timebound Details</Typography>
-                                        <Button startIcon={<Add />} size="small" variant="outlined" onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>Add Period</Button>
-                                    </Box>
-                                    {duePromotionPeriods.map((period, index) => (
-                                        <Paper key={index} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'success.light', border: '1px solid', borderColor: 'success.main', position: 'relative' }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                                                <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #bbf7d0' }}>Period {index + 1}</Typography>
-                                                <IconButton size="small" color="error" onClick={() => setDuePromotionPeriods(duePromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
-                                            </Box>
-                                            <Grid container spacing={1.5}>
-                                                <Grid item xs={12}>
-                                                    <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
-                                                        const newDate = formatDate(date);
-                                                        const updated = [...duePromotionPeriods];
-                                                        updated[index].from = newDate;
-                                                        if (newDate) {
-                                                            const dateObj = new Date(newDate);
-                                                            const m = dateObj.getMonth() + 1;
-                                                            const y = dateObj.getFullYear();
-                                                            updated[index].daRate = getMaharashtraDARate(m, y);
-                                                            updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                        }
-                                                        setDuePromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth size="small" />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
-                                                </Grid>
-                                                <Grid item xs={12}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...duePromotionPeriods]; u[index].ta = e.target.value; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                {customColumns.map(col => (
-                                                    <Grid item xs={12} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...duePromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDuePromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                ))}
-                                            </Grid>
-                                        </Paper>
-                                    ))}
-                                </CardContent>
-                            </Card>
-                        </Grid>
-
-                        {/* === DRAWN SECTION (Orange/Red Theme) === */}
-                        <Grid item xs={12} md={9}>
-                            <Card sx={{ borderTop: 0, overflow: 'visible' }}>
-                                {/* Header */}
-                                <Box sx={{ mx: 2, mt: -2, p: 2, background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: 'white', borderRadius: 2, boxShadow: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 1, borderRadius: 1 }}><TrendingDown fontSize="small" /></Box>
-                                    <Box>
-                                        <Typography variant="subtitle2" color="inherit" sx={{ letterSpacing: 1 }}>DRAWN AMOUNT</Typography>
-                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>पूर्वी दिलेले वेतन</Typography>
-                                    </Box>
-                                </Box>
-                                <CardContent sx={{ pt: 5, px: 4, pb: 3 }}>
-                                    {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay')}
-                                    {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`)}
-                                    {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance')}
-                                    {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label))}
-
-                                    {/* Promotion Section (Restored) */}
-                                    <Divider sx={{ my: 3 }} />
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Typography variant="subtitle2" color="warning.main">Promotion / Timebound Details</Typography>
-                                        <Button startIcon={<Add />} size="small" variant="outlined" color="warning" onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>Add Period</Button>
-                                    </Box>
-                                    {drawnPromotionPeriods.map((period, index) => (
-                                        <Paper key={index} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'warning.light', border: '1px solid', borderColor: 'warning.main', position: 'relative' }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                                                <Typography variant="caption" fontWeight="bold" sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #fed7aa' }}>Period {index + 1}</Typography>
-                                                <IconButton size="small" color="error" onClick={() => setDrawnPromotionPeriods(drawnPromotionPeriods.filter((_, i) => i !== index))}><Close fontSize="small" /></IconButton>
-                                            </Box>
-                                            <Grid container spacing={1.5}>
-                                                <Grid item xs={12}>
-                                                    <DatePicker selected={period.from ? new Date(period.from) : null} onChange={(date) => {
-                                                        const newDate = formatDate(date);
-                                                        const updated = [...drawnPromotionPeriods];
-                                                        updated[index].from = newDate;
-                                                        if (newDate) {
-                                                            const dateObj = new Date(newDate);
-                                                            const m = dateObj.getMonth() + 1;
-                                                            const y = dateObj.getFullYear();
-                                                            updated[index].daRate = getMaharashtraDARate(m, y);
-                                                            updated[index].hraRate = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                                                        }
-                                                        setDrawnPromotionPeriods(updated);
-                                                    }} customInput={<TextField label="From Date" fullWidth size="small" />} dateFormat="yyyy-MM-dd" renderCustomHeader={CustomHeader} />
-                                                </Grid>
-                                                <Grid item xs={12}><TextField label="Basic Pay" type="number" value={period.pay} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].pay = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="DA %" type="number" value={period.daRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].daRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="HRA %" type="number" value={period.hraRate} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].hraRate = parseFloat(e.target.value) || 0; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                <Grid item xs={12}><TextField label="TA" type="number" value={period.ta} onChange={(e) => { const u = [...drawnPromotionPeriods]; u[index].ta = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                {customColumns.map(col => (
-                                                    <Grid item xs={12} key={col.id}><TextField label={col.label} type="number" value={period.custom?.[col.id] || ''} onChange={(e) => { const u = [...drawnPromotionPeriods]; if (!u[index].custom) u[index].custom = {}; u[index].custom[col.id] = e.target.value; setDrawnPromotionPeriods(u); }} fullWidth size="small" /></Grid>
-                                                ))}
-                                            </Grid>
-                                        </Paper>
-                                    ))}
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </Grid>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px', marginBottom: '32px' }}>
+                    <Button variant="contained" size="large" startIcon={<Download />} onClick={generatePDF}
+                        sx={{
+                            borderRadius: 8, px: 5, py: 1.5, fontSize: '1rem', fontWeight: 700,
+                            background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                            boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.5)',
+                            '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 15px 30px -5px rgba(37, 99, 235, 0.6)' },
+                            transition: 'all 0.2s ease-in-out'
+                        }}>
+                        Download PDF Statement
+                    </Button>
+                </div>
 
 
-
-
-                    {/* --- ACTION FOOTER --- */}
                     <Box sx={{ position: 'sticky', bottom: 24, display: 'flex', justifyContent: 'center', zIndex: 100 }}>
                         <Button variant="contained" size="large" startIcon={<Download />} onClick={generatePDF}
                             sx={{
