@@ -148,8 +148,8 @@ function MedicalCalculation() {
         admissible_meds: calculateMedTotal() * 0.90,
         admissible_path: calculatePathTotal() * 0.90,
         grand_admissible: calculateAdmissibleStay() + (calculateProceduralTotal() * 0.90) + (calculateMedTotal() * 0.90) + (calculatePathTotal() * 0.90),
-        pathology_receipts: formData.pathology,
-        medicine_receipts: formData.medicines
+        pathology_receipts: formData.pathology_receipts,
+        medicine_receipts: formData.medicine_receipts
     };
 
     // --- Helpers ---

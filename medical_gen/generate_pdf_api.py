@@ -35,19 +35,17 @@ def generate_pdf_from_data(data_file):
         pathology_receipts = []
         for item in data.get('pathology_receipts', []):
             pathology_receipts.append({
-                'test_lab_name': item.get('lab', ''),
-                'test_name': item.get('test', ''),
-                'test_date': format_date(item.get('date', '')),
-                'test_amount': item.get('amount', 0)
+                'receipt_no': item.get('receipt_no', ''),
+                'date': format_date(item.get('date', '')),
+                'amount': item.get('amount', 0)
             })
 
         medicine_receipts = []
         for item in data.get('medicine_receipts', []):
             medicine_receipts.append({
-                'medicine_shop_name': item.get('shop', ''),
-                'medicine_invoice_no': item.get('invoice', ''),
-                'medicine_date': format_date(item.get('date', '')),
-                'medicine_amount': item.get('amount', 0)
+                'receipt_no': item.get('receipt_no', ''),
+                'date': format_date(item.get('date', '')),
+                'amount': item.get('amount', 0)
             })
 
         # Prepare context
