@@ -5,1191 +5,221 @@ import 'jspdf-autotable';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import './ArrearsCalculator.css';
+
 // MUI IMPORTS
 import {
-    Box, Grid, Card, CardContent, TextField, Button, Typography,
-    IconButton, Switch, FormControlLabel, Select, MenuItem, Divider,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Container, InputAdornment
+    Box, Button, Typography, IconButton, Container
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Download, Add, Close, Visibility, ExpandMore, AccountBalance, TrendingDown, AccessTime, ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Download, ChevronLeft, ChevronRight } from '@mui/icons-material';
+
+// UTILS & COMPONENTS
+import { calculateArrearsLogic, getMonthYearList, MONTHS } from '../../utils/arrearsCalculations';
+import EmployeeDetailsCard from './components/Arrears/EmployeeDetailsCard';
+import ConfigurationCard from './components/Arrears/ConfigurationCard';
+import DueDrawnCard from './components/Arrears/DueDrawnCard';
+import ComponentInputGroup from './components/Arrears/ComponentInputGroup';
+import ArrearsTable from './components/Arrears/ArrearsTable';
 
 // --- COMPACT THEME ---
 const compactTheme = createTheme({
-    typography: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        fontSize: 12,
-        h6: { fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em' },
-        subtitle2: { fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' },
-    },
     components: {
-        MuiTextField: { defaultProps: { size: 'small', variant: 'outlined', InputLabelProps: { shrink: true, style: { fontSize: '0.75rem', fontWeight: 600 } } } },
+        MuiTextField: { defaultProps: { size: 'small', margin: 'none' } },
+        MuiButton: { defaultProps: { size: 'small' } },
         MuiSelect: { defaultProps: { size: 'small' } },
-        MuiButton: { defaultProps: { size: 'small', disableElevation: true }, styleOverrides: { root: { borderRadius: 6, textTransform: 'none', fontWeight: 600 } } },
-        MuiCard: { styleOverrides: { root: { borderRadius: 12, boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)', border: '1px solid #e2e8f0' } } },
-        MuiTableCell: { styleOverrides: { root: { padding: '6px 12px', borderColor: '#f1f5f9' }, head: { backgroundColor: '#f8fafc', fontWeight: 700, color: '#475569' } } },
-    },
-    palette: {
-        primary: { main: '#2563eb' },
-        success: { main: '#10b981', light: '#ecfdf5', contrastText: '#065f46' }, // For Due
-        warning: { main: '#f97316', light: '#fff7ed', contrastText: '#9a3412' }, // For Drawn
-        text: { primary: '#1e293b', secondary: '#64748b' }
     }
 });
 
-// Helper for safe local date formatting (YYYY-MM-DD)
-const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const offset = d.getTimezoneOffset();
-    const dateLocal = new Date(d.getTime() - (offset * 60 * 1000));
-    return dateLocal.toISOString().split('T')[0];
-};
-
-// Helper for safe local month formatting (YYYY-MM)
-const formatMonth = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const offset = d.getTimezoneOffset();
-    const dateLocal = new Date(d.getTime() - (offset * 60 * 1000));
-    return dateLocal.toISOString().slice(0, 7);
-};
-
-// --- CONSTANTS & DATA ---
-const MONTHS = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const DA_RATES_MAHARASHTRA = [
-    { date: '2016-01-01', rate: 0 },
-    { date: '2016-07-01', rate: 2 },
-    { date: '2017-01-01', rate: 4 },
-    { date: '2017-07-01', rate: 5 },
-    { date: '2018-01-01', rate: 7 },
-    { date: '2018-07-01', rate: 9 },
-    { date: '2019-01-01', rate: 12 },
-    { date: '2019-07-01', rate: 17 },
-    { date: '2021-07-01', rate: 31 },
-    { date: '2022-01-01', rate: 34 },
-    { date: '2022-07-01', rate: 38 },
-    { date: '2023-01-01', rate: 42 },
-    { date: '2023-07-01', rate: 46 },
-    { date: '2024-01-01', rate: 50 },
-    { date: '2024-07-01', rate: 53 },
-    { date: '2025-01-01', rate: 55 },
-    { date: '2025-01-01', rate: 55 },
-];
-
-// --- HRA RATES ---
-// Extracted from your Excel File (7PC Sheet)
-// 0% (2016-2018), 8% (2019-2021), 9% (2021-2024), 10% (2024+)
-const HRA_RATES_Z = [
-    { start: '2016-01-01', end: '2018-12-31', rate: 0 },
-    { start: '2019-01-01', end: '2021-06-30', rate: 8 },
-    { start: '2021-07-01', end: '2023-12-31', rate: 9 },
-    { start: '2024-01-01', end: '2099-12-31', rate: 10 },
-];
-
-const getMaharashtraHRARate = (month, year, category) => {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-
-    // 1. Find Base Z Rate
-    let zRate = 0;
-    for (let period of HRA_RATES_Z) {
-        if (dateStr >= period.start && dateStr <= period.end) {
-            zRate = period.rate;
-            break;
-        }
-    }
-
-    // 2. Apply Multiplier
-    // Z = 1x, Y = 2x, X = 3x (Standard 7th PC: 8-16-24, 9-18-27, 10-20-30)
-    if (category === 'Y') return zRate * 2;
-    if (category === 'X') return zRate * 3;
-    return zRate; // Default Z
-};
-
-const getMaharashtraDARate = (month, year) => {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-    let rate = 0;
-    for (let item of DA_RATES_MAHARASHTRA) {
-        if (dateStr >= item.date) {
-            rate = item.rate;
-        } else {
-            break;
-        }
-    }
-    return rate;
-};
-
-// --- HELPER FUNCTIONS ---
-const getMonthYearList = (startStr, endStr) => {
-    if (!startStr || !endStr) return [];
-    const s = startStr.length === 7 ? `${startStr}-01` : startStr;
-    const e = endStr.length === 7 ? `${endStr}-01` : endStr;
-    const start = new Date(s);
-    const end = new Date(e);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
-    const list = [];
-    let current = new Date(start.getFullYear(), start.getMonth(), 1);
-    const loopEnd = new Date(end.getFullYear(), end.getMonth(), 1);
-    while (current <= loopEnd) {
-        list.push({
-            month: current.getMonth() + 1,
-            year: current.getFullYear(),
-            label: `01.${String(current.getMonth() + 1).padStart(2, '0')}.${current.getFullYear()}`
-        });
-        current.setMonth(current.getMonth() + 1);
-    }
-    return list;
-};
-
-// --- CUSTOM DATEPICKER HEADER ---
-const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
-    const years = [];
-    const currentYear = new Date().getFullYear();
-    for (let i = 2015; i <= currentYear + 5; i++) years.push(i);
-    const months = MONTHS;
-
-    return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1, py: 0.5 }}>
-            <IconButton onClick={decreaseMonth} disabled={prevMonthButtonDisabled} size="small"><ChevronLeft fontSize="small" /></IconButton>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-                <select value={months[date.getMonth()]} onChange={({ target: { value } }) => changeMonth(months.indexOf(value))} style={{ border: 'none', fontWeight: 'bold', background: 'transparent', cursor: 'pointer', fontSize: '0.9rem' }}>
-                    {months.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <select value={date.getFullYear()} onChange={({ target: { value } }) => changeYear(parseInt(value))} style={{ border: 'none', fontWeight: 'bold', background: 'transparent', cursor: 'pointer', fontSize: '0.9rem' }}>
-                    {years.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-            </Box>
-            <IconButton onClick={increaseMonth} disabled={nextMonthButtonDisabled} size="small"><ChevronRight fontSize="small" /></IconButton>
-        </Box>
-    );
-};
-
-function ArrearsCalculator() {
-    // Basic Info 
-    const [basicInfo, setBasicInfo] = useState({
-        empName: 'Dr. Suhash Subhash Shelar',
-        designation: 'सहायक प्राध्यापक',
-        fromMonth: '2023-01-01',
-        toMonth: '2023-06-30',
-        category: 'NPS', // NPS or GPF
-        incrementMonth: 'July', // No Increment, January, July, Both
-        orderNo: 'महाराष्ट्र शासन वित्त विभाग शासन निर्णय क्र.मभवा-1324/प्रक्र.34/सेवा-9, दि.25.02.2025 अन्वये दि.01.07.2024 ते 31.01.2025 या कालावधीचे',
-        cityCategory: 'Z' // X, Y, Z
-    });
-
-    // Toggles
-    const [toggles, setToggles] = useState({
-        promotionEnabled: false,
-        autoDAMaharashtra: true, // Default ON
-        autoHRAMaharashtra: true // Default ON
-    });
-
-    // Due Components
-    const [dueComponents, setDueComponents] = useState({
-        pay: [{ from: '2023-01', to: '2023-06', amount: 65000 }],
-        daRate: [{ from: '2023-01', to: '2023-06', amount: 38 }],
-        hraRate: [{ from: '2023-01', to: '2023-06', amount: 10 }],
-        ta: [{ from: '2023-01', to: '2023-06', amount: 0 }]
-    });
-
-    // Drawn Components
-    const [drawnComponents, setDrawnComponents] = useState({
-        pay: [{ from: '2023-01', to: '2023-06', amount: 63100 }],
-        daRate: [{ from: '2023-01', to: '2023-06', amount: 37 }],
-        hraRate: [{ from: '2023-01', to: '2023-06', amount: 9 }],
-        ta: [{ from: '2023-01', to: '2023-06', amount: 0 }]
-    });
-
+const ArrearsCalculator = () => {
+    const headerRef = useRef(null);
     const [calculationResults, setCalculationResults] = useState([]);
 
-    // Promotion Periods State - Separate for Due and Drawn
+    // --- STATE MANAGEMENT ---
+    const [basicInfo, setBasicInfo] = useState({
+        empName: '', designation: '', fromMonth: '2023-01', toMonth: '2023-06',
+        orderNo: '', category: 'NPS', incrementMonth: 'July', cityCategory: 'Z'
+    });
+
+    const [toggles, setToggles] = useState({
+        autoDAMaharashtra: true,
+        autoHRAMaharashtra: true,
+        promotionEnabled: false
+    });
+
+    const [dueComponents, setDueComponents] = useState({ pay: [{ amount: '', from: '' }], daRate: [], hraRate: [], ta: [] });
+    const [drawnComponents, setDrawnComponents] = useState({ pay: [{ amount: '', from: '' }], daRate: [], hraRate: [], ta: [] });
+    
     const [duePromotionPeriods, setDuePromotionPeriods] = useState([]);
     const [drawnPromotionPeriods, setDrawnPromotionPeriods] = useState([]);
-    const [showDuePromotion, setShowDuePromotion] = useState(false);
-    const [showDrawnPromotion, setShowDrawnPromotion] = useState(false);
 
-    // Dynamic Columns State
-    const [customColumns, setCustomColumns] = useState([]); // Array of { id: string, label: string, type: 'fixed'|'basic_percent', percent: number }
-    const [newColumn, setNewColumn] = useState({ label: '', type: 'fixed', percent: '' });
+    const [customColumns, setCustomColumns] = useState([]);
+    const [newColumn, setNewColumn] = useState({ label: '', type: 'manual', percent: 0 });
 
-    // Two refs: one for the header (image capture), one for visual table (optional)
-    const headerRef = useRef(null);
+    const updateBasicInfo = (key, val) => setBasicInfo(prev => ({ ...prev, [key]: val }));
 
-    // --- EFFECT: SYNC DATES ---
-    useEffect(() => {
-        if (!toggles.promotionEnabled) {
-            const sync = (comps) => {
-                const newComps = { ...comps };
-                Object.keys(newComps).forEach(key => {
-                    if (newComps[key].length === 1) {
-                        newComps[key][0].from = basicInfo.fromMonth;
-                        newComps[key][0].to = basicInfo.toMonth;
-                    }
-                });
-                return newComps;
-            };
-            setDueComponents(prev => sync(prev));
-            setDrawnComponents(prev => sync(prev));
-        }
-    }, [basicInfo.fromMonth, basicInfo.toMonth, toggles.promotionEnabled]);
-
-    // --- EFFECT: CALCULATION ENGINE ---
-    useEffect(() => {
-        calculateArrears();
-    }, [basicInfo, toggles, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods]);
-
-    // --- EFFECT: AUTO-UPDATE RATES (DA & HRA) ---
-    useEffect(() => {
-        if (!basicInfo.fromMonth) return;
-
-        const [year, month] = basicInfo.fromMonth.split('-').map(Number);
-
-        // Calculate Rates
-        const daRate = getMaharashtraDARate(month, year);
-        const hraRate = getMaharashtraHRARate(month, year, basicInfo.cityCategory);
-
-        // Update Due Components
-        setDueComponents(prev => {
-            const newComps = { ...prev };
-
-            // Update DA
-            if (toggles.autoDAMaharashtra) {
-                const list = [...(newComps.daRate || [])];
-                if (list.length > 0) {
-                    list[0] = { ...list[0], amount: daRate };
-                    newComps.daRate = list;
-                }
-            }
-
-            // Update HRA
-            if (toggles.autoHRAMaharashtra) {
-                const list = [...(newComps.hraRate || [])];
-                if (list.length > 0) {
-                    list[0] = { ...list[0], amount: hraRate };
-                    newComps.hraRate = list;
-                }
-            }
-
-            return newComps;
-        });
-
-        // Update Drawn Components
-        setDrawnComponents(prev => {
-            const newComps = { ...prev };
-
-            // Update DA
-            if (toggles.autoDAMaharashtra) {
-                const list = [...(newComps.daRate || [])];
-                if (list.length > 0) {
-                    list[0] = { ...list[0], amount: daRate };
-                    newComps.daRate = list;
-                }
-            }
-
-            // Update HRA
-            if (toggles.autoHRAMaharashtra) {
-                const list = [...(newComps.hraRate || [])];
-                if (list.length > 0) {
-                    list[0] = { ...list[0], amount: hraRate };
-                    newComps.hraRate = list;
-                }
-            }
-
-            return newComps;
-        });
-
-    }, [basicInfo.fromMonth, basicInfo.cityCategory, toggles.autoDAMaharashtra, toggles.autoHRAMaharashtra]);
-
-
-
-    // --- EFFECT: SYNC PROMOTION HRA WITH CITY CATEGORY ---
-    useEffect(() => {
-        const updateHRA = (periods) => {
-            return periods.map(p => {
-                if (p.from) {
-                    const [y, m] = p.from.split('-').map(Number);
-                    return { ...p, hraRate: getMaharashtraHRARate(m, y, basicInfo.cityCategory) };
-                }
-                return p;
-            });
-        };
-
-        if (basicInfo.cityCategory) {
-            setDuePromotionPeriods(prev => updateHRA(prev));
-            setDrawnPromotionPeriods(prev => updateHRA(prev));
-        }
-    }, [basicInfo.cityCategory]);
-
-    const getValueForMonth = (componentList, month, year) => {
-        if (!componentList || !Array.isArray(componentList)) return 0;
-        const dateStr = `${year}-${String(month).padStart(2, '0')}`;
-        const item = componentList.find(c => {
-            if (!c.from || !c.to) return false;
-            const fromMonth = c.from.substring(0, 7);
-            const toMonth = c.to.substring(0, 7);
-            return dateStr >= fromMonth && dateStr <= toMonth;
-        });
-        if (item) return parseFloat(item.amount) || 0;
-        if (componentList.length > 0) return parseFloat(componentList[0].amount) || 0;
-        return 0;
-    };
-
-    const calculateArrears = () => {
-        try {
-            const months = getMonthYearList(basicInfo.fromMonth, basicInfo.toMonth);
-            const results = [];
-            let runningPay = (dueComponents.pay && dueComponents.pay.length > 0) ? parseFloat(dueComponents.pay[0].amount) || 0 : 0;
-            let runningDrawnPay = (drawnComponents.pay && drawnComponents.pay.length > 0) ? parseFloat(drawnComponents.pay[0].amount) || 0 : 0;
-
-            // Running Overrides for Promotion Periods
-            let runningDueTA = null;
-            let runningDrawnTA = null;
-            const runningDueCustom = {};
-            const runningDrawnCustom = {};
-
-            months.forEach((m, index) => {
-                const { month, year, label } = m;
-                const dateStr = `${year}-${String(month).padStart(2, '0')}`;
-
-                // --- DUE PAY LOGIC ---
-                const periodStartEntry = dueComponents.pay ? dueComponents.pay.find(c => c.from && c.from.substring(0, 7) === dateStr) : null;
-                let isIncrementApplies = false;
-                if (periodStartEntry) {
-                    runningPay = parseFloat(periodStartEntry.amount) || 0;
-                } else if (index > 0) {
-                    const isJanInc = basicInfo.incrementMonth === 'January' && month === 1;
-                    const isJulyInc = basicInfo.incrementMonth === 'July' && month === 7;
-                    const isBothInc = basicInfo.incrementMonth === 'Both' && (month === 1 || month === 7);
-                    if (isJanInc || isJulyInc || isBothInc) {
-                        const incrementAmt = Math.round((runningPay * 0.03) / 100) * 100;
-                        runningPay = runningPay + incrementAmt;
-                        isIncrementApplies = true;
-                    }
-                }
-
-                // --- CHECK PROMOTION PERIODS (DUE) ---
-                const duePromotionPeriod = duePromotionPeriods.find(p => p.from && p.from.startsWith(dateStr));
-                if (duePromotionPeriod) {
-                    if (duePromotionPeriod.pay > 0) runningPay = duePromotionPeriod.pay;
-                    // Update Sticky TA if present
-                    if (duePromotionPeriod.ta !== undefined && duePromotionPeriod.ta !== '') {
-                        runningDueTA = parseFloat(duePromotionPeriod.ta) || 0;
-                    }
-                    // Update Sticky Custom if present
-                    if (duePromotionPeriod.custom) {
-                        Object.keys(duePromotionPeriod.custom).forEach(key => {
-                            if (duePromotionPeriod.custom[key] !== undefined && duePromotionPeriod.custom[key] !== '') {
-                                runningDueCustom[key] = parseFloat(duePromotionPeriod.custom[key]) || 0;
-                            }
-                        });
-                    }
-                }
-
-                // --- DRAWN PAY LOGIC ---
-                const drawnStartEntry = drawnComponents.pay ? drawnComponents.pay.find(c => c.from && c.from.substring(0, 7) === dateStr) : null;
-                if (drawnStartEntry) {
-                    runningDrawnPay = parseFloat(drawnStartEntry.amount) || 0;
-                } else if (index > 0) {
-                    const isJanInc = basicInfo.incrementMonth === 'January' && month === 1;
-                    const isJulyInc = basicInfo.incrementMonth === 'July' && month === 7;
-                    const isBothInc = basicInfo.incrementMonth === 'Both' && (month === 1 || month === 7);
-                    if (isJanInc || isJulyInc || isBothInc) {
-                        const incrementAmt = Math.round((runningDrawnPay * 0.03) / 100) * 100;
-                        runningDrawnPay = runningDrawnPay + incrementAmt;
-                    }
-                }
-
-                // --- CHECK PROMOTION PERIODS (DRAWN) ---
-                const drawnPromotionPeriod = drawnPromotionPeriods.find(p => p.from && p.from.startsWith(dateStr));
-                if (drawnPromotionPeriod) {
-                    if (drawnPromotionPeriod.pay > 0) runningDrawnPay = drawnPromotionPeriod.pay;
-                    // Update Sticky TA if present
-                    if (drawnPromotionPeriod.ta !== undefined && drawnPromotionPeriod.ta !== '') {
-                        runningDrawnTA = parseFloat(drawnPromotionPeriod.ta) || 0;
-                    }
-                    // Update Sticky Custom if present
-                    if (drawnPromotionPeriod.custom) {
-                        Object.keys(drawnPromotionPeriod.custom).forEach(key => {
-                            if (drawnPromotionPeriod.custom[key] !== undefined && drawnPromotionPeriod.custom[key] !== '') {
-                                runningDrawnCustom[key] = parseFloat(drawnPromotionPeriod.custom[key]) || 0;
-                            }
-                        });
-                    }
-                }
-
-                // --- CALCULATE TOTALS ---
-                let duePay = runningPay;
-                let drawnPay = runningDrawnPay;
-                const isIncrementMonth = isIncrementApplies;
-
-                // Due
-                let dueDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(dueComponents.daRate, month, year);
-                let dueHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(dueComponents.hraRate, month, year);
-
-                // TA Logic: Use Sticky -> Fallback to Standard
-                let dueTA = runningDueTA !== null ? runningDueTA : getValueForMonth(dueComponents.ta, month, year);
-
-                // Override DA and HRA rates if promotion periods specify them (Only for this period, or sticky too? Standard is Sticky for Pay, usually Rates are period specific unless defined otherwise. Let's keep Rates period specific for now as per previous logic, but TA is definitely sticky requested)
-                // Actually user asked for TA/Custom. Rates usually auto-calc.
-                if (duePromotionPeriod) {
-                    if (duePromotionPeriod.daRate > 0) dueDARate = duePromotionPeriod.daRate;
-                    if (duePromotionPeriod.hraRate > 0) dueHRA = duePromotionPeriod.hraRate;
-                }
-
-                // Custom Columns Due
-                let dueCustomTotal = 0;
-                const dueCustomValues = {};
-                customColumns.forEach(col => {
-                    let val = 0;
-                    if (col.type === 'basic_percent') {
-                        val = Math.round(duePay * (col.percent / 100));
-                    } else if (col.type === 'basic_da_percent') {
-                        val = Math.round((duePay + dueDAAmt) * (col.percent / 100));
-                    } else {
-                        val = runningDueCustom[col.id] !== undefined ? runningDueCustom[col.id] : getValueForMonth(dueComponents[col.id] || [], month, year);
-                    }
-                    dueCustomValues[col.id] = val;
-                    dueCustomTotal += val;
-                });
-
-                // Minimum HRA Logic
-                const getMinHRA = (category) => {
-                    if (category === 'X') return 5400;
-                    if (category === 'Y') return 3600;
-                    if (category === 'Z') return 1800;
-                    return 0;
-                };
-                const minHRA = getMinHRA(basicInfo.cityCategory);
-
-                const dueDAAmt = Math.round(duePay * dueDARate / 100);
-                let dueHRAAmt = Math.round(duePay * dueHRA / 100);
-                if (dueHRAAmt < minHRA) dueHRAAmt = minHRA;
-                const dueTotal = duePay + dueDAAmt + dueHRAAmt + dueTA + dueCustomTotal;
-
-                // Drawn
-                let drawnDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(drawnComponents.daRate, month, year);
-                let drawnHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(drawnComponents.hraRate, month, year);
-
-                // TA Logic Drawn
-                let drawnTA = runningDrawnTA !== null ? runningDrawnTA : getValueForMonth(drawnComponents.ta, month, year);
-
-                // Override Drawn DA and HRA rates if promotion period specifies them
-                if (drawnPromotionPeriod) {
-                    if (drawnPromotionPeriod.daRate > 0) drawnDARate = drawnPromotionPeriod.daRate;
-                    if (drawnPromotionPeriod.hraRate > 0) drawnHRA = drawnPromotionPeriod.hraRate;
-                }
-
-                // Custom Columns Drawn
-                let drawnCustomTotal = 0;
-                const drawnCustomValues = {};
-                customColumns.forEach(col => {
-                    let val = 0;
-                    if (col.type === 'basic_percent') {
-                        val = Math.round(drawnPay * (col.percent / 100));
-                    } else if (col.type === 'basic_da_percent') {
-                        val = Math.round((drawnPay + drawnDAAmt) * (col.percent / 100));
-                    } else {
-                        val = runningDrawnCustom[col.id] !== undefined ? runningDrawnCustom[col.id] : getValueForMonth(drawnComponents[col.id] || [], month, year);
-                    }
-                    drawnCustomValues[col.id] = val;
-                    drawnCustomTotal += val;
-                });
-
-                const drawnDAAmt = Math.round(drawnPay * drawnDARate / 100);
-                let drawnHRAAmt = Math.round(drawnPay * drawnHRA / 100);
-                if (drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
-                const drawnTotal = drawnPay + drawnDAAmt + drawnHRAAmt + drawnTA + drawnCustomTotal;
-
-                // Difference
-                const diffPay = duePay - drawnPay;
-                const diffDA = dueDAAmt - drawnDAAmt;
-                const diffHRA = dueHRAAmt - drawnHRAAmt;
-                const diffTA = dueTA - drawnTA;
-                const diffCustom = {};
-                customColumns.forEach(col => {
-                    diffCustom[col.id] = (dueCustomValues[col.id] || 0) - (drawnCustomValues[col.id] || 0);
-                });
-                const diffTotal = dueTotal - drawnTotal;
-
-                // Deductions
-                let dcps = 0;
-                if (basicInfo.category === 'NPS') {
-                    dcps = Math.round(diffTotal * 0.10);
-                }
-                const finalAmount = diffTotal - dcps;
-
-                results.push({
-                    label: label + (isIncrementMonth ? ' (INC)' : ''),
-                    isIncrementMonth,
-                    due: { pay: duePay, daRate: dueDARate, da: dueDAAmt, hraRate: dueHRA, hra: dueHRAAmt, ta: dueTA, custom: dueCustomValues, total: dueTotal },
-                    drawn: { pay: drawnPay, daRate: drawnDARate, da: drawnDAAmt, hraRate: drawnHRA, hra: drawnHRAAmt, ta: drawnTA, custom: drawnCustomValues, total: drawnTotal },
-                    diff: { pay: diffPay, da: diffDA, hra: diffHRA, ta: diffTA, custom: diffCustom, total: diffTotal },
-                    dcps,
-                    finalAmount
-                });
-            });
-
-            setCalculationResults(results);
-        } catch (error) {
-            console.error("Calculation Error:", error);
-        }
-    };
-
-    const updateBasicInfo = (field, value) => setBasicInfo(prev => ({ ...prev, [field]: value }));
-    const updateComponent = (type, compKey, index, field, value) => {
-        const setter = type === 'due' ? setDueComponents : setDrawnComponents;
-        setter(prev => {
-            const list = [...(prev[compKey] || [])];
-            let newItem = { ...list[index], [field]: value };
-
-            // AUTO-CALC LOGIC: Recalculate rates when 'From' month changes
-            if (field === 'from' && value) {
-                const dateObj = new Date(value + "-01"); // value is YYYY-MM
-                if (!isNaN(dateObj.getTime())) {
-                    const m = dateObj.getMonth() + 1;
-                    const y = dateObj.getFullYear();
-
-                    // Auto-DA
-                    if (compKey === 'daRate' && toggles.autoDAMaharashtra) {
-                        newItem.amount = getMaharashtraDARate(m, y);
-                    }
-                    // Auto-HRA
-                    if (compKey === 'hraRate' && toggles.autoHRAMaharashtra) {
-                        newItem.amount = getMaharashtraHRARate(m, y, basicInfo.cityCategory);
-                    }
-                }
-            }
-
-            list[index] = newItem;
-            return { ...prev, [compKey]: list };
+    const updateComponent = (type, key, idx, field, val) => {
+        const setFn = type === 'due' ? setDueComponents : setDrawnComponents;
+        setFn(prev => {
+            const next = { ...prev };
+            if (!next[key]) next[key] = [];
+            const list = [...next[key]];
+            if (!list[idx]) list[idx] = { amount: '', from: '' };
+            list[idx] = { ...list[idx], [field]: val };
+            next[key] = list;
+            return next;
         });
     };
 
     const addCustomColumn = () => {
         if (!newColumn.label) return;
-        const id = newColumn.label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-        setCustomColumns([...customColumns, {
-            id,
-            label: newColumn.label,
-            type: newColumn.type,
-            percent: parseFloat(newColumn.percent) || 0
-        }]);
-
-        // Initialize state for this column in both Due and Drawn (only needed if fixed, but safe to add anyway)
-        const defaultPeriod = [{ from: basicInfo.fromMonth, to: basicInfo.toMonth, amount: 0 }];
-        setDueComponents(prev => ({ ...prev, [id]: defaultPeriod }));
-        setDrawnComponents(prev => ({ ...prev, [id]: defaultPeriod }));
-
-        // Reset Form
-        setNewColumn({ label: '', type: 'fixed', percent: '' });
+        const id = newColumn.label.toLowerCase().replace(/\s+/g, '_');
+        setCustomColumns([...customColumns, { ...newColumn, id }]);
+        setDueComponents(prev => ({ ...prev, [id]: [] }));
+        setDrawnComponents(prev => ({ ...prev, [id]: [] }));
+        setNewColumn({ label: '', type: 'manual', percent: 0 });
     };
 
-    const removeCustomColumn = (id) => {
-        setCustomColumns(customColumns.filter(c => c.id !== id));
-        // Optional: Cleanup components state, but not strictly necessary for functionality
-    };
-
-    // --- HYBRID GENERATION: Image for Header (Text Fix) + Vector for Table (Clarity) ---
-    const generatePDF = async () => {
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape, millimeters, A4
-        const pageWidth = doc.internal.pageSize.getWidth();
-
-        let startY = 15;
-
-        // 1. HEADER GENERATION (High Quality Image)
-        if (headerRef.current) {
-            // Capture header with HIGHER scale for clarity
-            const canvas = await html2canvas(headerRef.current, { scale: 4, useCORS: true });
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-
-            // Adjust width to fit page margins (10mm left/right)
-            const imgWidth = pageWidth - 20;
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-            // Use FAST compression to reduce artifacts
-            doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight, undefined, 'FAST');
-            startY = 10 + imgHeight + 1; // Set table to start below image (REDUCED BUFFER FROM 5 to 1)
-        }
-
-        // 2. TABLE GENERATION (Vector Based - Crystal Clear Font)
-
-        // Define Column Headers
-        const headRows = [
-            [
-                { content: 'SR', rowSpan: 2, styles: { valign: 'middle' } },
-                { content: 'MONTH', rowSpan: 2, styles: { valign: 'middle' } },
-                { content: 'DUE', colSpan: 5 + customColumns.length, styles: { halign: 'center' } },
-                { content: 'DRAWN', colSpan: 5 + customColumns.length, styles: { halign: 'center' } },
-                { content: 'DIFFERENCE', colSpan: 5 + customColumns.length, styles: { halign: 'center' } },
-            ],
-            [
-                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL',
-                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL',
-                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'
-            ]
-        ];
-
-        // Add NPS columns if enabled
-        if (basicInfo.category === 'NPS') {
-            headRows[0].push(
-                { content: 'DCPS\n10%', rowSpan: 2, styles: { valign: 'middle' } },
-                { content: 'NPS\n14%', rowSpan: 2, styles: { valign: 'middle' } }
-            );
-        }
-
-        // Prepare Body Data
-        const bodyData = calculationResults.map((row, index) => {
-            const baseRow = [
-                index + 1,
-                row.label + (row.isIncrementMonth ? ' (INC)' : ''),
-                row.due.pay, row.due.da, row.due.hra, row.due.ta, ...customColumns.map(c => row.due.custom[c.id] || 0), row.due.total,
-                row.drawn.pay, row.drawn.da, row.drawn.hra, row.drawn.ta, ...customColumns.map(c => row.drawn.custom[c.id] || 0), row.drawn.total,
-                row.diff.pay, row.diff.da, row.diff.hra, row.diff.ta, ...customColumns.map(c => row.diff.custom[c.id] || 0), row.diff.total
-            ];
-
-            if (basicInfo.category === 'NPS') {
-                const nps14 = Math.round(row.diff.total * 0.14);
-                baseRow.push(row.dcps, nps14);
-            }
-            return baseRow;
+    // --- CALCULATION TRIGGER ---
+    useEffect(() => {
+        const results = calculateArrearsLogic({
+            basicInfo, dueComponents, drawnComponents, 
+            duePromotionPeriods, drawnPromotionPeriods, 
+            toggles, customColumns
         });
+        setCalculationResults(results);
+    }, [basicInfo, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods, toggles, customColumns]);
 
-        // 3. ADD TOTAL ROW (With Merge Logic)
+    // --- PDF GENERATION ---
+    const generatePDF = async () => {
+        const doc = new jsPDF('l', 'mm', 'a3');
+        const headerCanvas = await html2canvas(headerRef.current, { scale: 2 });
+        const headerImg = headerCanvas.toDataURL('image/png');
+        const imgProps = doc.getImageProperties(headerImg);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        doc.addImage(headerImg, 'PNG', 0, 5, pdfWidth, imgHeight);
+
+        const tableData = calculationResults.map((r, i) => [
+            i + 1, r.label,
+            r.due.pay, r.due.da, r.due.hra, r.due.ta, ...customColumns.map(c => r.due.custom[c.id]), r.due.total,
+            r.drawn.pay, r.drawn.da, r.drawn.hra, r.drawn.ta, ...customColumns.map(c => r.drawn.custom[c.id]), r.drawn.total,
+            r.diff.pay, r.diff.da, r.diff.hra, r.diff.ta, ...customColumns.map(c => r.diff.custom[c.id]), r.diff.total,
+            ...(basicInfo.category === 'NPS' ? [r.dcps, Math.round(r.diff.total * 0.14)] : [r.diff.total])
+        ]);
+
         const totalRow = [
-            { content: 'TOTAL', colSpan: 2, styles: { halign: 'center', fontStyle: 'bold' } }, // Merge SR and MONTH
-
-            // Due Sums
+            '', 'TOTAL',
             calculationResults.reduce((s, r) => s + r.due.pay, 0),
             calculationResults.reduce((s, r) => s + r.due.da, 0),
             calculationResults.reduce((s, r) => s + r.due.hra, 0),
             calculationResults.reduce((s, r) => s + r.due.ta, 0),
             ...customColumns.map(c => calculationResults.reduce((s, r) => s + (r.due.custom[c.id] || 0), 0)),
             calculationResults.reduce((s, r) => s + r.due.total, 0),
-
-            // Drawn Sums
             calculationResults.reduce((s, r) => s + r.drawn.pay, 0),
             calculationResults.reduce((s, r) => s + r.drawn.da, 0),
             calculationResults.reduce((s, r) => s + r.drawn.hra, 0),
             calculationResults.reduce((s, r) => s + r.drawn.ta, 0),
             ...customColumns.map(c => calculationResults.reduce((s, r) => s + (r.drawn.custom[c.id] || 0), 0)),
             calculationResults.reduce((s, r) => s + r.drawn.total, 0),
-
-            // Diff Sums
             calculationResults.reduce((s, r) => s + r.diff.pay, 0),
             calculationResults.reduce((s, r) => s + r.diff.da, 0),
             calculationResults.reduce((s, r) => s + r.diff.hra, 0),
             calculationResults.reduce((s, r) => s + r.diff.ta, 0),
             ...customColumns.map(c => calculationResults.reduce((s, r) => s + (r.diff.custom[c.id] || 0), 0)),
-            calculationResults.reduce((s, r) => s + r.diff.total, 0)
+            calculationResults.reduce((s, r) => s + r.diff.total, 0),
+            ...(basicInfo.category === 'NPS' ? 
+                [calculationResults.reduce((s, r) => s + r.dcps, 0), calculationResults.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)] : 
+                [calculationResults.reduce((s, r) => s + r.diff.total, 0)])
         ];
 
-        if (basicInfo.category === 'NPS') {
-            totalRow.push(
-                calculationResults.reduce((s, r) => s + r.dcps, 0),
-                calculationResults.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)
-            );
-        }
-
-        bodyData.push(totalRow);
-
-        // 4. GENERATE TABLE
-
-        // Define Column Ranges for Coloring
-        const dueStart = 2; // SR=0, MONTH=1, DUE START=2
-        const dueEnd = 2 + (5 + customColumns.length) - 1; // 2 + count - 1
-
-        const drawnStart = dueEnd + 1;
-        const drawnEnd = drawnStart + (5 + customColumns.length) - 1;
-
-        const diffStart = drawnEnd + 1;
-        const diffEnd = diffStart + (5 + customColumns.length) - 1;
-
         doc.autoTable({
-            startY: startY,
-            head: headRows,
-            body: bodyData,
+            startY: imgHeight + 10,
+            head: [[
+                { content: 'SR', rowSpan: 2 }, { content: 'MONTH', rowSpan: 2 },
+                { content: 'DUE', colSpan: 5 + customColumns.length, styles: { halign: 'center', fillColor: [224, 231, 255] } },
+                { content: 'DRAWN', colSpan: 5 + customColumns.length, styles: { halign: 'center', fillColor: [224, 231, 255] } },
+                { content: 'DIFFERENCE', colSpan: 5 + customColumns.length, styles: { halign: 'center', fillColor: [224, 231, 255] } },
+                ...(basicInfo.category === 'NPS' ? [{ content: 'DCPS', rowSpan: 2 }, { content: 'NPS 14%', rowSpan: 2 }] : [{ content: 'FINAL', rowSpan: 2 }])
+            ], [
+                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL',
+                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL',
+                'PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'
+            ]],
+            body: [...tableData, totalRow],
             theme: 'grid',
-            margin: { top: 10, right: 10, bottom: 10, left: 10 }, // Align table with header image (x=10, width=PageWidth-20)
-            headStyles: {
-                fillColor: [52, 73, 94], // Default Dark Grey (covers SR, MONTH)
-                textColor: 255,
-                fontStyle: 'bold',
-                halign: 'center',
-                valign: 'middle',
-                fontSize: 10,
-                lineWidth: 0.1,
-                lineColor: [0, 0, 0]
-            },
-            styles: {
-                fontSize: 9,
-                cellPadding: 1.5,
-                valign: 'middle',
-                halign: 'center', // Center align all text
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,
-                overflow: 'linebreak',
-                textColor: [50, 50, 50]
-            },
-            columnStyles: {
-                0: { cellWidth: 10 }, // SR
-                1: { cellWidth: 22 }, // MONTH
-
-                // Bold Total Columns
-                [dueEnd]: { fontStyle: 'bold' },
-                [drawnEnd]: { fontStyle: 'bold' },
-                [diffEnd]: { fontStyle: 'bold' },
-            },
-            didParseCell: function (data) {
-                // --- BODY STYLING ---
-                if (data.section === 'body') {
-                    // Total Row Styling (Dark Grey)
-                    if (data.row.index === bodyData.length - 1) {
-                        data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.fillColor = [220, 220, 220];
-                        data.cell.styles.textColor = [0, 0, 0];
-                        return;
-                    }
-
-                    // Section Background Colors (Light Tints)
-                    // Due Section (Light Green)
-                    if (data.column.index >= dueStart && data.column.index <= dueEnd) {
-                        data.cell.styles.fillColor = [235, 250, 240];
-                    }
-                    // Drawn Section (Light Orange)
-                    else if (data.column.index >= drawnStart && data.column.index <= drawnEnd) {
-                        data.cell.styles.fillColor = [254, 245, 230];
-                    }
-                    // Difference Section (Light Blue)
-                    else if (data.column.index >= diffStart && data.column.index <= diffEnd) {
-                        data.cell.styles.fillColor = [235, 245, 251];
-                    }
-                }
-
-                // --- HEADER STYLING ---
-                if (data.section === 'head') {
-                    // Due Header (Green)
-                    if (data.column.index >= dueStart && data.column.index <= dueEnd) {
-                        data.cell.styles.fillColor = [25, 115, 60]; // Darker Green for B&W Print
-                    }
-                    // Drawn Header (Orange)
-                    else if (data.column.index >= drawnStart && data.column.index <= drawnEnd) {
-                        data.cell.styles.fillColor = [200, 100, 10]; // Darker Orange/Rust for B&W Print
-                    }
-                    // Difference Header (Blue)
-                    else if (data.column.index >= diffStart && data.column.index <= diffEnd) {
-                        data.cell.styles.fillColor = [20, 80, 140]; // Darker Blue for B&W Print
-                    }
-                    // NPS Headers (Dark Grey/Black)
-                    else if (data.column.index > diffEnd) {
-                        data.cell.styles.fillColor = [44, 62, 80];
-                    }
-                }
-            },
-            didDrawCell: function (data) {
-                // Determine column indices for section ends
-                // Due Range
-                const dueEndIdx = 2 + (5 + customColumns.length) - 1;
-                // Drawn Range
-                const drawnEndIdx = dueEndIdx + (5 + customColumns.length);
-                // Diff Range
-                const diffEndIdx = drawnEndIdx + (5 + customColumns.length);
-
-                const sections = [
-                    { start: 0, end: 1 }, // SR and Month Section
-                    { start: 2, end: dueEndIdx }, // Due Section
-                    { start: dueEndIdx + 1, end: drawnEndIdx }, // Drawn Section
-                    { start: drawnEndIdx + 1, end: diffEndIdx }, // Difference Section
-                    { start: diffEndIdx + 1, end: diffEndIdx + 2 } // DCPS and NPS Section
-                ];
-
-                const isHeader = data.section === 'head';
-                const isBody = data.section === 'body';
-                const isLastRow = data.row.index === bodyData.length - 1;
-                const colIdx = data.column.index;
-
-                if (isHeader || isBody) {
-                    sections.forEach(sec => {
-                        if (colIdx >= sec.start && colIdx <= sec.end) {
-                            doc.setDrawColor(0, 0, 0);
-                            doc.setLineWidth(0.5); // Thicker line for section box
-
-                            // Right Border (End Column)
-                            if (colIdx === sec.end) {
-                                doc.line(data.cell.x + data.cell.width, data.cell.y, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-                            }
-                            // Left Border (Start Column)
-                            if (colIdx === sec.start) {
-                                doc.line(data.cell.x, data.cell.y, data.cell.x, data.cell.y + data.cell.height);
-                            }
-                            // Top Border (Header Only) - REMOVE or Make THINNER if user dislikes "Dark Bold"
-                            // User said: "I DONT WANT THIS DARK BOLD LINE THERE"
-                            // So we remove the bold top border for headers.
-
-                            // Bottom Border (Header Separator & Last Body Row)
-                            if (isHeader) {
-                                // Draw bold line at bottom of header (Separator)
-                                if (data.row.index === headRows.length - 1) {
-                                    doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-                                }
-                                // Draw bold line at top of header (Table Top)
-                                if (data.row.index === 0) {
-                                    doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y);
-                                }
-                            }
-
-                            if (isBody && isLastRow) {
-                                doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-                            }
-                        }
-                    });
-                }
-            }
+            styles: { fontSize: 8, cellPadding: 2, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
+            headStyles: { fillColor: [240, 240, 240], fontStyle: 'bold', halign: 'center' },
+            bodyStyles: { halign: 'right' },
+            columnStyles: { 1: { halign: 'left', fontStyle: 'bold' } }
         });
 
-
-
-        doc.save(`Arrears_${basicInfo.empName.replace(/\s+/g, '_')}.pdf`);
+        doc.save(`Arrears_Statement_${basicInfo.empName || 'Employee'}.pdf`);
     };
 
-    const renderComponentInputs = (title, type, compKey, label, inputClass) => {
-        const comps = (type === 'due' ? dueComponents[compKey] : drawnComponents[compKey]) || [];
-        const isDue = type === 'due';
+    // --- SHARED RENDER HELPERS ---
+    const formatDate = (date) => date ? date.toISOString().split('T')[0].substring(0, 7) : '';
+    
+    const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
+        const years = [];
+        const currentYear = new Date().getFullYear();
+        for (let i = 2015; i <= currentYear + 5; i++) years.push(i);
         return (
-            <React.Fragment>
-                {comps.map((item, idx) => (
-                    <div key={idx} className={"input-group " + inputClass} style={{ marginBottom: idx < comps.length - 1 ? '10px' : '0' }}>
-                        <label className="input-label">{label}</label>
-                        <span className="currency-icon">₹</span>
-                        <input
-                            type="number"
-                            className="input-field"
-                            placeholder="0"
-                            value={item.amount}
-                            onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
-                        />
-                    </div>
-                ))}
-            </React.Fragment>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1, py: 0.5 }}>
+                <IconButton onClick={decreaseMonth} disabled={prevMonthButtonDisabled} size="small"><ChevronLeft fontSize="small" /></IconButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <select value={MONTHS[date.getMonth()]} onChange={({ target: { value } }) => changeMonth(MONTHS.indexOf(value))} style={{ border: 'none', fontWeight: 'bold' }}>
+                        {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <select value={date.getFullYear()} onChange={({ target: { value } }) => changeYear(parseInt(value))} style={{ border: 'none', fontWeight: 'bold' }}>
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                </div>
+                <IconButton onClick={increaseMonth} disabled={nextMonthButtonDisabled} size="small"><ChevronRight fontSize="small" /></IconButton>
+            </Box>
         );
     };
+
+    const renderComponentInputs = (type, compKey, label, inputClass) => (
+        <ComponentInputGroup 
+            type={type} compKey={compKey} label={label} inputClass={inputClass} 
+            components={type === 'due' ? dueComponents : drawnComponents}
+            updateComponent={updateComponent}
+        />
+    );
 
     return (
         <ThemeProvider theme={compactTheme}>
             <div className="arrears-container">
                 <div className="arrears-grid">
+                    <EmployeeDetailsCard basicInfo={basicInfo} updateBasicInfo={updateBasicInfo} formatDate={formatDate} CustomHeader={CustomHeader} />
+                    <ConfigurationCard toggles={toggles} setToggles={setToggles} basicInfo={basicInfo} updateBasicInfo={updateBasicInfo} newColumn={newColumn} setNewColumn={setNewColumn} addCustomColumn={addCustomColumn} />
                     
-                    {/* SECTION 1: EMPLOYEE DETAILS */}
-                    <div className="arrears-card">
-                        <div className="card-header">
-                            <span className="badge badge-blue">01</span>
-                            <h2 className="card-title">Employee Details</h2>
-                        </div>
-                        <div className="card-body grid-3x2">
-                            <div className="input-group">
-                                <label className="input-label">Name</label>
-                                <input className="input-field" type="text" value={basicInfo.empName} onChange={e => updateBasicInfo('empName', e.target.value)} />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Designation</label>
-                                <input className="input-field" type="text" placeholder="सहायक प्राध्यापक" value={basicInfo.designation} onChange={e => updateBasicInfo('designation', e.target.value)} />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">From Month</label>
-                                <div className="date-picker-wrapper">
-                                    <DatePicker
-                                        selected={basicInfo.fromMonth ? new Date(basicInfo.fromMonth) : null}
-                                        onChange={(date) => updateBasicInfo('fromMonth', formatDate(date))}
-                                        dateFormat="yyyy-MM-dd"
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<input className="input-field" placeholder="2023-01-01" />}
-                                    />
-                                </div>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">To Month</label>
-                                <div className="date-picker-wrapper">
-                                    <DatePicker
-                                        selected={basicInfo.toMonth ? new Date(basicInfo.toMonth) : null}
-                                        onChange={(date) => updateBasicInfo('toMonth', formatDate(date))}
-                                        dateFormat="yyyy-MM-dd"
-                                        renderCustomHeader={CustomHeader}
-                                        customInput={<input className="input-field" placeholder="2023-06-30" />}
-                                    />
-                                </div>
-                            </div>
-                            <div className="input-group col-span-2">
-                                <label className="input-label">GR / Order Title</label>
-                                <input className="input-field" type="text" placeholder="महाराष्ट्र शासन वित्त विभाग..." value={basicInfo.orderNo} onChange={e => updateBasicInfo('orderNo', e.target.value)} />
-                            </div>
-                        </div>
-                    </div>
+                    <DueDrawnCard 
+                        type="due" title="DUE AMOUNT" subtitle="देय रक्कम"
+                        components={dueComponents} updateComponent={updateComponent} toggles={toggles} customColumns={customColumns}
+                        renderComponentInputs={renderComponentInputs}
+                        addPeriod={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
+                    />
 
-                    {/* SECTION 2: CONFIGURATION */}
-                    <div className="arrears-card">
-                        <div className="card-header">
-                            <span className="badge badge-purple">02</span>
-                            <h2 className="card-title">Configuration</h2>
-                        </div>
-                        <div className="card-body grid-3x2">
-                            <div className="input-group">
-                                <label className="input-label">Auto-DA</label>
-                                <div className="switch-container">
-                                    <span className="switch-label">Auto-DA {toggles.autoDAMaharashtra ? 'ON' : 'OFF'}</span>
-                                    <Switch size="small" checked={toggles.autoDAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoDAMaharashtra: e.target.checked }))} />
-                                </div>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Auto-HRA</label>
-                                <div className="switch-container">
-                                    <span className="switch-label">Auto-HRA {toggles.autoHRAMaharashtra ? 'ON' : 'OFF'}</span>
-                                    <Switch size="small" checked={toggles.autoHRAMaharashtra} onChange={e => setToggles(p => ({ ...p, autoHRAMaharashtra: e.target.checked }))} color="secondary" />
-                                </div>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Category</label>
-                                <select className="input-field" value={basicInfo.category} onChange={e => updateBasicInfo('category', e.target.value)}>
-                                    <option value="NPS">NPS</option>
-                                    <option value="GPF">GPF</option>
-                                </select>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">City (HRA)</label>
-                                <select className="input-field" value={basicInfo.cityCategory} onChange={e => updateBasicInfo('cityCategory', e.target.value)}>
-                                    <option value="X">X (Metro)</option>
-                                    <option value="Y">Y (City)</option>
-                                    <option value="Z">Z (Rural)</option>
-                                </select>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Increment</label>
-                                <select className="input-field" value={basicInfo.incrementMonth} onChange={e => updateBasicInfo('incrementMonth', e.target.value)}>
-                                    <option value="No Increment">None</option>
-                                    <option value="January">January</option>
-                                    <option value="July">July</option>
-                                    <option value="Both">Both</option>
-                                </select>
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Custom Col</label>
-                                <div className="custom-col-group">
-                                    <input className="input-field" type="text" placeholder="Custom Col" value={newColumn.label} onChange={(e) => setNewColumn({ ...newColumn, label: e.target.value })} />
-                                    <button className="btn-add-col" onClick={addCustomColumn}>+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SECTION 3: DUE AMOUNT */}
-                    <div className="arrears-card due-card">
-                        <div className="card-header">
-                            <div className="header-title-container">
-                                <AccountBalance fontSize="small" />
-                                <h2 className="header-title">DUE AMOUNT</h2>
-                            </div>
-                            <p className="header-subtitle">देय रक्कम</p>
-                        </div>
-                        <div className="card-body vertical-stack">
-                            {renderComponentInputs('Due', 'due', 'pay', 'Basic Pay', 'due-input')}
-                            {renderComponentInputs('Due', 'due', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`, 'due-input')}
-                            {renderComponentInputs('Due', 'due', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`, 'due-input')}
-                            {renderComponentInputs('Due', 'due', 'ta', 'Transport Allowance', 'due-input')}
-                            {customColumns.map(col => renderComponentInputs(col.label, 'due', col.id, col.label, 'due-input'))}
-                        </div>
-                        <div className="card-footer">
-                            <button className="btn-add-period btn-blue" onClick={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>PROMOTION / TIMEBOUND DETAILS [+ Add Period]</button>
-                        </div>
-                    </div>
-
-                    {/* SECTION 4: DRAWN AMOUNT */}
-                    <div className="arrears-card drawn-card">
-                        <div className="card-header">
-                            <div className="header-title-container">
-                                <TrendingDown fontSize="small" />
-                                <h2 className="header-title">DRAWN AMOUNT</h2>
-                            </div>
-                            <p className="header-subtitle">पूर्वी दिलेले वेतन</p>
-                        </div>
-                        <div className="card-body vertical-stack">
-                            {renderComponentInputs('Drawn', 'drawn', 'pay', 'Basic Pay', 'drawn-input')}
-                            {renderComponentInputs('Drawn', 'drawn', 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`, 'drawn-input')}
-                            {renderComponentInputs('Drawn', 'drawn', 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`, 'drawn-input')}
-                            {renderComponentInputs('Drawn', 'drawn', 'ta', 'Transport Allowance', 'drawn-input')}
-                            {customColumns.map(col => renderComponentInputs(col.label, 'drawn', col.id, col.label, 'drawn-input'))}
-                        </div>
-                        <div className="card-footer">
-                            <button className="btn-add-period btn-orange" onClick={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}>PROMOTION / TIMEBOUND DETAILS [+ Add Period]</button>
-                        </div>
-                    </div>
+                    <DueDrawnCard 
+                        type="drawn" title="DRAWN AMOUNT" subtitle="पूर्वी दिलेले वेतन"
+                        components={drawnComponents} updateComponent={updateComponent} toggles={toggles} customColumns={customColumns}
+                        renderComponentInputs={renderComponentInputs}
+                        addPeriod={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
+                    />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
                     <Button variant="contained" size="large" startIcon={<Download />} onClick={generatePDF}
-                        sx={{
-                            borderRadius: 8, px: 5, py: 1.5, fontSize: '1rem', fontWeight: 700,
-                            background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-                            boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.5)',
-                            '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 15px 30px -5px rgba(37, 99, 235, 0.6)' },
-                            transition: 'all 0.2s ease-in-out'
-                        }}>
+                        sx={{ borderRadius: 8, px: 5, py: 1.5, fontWeight: 700, background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}>
                         Download PDF Statement
                     </Button>
                 </div>
 
-
-                    <Box sx={{ position: 'sticky', bottom: 24, display: 'flex', justifyContent: 'center', zIndex: 100 }}>
-                        <Button variant="contained" size="large" startIcon={<Download />} onClick={generatePDF}
-                            sx={{
-                                borderRadius: 8, px: 5, py: 1.5, fontSize: '1rem', fontWeight: 700,
-                                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-                                boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.5)',
-                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 15px 30px -5px rgba(37, 99, 235, 0.6)' },
-                                transition: 'all 0.2s ease-in-out'
-                            }}>
-                            Download PDF Statement
-                        </Button>
-                    </Box>
-
-                    {/* --- ON SCREEN PREVIEW (Hidden / For Capture) --- */}
-                    <Box sx={{ mt: 4, p: 2, bgcolor: 'grey.100', borderRadius: 2, border: '1px solid', borderColor: 'grey.300', opacity: 0.5, '&:hover': { opacity: 1 }, transition: 'opacity 0.3s' }}>
-                        <Typography variant="caption" display="block" align="center" sx={{ fontWeight: 'bold', color: 'grey.500', mb: 2, letterSpacing: 2, textTransform: 'uppercase' }}>
-                            PDF Generation Preview (Internal)
-                        </Typography>
-                        <Box sx={{ overflowX: 'auto', p: 1, bgcolor: 'grey.200', borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}>
-                            <Box sx={{
-                                bgcolor: 'white',
-                                p: 4,
-                                color: 'black',
-                                mx: 'auto',
-                                transformOrigin: 'top left',
-                                transform: { xs: 'scale(0.5)', md: 'scale(0.75)', lg: 'scale(1)' },
-                                transition: 'transform 0.3s',
-                                width: '2200px',
-                                fontFamily: 'Arial, sans-serif'
-                            }}>
-
-                                {/* HEADER SECTION (Captured as Image for Marathi Support) */}
-                                <div ref={headerRef} style={{ padding: '0px', background: 'white' }}>
-                                    <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                        <h2 style={{ fontSize: '30px', fontWeight: 'bold', margin: '0', padding: '0', lineHeight: '1.4', textAlign: 'center', color: '#000' }}>
-                                            {basicInfo.orderNo}
-                                        </h2>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase', width: '100%', color: '#000', borderBottom: '2px solid #000', paddingBottom: '5px' }}>
-                                        <div style={{ flex: 1, textAlign: 'left' }}>NAME: <span style={{ fontWeight: 'normal' }}>{basicInfo.empName}</span></div>
-                                        <div style={{ flex: 1, textAlign: 'center' }}>DESIGNATION: <span style={{ fontWeight: 'normal' }}>{basicInfo.designation}</span></div>
-                                        <div style={{ flex: 1, textAlign: 'right' }}>PERIOD: <span style={{ fontWeight: 'normal' }}>{basicInfo.fromMonth} TO {basicInfo.toMonth}</span></div>
-                                    </div>
-                                </div>
-
-                                {/* TABLE SECTION (Visual Only - PDF uses AutoTable) */}
-                                <div>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', tableLayout: 'fixed' }}>
-                                        <colgroup>
-                                            <col style={{ width: '3%' }} />
-                                            <col style={{ width: '8%' }} />
-                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                            <col style={{ width: '6%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> <col style={{ width: '5%' }} /> {customColumns.map(c => <col key={c.id} style={{ width: '5%' }} />)} <col style={{ width: '7%' }} />
-                                            {basicInfo.category === 'NPS' ? <><col style={{ width: '5%' }} /><col style={{ width: '5%' }} /></> : <col style={{ width: '10%' }} />}
-                                        </colgroup>
-                                        <thead>
-                                            <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
-                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>SR</th>
-                                                <th rowSpan={2} style={{ border: '1px solid black', padding: '8px' }}>MONTH</th>
-                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DUE</th>
-                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DRAWN</th>
-                                                <th colSpan={5 + customColumns.length} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DIFFERENCE</th>
-                                                {basicInfo.category === 'NPS' && (
-                                                    <>
-                                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>DCPS<br />10%</th>
-                                                        <th rowSpan={2} style={{ border: '1px solid black', padding: '8px', backgroundColor: '#e0e7ff' }}>NPS<br />14%</th>
-                                                    </>
-                                                )}
-                                            </tr>
-                                            <tr style={{ textAlign: 'center', fontWeight: 'bold', color: '#000' }}>
-                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                                {['PAY', 'DA', 'HRA', 'TA', ...customColumns.map(c => c.label), 'TOTAL'].map((h, i) => <th key={i} style={{ border: '1px solid black', padding: '6px', background: '#f0f0f0' }}>{h}</th>)}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {calculationResults.map((row, idx) => {
-                                                const nps14 = Math.round(row.diff.total * 0.14);
-                                                return (
-                                                    <tr key={idx} style={{ textAlign: 'center', color: '#000' }}>
-                                                        <td style={{ border: '1px solid black', padding: '6px' }}>{idx + 1}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'left', fontWeight: 'bold' }}>
-                                                            {row.label}
-                                                            {row.isIncrementMonth && <span style={{ marginLeft: '5px', fontSize: '10px', border: '1px solid black', padding: '1px 4px', borderRadius: '3px' }}>INC</span>}
-                                                        </td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.pay}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.da}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.hra}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.ta}</td>
-                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.due.custom[c.id]}</td>)}
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.due.total}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.pay}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.da}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.hra}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.ta}</td>
-                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.drawn.custom[c.id]}</td>)}
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.drawn.total}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.pay}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.da}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.hra}</td>
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.ta}</td>
-                                                        {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '6px', textAlign: 'right' }}>{row.diff.custom[c.id]}</td>)}
-                                                        <td style={{ border: '1px solid black', padding: '6px', textAlign: 'right', fontWeight: 'bold', background: '#f9f9f9' }}>{row.diff.total}</td>
-                                                        {basicInfo.category === 'NPS' && (
-                                                            <>
-                                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{row.dcps}</td>
-                                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{nps14}</td>
-                                                            </>
-                                                        )}
-                                                    </tr>
-                                                );
-                                            })}
-                                            <tr style={{ fontWeight: 'bold', background: '#e0e0e0', color: '#000' }}>
-                                                <td colSpan={2} style={{ border: '1px solid black', padding: '8px', textAlign: 'center' }}>TOTAL</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.pay, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.da, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.hra, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.ta, 0)}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.due.custom[c.id] || 0), 0)}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.due.total, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.pay, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.da, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.hra, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.ta, 0)}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.drawn.custom[c.id] || 0), 0)}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.drawn.total, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.pay, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.da, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.hra, 0)}</td>
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.ta, 0)}</td>
-                                                {customColumns.map(c => <td key={c.id} style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + (r.diff.custom[c.id] || 0), 0)}</td>)}
-                                                <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.diff.total, 0)}</td>
-                                                {basicInfo.category === 'NPS' && (
-                                                    <>
-                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + r.dcps, 0)}</td>
-                                                        <td style={{ border: '1px solid black', padding: '8px', textAlign: 'right' }}>{calculationResults.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)}</td>
-                                                    </>
-                                                )}
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Container>
-            </Box >
-        </ThemeProvider >
+                <ArrearsTable headerRef={headerRef} basicInfo={basicInfo} customColumns={customColumns} calculationResults={calculationResults} />
+            </div>
+        </ThemeProvider>
     );
 };
 
