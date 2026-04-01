@@ -2,7 +2,6 @@
 builder = "NIXPACKS"
 
 [deploy]
-rootDirectory = "employee-corner-2.0"
 healthcheckPath = "/arrears"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
