@@ -1,5 +1,5 @@
 import React from 'react';
-import { downloadModernPDF, downloadTraditionalPDF } from '../../utils/payslipPDF';
+import { downloadModernPDF, downloadTraditionalPDF } from '../../../../utils/payslipPDF';
 
 const PayslipResults = ({ result }) => {
     if (!result) return null;

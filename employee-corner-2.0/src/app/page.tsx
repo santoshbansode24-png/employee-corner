@@ -33,7 +33,7 @@ export default function Dashboard() {
             description: "Helper tools for documents and images.",
             badgeColor: "bg-purple-100 text-purple-800",
             tools: [
-                { name: "Medical Bill", path: "#medical", icon: FileImage, desc: "Reimbursement claims (Soon)", active: false },
+                { name: "Medical Bill", path: "/medical", icon: FileImage, desc: "Reimbursement claims (Form C & D)", active: true },
             ]
         }
     ];

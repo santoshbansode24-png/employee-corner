@@ -31,7 +31,7 @@ const navSections = [
             { name: "Arrears Statement", href: "/arrears", icon: FileText },
             { name: "Pay Scale Viewer", href: "/payscale", icon: TrendingUp },
             { name: "Pension Calculator", href: "/pension", icon: Landmark },
-            { name: "Medical Bill", href: "#medical", icon: FileImage },
+            { name: "Medical Bill", href: "/medical", icon: FileImage },
         ]
     },
     {
