@@ -22,7 +22,7 @@ export default function ArrearsPage() {
     const [calculationResults, setCalculationResults] = useState<any[]>([]);
 
     const [basicInfo, setBasicInfo] = useState({
-        empName: '', designation: '', fromMonth: '2023-01', toMonth: '2023-06',
+        empName: '', designation: '', fromMonth: '2023-01-01', toMonth: '2023-06-30',
         orderNo: '', category: 'NPS', incrementMonth: 'July', cityCategory: 'Z'
     });
 
@@ -32,8 +32,8 @@ export default function ArrearsPage() {
         promotionEnabled: false
     });
 
-    const [dueComponents, setDueComponents] = useState<any>({ pay: [{ amount: '', from: '' }], daRate: [], hraRate: [], ta: [] });
-    const [drawnComponents, setDrawnComponents] = useState<any>({ pay: [{ amount: '', from: '' }], daRate: [], hraRate: [], ta: [] });
+    const [dueComponents, setDueComponents] = useState<any>({ pay: [{ amount: '', from: '' }], daRate: [{ amount: '', from: '' }], hraRate: [{ amount: '', from: '' }], ta: [{ amount: '', from: '' }] });
+    const [drawnComponents, setDrawnComponents] = useState<any>({ pay: [{ amount: '', from: '' }], daRate: [{ amount: '', from: '' }], hraRate: [{ amount: '', from: '' }], ta: [{ amount: '', from: '' }] });
     
     const [duePromotionPeriods, setDuePromotionPeriods] = useState<any[]>([]);
     const [drawnPromotionPeriods, setDrawnPromotionPeriods] = useState<any[]>([]);
@@ -56,12 +56,21 @@ export default function ArrearsPage() {
         });
     };
 
+    const updatePromotionPeriod = (type: string, idx: number, field: string, val: any) => {
+        const setFn = type === 'due' ? setDuePromotionPeriods : setDrawnPromotionPeriods;
+        setFn(prev => {
+            const next = [...prev];
+            next[idx] = { ...next[idx], [field]: val };
+            return next;
+        });
+    };
+
     const addCustomColumn = () => {
         if (!newColumn.label) return;
         const id = newColumn.label.toLowerCase().replace(/\s+/g, '_');
         setCustomColumns([...customColumns, { ...newColumn, id }]);
-        setDueComponents((prev: any) => ({ ...prev, [id]: [] }));
-        setDrawnComponents((prev: any) => ({ ...prev, [id]: [] }));
+        setDueComponents((prev: any) => ({ ...prev, [id]: [{ amount: '', from: '' }] }));
+        setDrawnComponents((prev: any) => ({ ...prev, [id]: [{ amount: '', from: '' }] }));
         setNewColumn({ label: '', type: 'manual', percent: 0 });
     };
 
@@ -81,6 +90,8 @@ export default function ArrearsPage() {
             type={type} compKey={compKey} label={label} inputClass={inputClass} 
             components={type === 'due' ? dueComponents : drawnComponents}
             updateComponent={updateComponent}
+            basicInfo={basicInfo}
+            toggles={toggles}
         />
     );
 
@@ -108,6 +119,9 @@ export default function ArrearsPage() {
                     <DueDrawnCard 
                         type="due" title="DUE AMOUNT" subtitle="देय रक्कम"
                         components={dueComponents} updateComponent={updateComponent} toggles={toggles} customColumns={customColumns}
+                        basicInfo={basicInfo}
+                        promotionPeriods={duePromotionPeriods}
+                        updatePromotionPeriod={updatePromotionPeriod}
                         renderComponentInputs={renderComponentInputs}
                         addPeriod={() => setDuePromotionPeriods([...duePromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
                     />
@@ -115,6 +129,9 @@ export default function ArrearsPage() {
                     <DueDrawnCard 
                         type="drawn" title="DRAWN AMOUNT" subtitle="पूर्वी दिलेले वेतन"
                         components={drawnComponents} updateComponent={updateComponent} toggles={toggles} customColumns={customColumns}
+                        basicInfo={basicInfo}
+                        promotionPeriods={drawnPromotionPeriods}
+                        updatePromotionPeriod={updatePromotionPeriod}
                         renderComponentInputs={renderComponentInputs}
                         addPeriod={() => setDrawnPromotionPeriods([...drawnPromotionPeriods, { from: '', pay: 0, daRate: 0, hraRate: 0, ta: 0, custom: {} }])}
                     />

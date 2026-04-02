@@ -41,18 +41,18 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">From Month</Label>
+                    <Label className="text-gray-600 font-semibold">From Date</Label>
                     <Input 
-                        type="month"
+                        type="date"
                         value={basicInfo.fromMonth}
                         onChange={e => updateBasicInfo('fromMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">To Month</Label>
+                    <Label className="text-gray-600 font-semibold">To Date</Label>
                     <Input 
-                        type="month"
+                        type="date"
                         value={basicInfo.toMonth}
                         onChange={e => updateBasicInfo('toMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
