@@ -39,6 +39,11 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
                 if (isAutoDA) autoValue = getMaharashtraDARate(startMonth, startYear);
                 if (isAutoHRA) autoValue = getMaharashtraHRARate(startMonth, startYear, basicInfo.cityCategory);
 
+                // Show manual input if user overrides, otherwise show auto value. 
+                // For non-auto components, directly use item.amount.
+                let displayValue = (item.amount !== '' && item.amount !== undefined && item.amount !== null) ? item.amount : autoValue;
+                if (!isAutoDA && !isAutoHRA) displayValue = item.amount || '';
+
                 return (
                 <div key={idx} className={`relative pt-4 ${idx < comps.length - 1 ? 'mb-4' : ''}`}>
                     <div className="absolute top-0 left-2 z-10 px-1 bg-white">
@@ -47,15 +52,14 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
                     
                     <div className={`relative flex items-center bg-transparent border-2 rounded-lg transition-all ${focusRing} ${inputClass}`}>
                         <span className={`pl-4 pr-1 font-semibold text-lg ${isDue ? 'text-emerald-700' : 'text-gray-600'}`}>
-                            ₹
+                            {compKey === 'daRate' || compKey === 'hraRate' ? '%' : '₹'}
                         </span>
                         <Input
                             type="number"
-                            placeholder="0"
-                            value={isAutoDA || isAutoHRA ? autoValue : (item.amount || '')}
+                            placeholder={isAutoDA || isAutoHRA ? autoValue.toString() : "0"}
+                            value={displayValue}
                             onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
-                            disabled={isAutoDA || isAutoHRA}
-                            className={`bg-transparent border-none text-lg font-semibold text-gray-800 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-300 py-6 pr-4 pl-0 ${isAutoDA || isAutoHRA ? 'opacity-80 cursor-not-allowed' : ''}`}
+                            className={`bg-transparent border-none text-lg font-semibold text-gray-800 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-300 py-6 pr-4 pl-0 ${(isAutoDA || isAutoHRA) && (item.amount === '' || item.amount === undefined || item.amount === null) ? 'text-blue-600 bg-blue-50/10' : ''}`}
                             style={{ boxShadow: 'none' }}
                         />
                     </div>

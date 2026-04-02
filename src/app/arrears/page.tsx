@@ -101,8 +101,8 @@ export default function ArrearsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-slate-50/40 py-8 px-6 lg:px-10 lg:pl-12 font-sans relative">
+            <div className="w-full max-w-[1600px] space-y-8 animate-in slide-in-from-bottom-4 duration-700 fade-in relative z-10">
                 
                 <div className="text-center space-y-2">
                     <h1 className="text-4xl font-extrabold text-blue-900 tracking-tight flex items-center justify-center gap-3">

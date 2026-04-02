@@ -39,64 +39,81 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-6 lg:p-10 font-sans">
-            <div className="max-w-6xl mx-auto space-y-12 animate-in slide-in-from-bottom-4 duration-700 fade-in">
-                
-                {/* Header Section */}
-                <div className="space-y-4">
-                    <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
-                        Welcome to <span className="text-blue-600">Smart Toolkit</span>
-                    </h1>
-                    <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">
-                        A fully modernized, high-performance suite for government employees. Calculate your financials instantly without server lag.
-                    </p>
-                </div>
+        <div className="min-h-screen bg-slate-50/40 font-sans relative">
+            {/* Soft background gradient glow */}
+            <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-br from-blue-100/50 via-indigo-50/50 to-transparent pointer-events-none -z-10" />
+            <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+            
+            <div className="p-6 lg:p-10 lg:pl-12">
+                <div className="w-full max-w-full xl:max-w-[1400px] space-y-16 animate-in slide-in-from-bottom-6 duration-700 fade-in">
+                    
+                    {/* Header Section */}
+                    <div className="space-y-4 max-w-3xl">
+                        <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-800 tracking-tight leading-tight">
+                            Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Smart Toolkit</span>
+                        </h1>
+                        <p className="text-lg text-slate-500 leading-relaxed font-medium">
+                            A fully modernized, high-performance suite for government employees. Calculate your financials instantly with zero server lag.
+                        </p>
+                    </div>
 
-                {/* Modules Grid */}
-                <div className="space-y-10">
-                    {modules.map((module, idx) => (
-                        <div key={idx} className="space-y-6">
-                            <div className="flex items-center gap-4">
-                                <h2 className="text-2xl font-bold text-slate-800">{module.title}</h2>
-                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${module.badgeColor}`}>
-                                    {module.tools.filter(t => t.active).length} Active Tools
-                                </span>
-                            </div>
-                            <p className="text-slate-500 -mt-4">{module.description}</p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {module.tools.map((tool, toolIdx) => (
-                                    <Link 
-                                        key={toolIdx} 
-                                        href={tool.path}
-                                        className={tool.active ? "cursor-pointer group" : "cursor-default opacity-60"}
-                                    >
-                                        <Card className={`h-full border-slate-200 shadow-sm transition-all duration-300
-                                            ${tool.active ? 'hover:shadow-md hover:border-blue-300 hover:-translate-y-1' : 'bg-slate-50'}
-                                        `}>
-                                            <CardContent className="p-6 flex flex-col items-start gap-4 h-full">
-                                                <div className={`p-3 rounded-xl 
-                                                    ${tool.active ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors' : 'bg-slate-200 text-slate-500'}
-                                                `}>
-                                                    <tool.icon size={24} strokeWidth={2} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h3 className="font-bold text-slate-900 leading-none">{tool.name}</h3>
-                                                    <p className="text-sm text-slate-500 line-clamp-2">{tool.desc}</p>
-                                                </div>
-                                                {!tool.active && (
-                                                    <div className="mt-auto inline-flex items-center px-2 py-1 bg-slate-200 text-slate-600 text-[10px] uppercase font-bold tracking-wider rounded">
-                                                        Development
+                    {/* Modules Grid */}
+                    <div className="space-y-14">
+                        {modules.map((module, idx) => (
+                            <div key={idx} className="space-y-6">
+                                <div className="flex items-center gap-4 border-b border-slate-200/60 pb-3">
+                                    <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{module.title}</h2>
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${module.badgeColor}`}>
+                                        {module.tools.filter(t => t.active).length} Tools
+                                    </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2">
+                                    {module.tools.map((tool, toolIdx) => (
+                                        <Link 
+                                            key={toolIdx} 
+                                            href={tool.path}
+                                            className={tool.active ? "cursor-pointer group block" : "cursor-default opacity-60 block"}
+                                        >
+                                            <Card className={`h-full border-transparent bg-white shadow-[0_2px_12px_-4px_rgba(6,81,237,0.08)] transition-all duration-300 hover:shadow-[0_12px_30px_-6px_rgba(6,81,237,0.15)]
+                                                ${tool.active ? 'hover:border-blue-200/60 hover:-translate-y-1.5 ring-1 ring-slate-100 hover:ring-blue-200' : 'bg-slate-50 ring-1 ring-slate-100'}
+                                            `}>
+                                                <CardContent className="p-7 flex flex-col justify-between h-full relative overflow-hidden">
+                                                    {/* Glow effect on hover */}
+                                                    {tool.active && <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-full blur-2xl -mr-10 -mt-10 transition-all duration-500 group-hover:from-blue-200/60 group-hover:scale-150"></div>}
+                                                    
+                                                    <div className="flex flex-col items-start gap-5 flex-1 relative z-10">
+                                                        <div className={`p-3.5 rounded-2xl 
+                                                            ${tool.active ? 'bg-gradient-to-br from-blue-50 to-indigo-50/80 text-blue-600 shadow-sm group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white transition-all duration-500 group-hover:shadow-blue-500/25 ring-1 ring-blue-100/50 group-hover:ring-blue-600' : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200'}
+                                                        `}>
+                                                            <tool.icon size={26} strokeWidth={1.8} />
+                                                        </div>
+                                                        <div className="space-y-2 mt-1">
+                                                            <h3 className={`font-bold text-lg leading-tight transition-colors duration-300 ${tool.active ? 'text-slate-800 group-hover:text-blue-700' : 'text-slate-500'}`}>{tool.name}</h3>
+                                                            <p className="text-[15px] text-slate-500 leading-relaxed font-medium line-clamp-2">{tool.desc}</p>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </Link>
-                                ))}
+                                                    
+                                                    {tool.active ? (
+                                                        <div className="mt-8 flex items-center text-[14px] font-bold text-blue-600 transform transition-all duration-300 group-hover:translate-x-1 relative z-10">
+                                                            Launch Tool 
+                                                            <svg className="w-4 h-4 ml-1.5 stroke-[2.5px] transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-8 inline-flex items-center px-2.5 py-1.5 bg-slate-100 text-slate-400 text-[11px] uppercase font-bold tracking-wider rounded-md border border-slate-200 relative z-10">
+                                                            Coming Soon
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
 
                 {/* Upgrade Info Box */}
                 <div className="mt-12 p-8 bg-gradient-to-br from-indigo-900 to-blue-900 rounded-3xl shadow-xl border border-indigo-700/50 text-white relative overflow-hidden">
@@ -117,6 +134,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
+                </div>
             </div>
         </div>
     );

@@ -31,13 +31,16 @@ export const HRA_RATES_Z = [
 
 export const getMaharashtraHRARate = (month: number, year: number, category: string) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-    let zRate = 0;
-    for (let period of HRA_RATES_Z) {
-        if (dateStr >= period.start && dateStr <= period.end) {
-            zRate = period.rate;
-            break;
-        }
+    if (dateStr < '2019-01-01') return 0;
+
+    const daRate = getMaharashtraDARate(month, year);
+    let zRate = 8;
+    if (daRate >= 50) {
+        zRate = 10;
+    } else if (daRate >= 25) {
+        zRate = 9;
     }
+
     if (category === 'Y') return zRate * 2;
     if (category === 'X') return zRate * 3;
     return zRate;
@@ -78,12 +81,12 @@ export const getMonthYearList = (startStr: string, endStr: string) => {
 };
 
 export const getValueForMonth = (comps: any[], month: number, year: number) => {
-    if (!comps || comps.length === 0) return 0;
+    if (!comps || comps.length === 0) return null;
     const dateStr = `${year}-${String(month).padStart(2, '0')}`;
-    let latestVal = 0;
+    let latestVal: number | null = null;
     for (let item of comps) {
         if (item.from && item.from.substring(0, 7) <= dateStr) {
-            latestVal = parseFloat(item.amount) || 0;
+            latestVal = item.amount !== '' && item.amount !== undefined ? parseFloat(item.amount) : null;
         } else if (item.from && item.from.substring(0, 7) > dateStr) {
             break;
         }
@@ -166,9 +169,11 @@ export const calculateArrearsLogic = (params: any) => {
             }
         }
 
-        let dueDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(dueComponents.daRate, month, year);
-        let dueHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(dueComponents.hraRate, month, year);
-        let dueTA = runningDueTA !== null ? runningDueTA : getValueForMonth(dueComponents.ta, month, year);
+        let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
+        let dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+        let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
+        let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : 0);
+        let dueTA = runningDueTA !== null ? runningDueTA : (getValueForMonth(dueComponents.ta, month, year) || 0);
 
         if (duePromotionPeriod) {
             if (duePromotionPeriod.daRate > 0) dueDARate = duePromotionPeriod.daRate;
@@ -183,7 +188,7 @@ export const calculateArrearsLogic = (params: any) => {
             let val = 0;
             if (col.type === 'basic_percent') val = Math.round(runningPay * (col.percent / 100));
             else if (col.type === 'basic_da_percent') val = Math.round((runningPay + dueDAAmt) * (col.percent / 100));
-            else val = runningDueCustom[col.id] !== undefined ? runningDueCustom[col.id] : getValueForMonth(dueComponents[col.id] || [], month, year);
+            else val = runningDueCustom[col.id] !== undefined ? runningDueCustom[col.id] : (getValueForMonth(dueComponents[col.id] || [], month, year) || 0);
             dueCustomValues[col.id] = val;
             dueCustomTotal += val;
         });
@@ -195,9 +200,11 @@ export const calculateArrearsLogic = (params: any) => {
         const dueTotal = runningPay + dueDAAmt + dueHRAAmt + dueTA + dueCustomTotal;
 
         // Drawn Calcs
-        let drawnDARate = toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : getValueForMonth(drawnComponents.daRate, month, year);
-        let drawnHRA = toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : getValueForMonth(drawnComponents.hraRate, month, year);
-        let drawnTA = runningDrawnTA !== null ? runningDrawnTA : getValueForMonth(drawnComponents.ta, month, year);
+        let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
+        let drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+        let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
+        let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : 0);
+        let drawnTA = runningDrawnTA !== null ? runningDrawnTA : (getValueForMonth(drawnComponents.ta, month, year) || 0);
 
         if (drawnPromotionPeriod) {
             if (drawnPromotionPeriod.daRate > 0) drawnDARate = drawnPromotionPeriod.daRate;
@@ -212,7 +219,7 @@ export const calculateArrearsLogic = (params: any) => {
             let val = 0;
             if (col.type === 'basic_percent') val = Math.round(runningDrawnPay * (col.percent / 100));
             else if (col.type === 'basic_da_percent') val = Math.round((runningDrawnPay + drawnDAAmt) * (col.percent / 100));
-            else val = runningDrawnCustom[col.id] !== undefined ? runningDrawnCustom[col.id] : getValueForMonth(drawnComponents[col.id] || [], month, year);
+            else val = runningDrawnCustom[col.id] !== undefined ? runningDrawnCustom[col.id] : (getValueForMonth(drawnComponents[col.id] || [], month, year) || 0);
             drawnCustomValues[col.id] = val;
             drawnCustomTotal += val;
         });

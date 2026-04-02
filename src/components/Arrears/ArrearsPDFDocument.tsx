@@ -2,18 +2,18 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 const styles = StyleSheet.create({
-    page: { padding: 20, paddingBottom: 30, backgroundColor: '#ffffff', flexDirection: 'column', fontSize: 8 },
+    page: { padding: 20, paddingBottom: 30, backgroundColor: '#ffffff', flexDirection: 'column', fontSize: 10 },
     headerBox: { marginBottom: 15, textAlign: 'center' },
-    orderNo: { fontSize: 13, fontWeight: 'extrabold', marginBottom: 10 },
+    orderNo: { fontSize: 16, fontWeight: 'extrabold', marginBottom: 10 },
     infoRow: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 5, marginBottom: 15 },
-    infoText: { fontSize: 9, fontWeight: 'bold' },
+    infoText: { fontSize: 12, fontWeight: 'bold' },
     table: { display: 'flex', width: '100%', borderStyle: 'solid', borderWidth: 1, borderColor: '#000', borderRightWidth: 0, borderBottomWidth: 0 },
-    tableRow: { flexDirection: 'row', width: '100%' },
+    tableRow: { flexDirection: 'row', width: '100%', minHeight: 30 },
     tableColHeader: { borderStyle: 'solid', borderColor: '#000', borderWidth: 1, borderLeftWidth: 0, borderTopWidth: 0, backgroundColor: '#e0e7ff', justifyContent: 'center' },
     tableCol: { borderStyle: 'solid', borderColor: '#000', borderWidth: 1, borderLeftWidth: 0, borderTopWidth: 0, justifyContent: 'center' },
-    tableCellHeader: { margin: 3, fontSize: 7, fontWeight: 'black', textAlign: 'center' },
-    tableCell: { margin: 4, fontSize: 7, textAlign: 'right' },
-    tableCellLeft: { margin: 4, fontSize: 7, textAlign: 'left' }
+    tableCellHeader: { margin: 5, fontSize: 9, fontWeight: 'black', textAlign: 'center' },
+    tableCell: { margin: 5, fontSize: 9, textAlign: 'center' },
+    tableCellLeft: { margin: 5, fontSize: 9, textAlign: 'center' }
 });
 
 interface PDFProps {
