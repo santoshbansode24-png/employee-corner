@@ -1,6 +1,0 @@
-docxtpl
-python-docx
-pandas
-numpy
- packaging
-pillow
