@@ -1,13 +1,27 @@
 export const CITIES: Record<string, { category: string, isMetro: boolean }> = {
     'Mumbai': { category: 'X', isMetro: true },
-    'Thane': { category: 'X', isMetro: true },
     'Pune': { category: 'X', isMetro: true },
+    'Thane': { category: 'X', isMetro: true },
+    'Navi Mumbai': { category: 'X', isMetro: true },
     'Nagpur': { category: 'Y', isMetro: false },
     'Nashik': { category: 'Y', isMetro: false },
     'Aurangabad': { category: 'Y', isMetro: false },
-    'Solapur': { category: 'Z', isMetro: false },
-    'Kolhapur': { category: 'Z', isMetro: false },
-    'Amravati': { category: 'Z', isMetro: false },
+    'Chhatrapati Sambhajinagar': { category: 'Y', isMetro: false },
+    'Solapur': { category: 'Y', isMetro: false },
+    'Kolhapur': { category: 'Y', isMetro: false },
+    'Amravati': { category: 'Y', isMetro: false },
+    'Ahmadnagar': { category: 'Y', isMetro: false },
+    'Jalgaon': { category: 'Y', isMetro: false },
+    'Akola': { category: 'Y', isMetro: false },
+    'Latur': { category: 'Y', isMetro: false },
+    'Malegaon': { category: 'Y', isMetro: false },
+    'Nanded': { category: 'Y', isMetro: false },
+    'Sangli': { category: 'Y', isMetro: false },
+    'Ulhasnagar': { category: 'Y', isMetro: false },
+    'Vasai-Virar': { category: 'Y', isMetro: false },
+    'Mira-Bhayandar': { category: 'Y', isMetro: false },
+    'Bhiwandi': { category: 'Y', isMetro: false },
+    'Other (Z Category)': { category: 'Z', isMetro: false },
 };
 
 export const calculatePayslipLogic = (formData: any, additionalAllowances: any[]) => {
@@ -17,16 +31,23 @@ export const calculatePayslipLogic = (formData: any, additionalAllowances: any[]
     // Calculate DA
     const da = Math.round(basic * daRate / 100);
 
-    // Calculate HRA based on DA slab
+    // Calculate HRA based on DA slab and City Category
     let hraRate = 0;
-    if (daRate < 25) {
-        hraRate = formData.cityCategory === 'X' ? 24 : formData.cityCategory === 'Y' ? 16 : 8;
-    } else if (daRate >= 25 && daRate < 50) {
-        hraRate = formData.cityCategory === 'X' ? 27 : formData.cityCategory === 'Y' ? 18 : 9;
+    let minHRA = 0;
+    
+    if (formData.cityCategory === 'X') {
+        hraRate = daRate >= 50 ? 30 : (daRate >= 25 ? 27 : 24);
+        minHRA = 5400;
+    } else if (formData.cityCategory === 'Y') {
+        hraRate = daRate >= 50 ? 20 : (daRate >= 25 ? 18 : 16);
+        minHRA = 3600;
     } else {
-        hraRate = formData.cityCategory === 'X' ? 30 : formData.cityCategory === 'Y' ? 20 : 10;
+        hraRate = daRate >= 50 ? 10 : (daRate >= 25 ? 9 : 8);
+        minHRA = 1800;
     }
-    const hra = Math.round(basic * hraRate / 100);
+
+    let hra = Math.round(basic * hraRate / 100);
+    if (hra < minHRA) hra = minHRA;
 
     // Calculate TA
     let ta = 0;
