@@ -11,7 +11,7 @@ import { Calculator } from "lucide-react";
 
 export default function PayslipPage() {
     const [formData, setFormData] = useState({
-        employeeType: 'GPF', basicSalary: '', payScale: 'S-7 to S-19', daRate: 55, city: '',
+        employeeType: 'GPF', basicSalary: '', payScale: 'S-7 to S-19', daRate: 58, city: '',
         cityCategory: 'X', isHandicap: false, employeeClass: '1', perTA: 0,
         gpfSubscription: 0, gpfRecovery: 0, festivalAdvance: 0, otherAdvances: 0,
         otherRecovery: 0, incomeTax: 0,
