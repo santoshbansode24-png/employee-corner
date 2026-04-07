@@ -163,6 +163,67 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     <Text>Smart Toolkit 2.0 • Medical Reimbursement Form C & D</Text>
                 </View>
             </Page>
+
+            {/* Page 3: Pathology & Medicine Receipts Detail */}
+            <Page size="A4" style={styles.page}>
+                <Text style={styles.title}>PATHOLOGY & MEDICINE RECEIPTS</Text>
+
+                <Text style={[styles.subTitle, {marginTop: 10, textAlign: 'left', textDecoration: 'underline'}]}>A. Pathology Bills</Text>
+                <View style={{ borderTopWidth: 1, borderTopColor: '#ccc' }}>
+                    <View style={styles.tableHeaderRow}>
+                        <Text style={[styles.tCol1, {width: '10%'}]}>Sr.</Text>
+                        <Text style={[styles.tCol2, {width: '40%'}]}>Receipt No.</Text>
+                        <Text style={[styles.tCol3, {width: '30%'}]}>Date</Text>
+                        <Text style={[styles.tCol4, {width: '20%', textAlign: 'right'}]}>Amount (Rs.)</Text>
+                    </View>
+                    {data.pathology_receipts && data.pathology_receipts.length > 0 ? (
+                        data.pathology_receipts.map((r, i) => (
+                            <View key={i} style={styles.tableRow}>
+                                <Text style={[styles.tCol1, {width: '10%'}]}>{i + 1}</Text>
+                                <Text style={[styles.tCol2, {width: '40%'}]}>{r.receipt_no}</Text>
+                                <Text style={[styles.tCol3, {width: '30%'}]}>{r.date}</Text>
+                                <Text style={[styles.tCol4, {width: '20%', textAlign: 'right'}]}>{Number(r.amount).toFixed(2)}</Text>
+                            </View>
+                        ))
+                    ) : (
+                        <View style={styles.tableRow}><Text style={[styles.tCol3, {width: '100%', textAlign: 'center'}]}>No Pathology Receipts Added</Text></View>
+                    )}
+                    <View style={[styles.tableRow, { backgroundColor: '#f9fafb', borderTopWidth: 2 }]}>
+                        <Text style={[styles.tCol1, {width: '80%', fontWeight: 'bold'}]}>TOTAL PATHOLOGY CLAIM</Text>
+                        <Text style={[styles.tCol4, {width: '20%', textAlign: 'right', fontWeight: 'bold'}]}>{totals.path_total.toFixed(2)}</Text>
+                    </View>
+                </View>
+
+                <Text style={[styles.subTitle, {marginTop: 30, textAlign: 'left', textDecoration: 'underline'}]}>B. Medicine Bills</Text>
+                <View style={{ borderTopWidth: 1, borderTopColor: '#ccc' }}>
+                    <View style={styles.tableHeaderRow}>
+                        <Text style={[styles.tCol1, {width: '10%'}]}>Sr.</Text>
+                        <Text style={[styles.tCol2, {width: '40%'}]}>Receipt No.</Text>
+                        <Text style={[styles.tCol3, {width: '30%'}]}>Date</Text>
+                        <Text style={[styles.tCol4, {width: '20%', textAlign: 'right'}]}>Amount (Rs.)</Text>
+                    </View>
+                    {data.medicine_receipts && data.medicine_receipts.length > 0 ? (
+                        data.medicine_receipts.map((r, i) => (
+                            <View key={i} style={styles.tableRow}>
+                                <Text style={[styles.tCol1, {width: '10%'}]}>{i + 1}</Text>
+                                <Text style={[styles.tCol2, {width: '40%'}]}>{r.receipt_no}</Text>
+                                <Text style={[styles.tCol3, {width: '30%'}]}>{r.date}</Text>
+                                <Text style={[styles.tCol4, {width: '20%', textAlign: 'right'}]}>{Number(r.amount).toFixed(2)}</Text>
+                            </View>
+                        ))
+                    ) : (
+                        <View style={styles.tableRow}><Text style={[styles.tCol3, {width: '100%', textAlign: 'center'}]}>No Medicine Receipts Added</Text></View>
+                    )}
+                    <View style={[styles.tableRow, { backgroundColor: '#f9fafb', borderTopWidth: 2 }]}>
+                        <Text style={[styles.tCol1, {width: '80%', fontWeight: 'bold'}]}>TOTAL MEDICINE CLAIM</Text>
+                        <Text style={[styles.tCol4, {width: '20%', textAlign: 'right', fontWeight: 'bold'}]}>{totals.med_total.toFixed(2)}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.footer}>
+                    <Text>Smart Toolkit 2.0 • Medical Reimbursement Form C & D</Text>
+                </View>
+            </Page>
         </Document>
     );
 };

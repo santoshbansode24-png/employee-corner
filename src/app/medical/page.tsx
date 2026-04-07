@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useDebounce } from 'use-debounce';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,26 @@ import MedicalPDFDocument from '@/components/Medical/MedicalPDFDocument';
 const PDFDownloadLink = dynamic(() => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink), {
   ssr: false,
   loading: () => <Button disabled className="w-full bg-blue-300">Loading Report Engine...</Button>
+});
+
+const MemoizedMedicalPDF = React.memo(({ data, totals }: { data: MedicalFormData, totals: any }) => {
+    return (
+        <PDFDownloadLink 
+            document={<MedicalPDFDocument data={data} totals={totals} />} 
+            fileName={`Medical-Form-${(data.emp_name_english || 'Proposal').replace(/\s+/g, '-')}.pdf`}
+        >
+            {({ blob, url, loading, error }) => (
+                <Button 
+                    size="lg"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 h-auto text-lg whitespace-nowrap"
+                    disabled={loading || !data.emp_name_english}
+                >
+                    <Download size={24} />
+                    {loading ? 'Compiling Official Proposal...' : 'Download Form C/D PDF'}
+                </Button>
+            )}
+        </PDFDownloadLink>
+    );
 });
 
 export default function MedicalPage() {
@@ -51,6 +72,10 @@ export default function MedicalPage() {
 
     // Calculate totals on the fly using useMemo
     const totals = useMemo(() => calculateMedicalTotals(formData), [formData]);
+    
+    // Performance isolation firewall
+    const [debouncedFormData] = useDebounce(formData, 800);
+    const debouncedTotals = useMemo(() => calculateMedicalTotals(debouncedFormData), [debouncedFormData]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
@@ -228,21 +253,7 @@ export default function MedicalPage() {
                                 <div className="text-slate-400 font-medium">Estimated Admissible Final: <span className="text-white font-bold ml-1">₹ {totals.grand_admissible.toLocaleString('en-IN')}</span></div>
                             </div>
 
-                            <PDFDownloadLink 
-                                document={<MedicalPDFDocument data={formData} totals={totals} />} 
-                                fileName={`Medical-Form-${formData.emp_name_english.replace(/\s+/g, '-')}.pdf`}
-                            >
-                                {({ blob, url, loading, error }) => (
-                                    <Button 
-                                        size="lg"
-                                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 h-auto text-lg whitespace-nowrap"
-                                        disabled={loading || !formData.emp_name_english}
-                                    >
-                                        <Download size={24} />
-                                        {loading ? 'Compiling Official Proposal...' : 'Download Form C/D PDF'}
-                                    </Button>
-                                )}
-                            </PDFDownloadLink>
+                            <MemoizedMedicalPDF data={debouncedFormData} totals={debouncedTotals} />
                         </Card>
                     </TabsContent>
                 </Tabs>
