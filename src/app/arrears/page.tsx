@@ -22,7 +22,7 @@ export default function ArrearsPage() {
     const [calculationResults, setCalculationResults] = useState<any[]>([]);
 
     const [basicInfo, setBasicInfo] = useState({
-        empName: '', designation: '', fromMonth: '2023-01-01', toMonth: '2023-06-30',
+        empName: '', designation: '', fromMonth: '', toMonth: '',
         orderNo: '', category: 'NPS', incrementMonth: 'July', cityCategory: 'Z'
     });
 

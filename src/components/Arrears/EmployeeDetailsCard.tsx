@@ -34,7 +34,7 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                 <div className="space-y-2">
                     <Label className="text-gray-600 font-semibold">Designation</Label>
                     <Input 
-                        placeholder="सहायक प्राध्यापक" 
+                        placeholder="Designation" 
                         value={basicInfo.designation} 
                         onChange={e => updateBasicInfo('designation', e.target.value)} 
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"

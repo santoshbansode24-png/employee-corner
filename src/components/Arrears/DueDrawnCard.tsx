@@ -43,8 +43,8 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     const titleColor = 'text-white';
     const inputClass = isDue ? 'focus:ring-emerald-500 border-emerald-400' : 'focus:ring-orange-500 border-orange-400';
     const btnClass = isDue 
-        ? 'text-blue-600 border border-blue-200 hover:bg-blue-50 bg-white w-full mt-2 font-bold shadow-sm' 
-        : 'text-orange-500 border border-orange-200 hover:bg-orange-50 bg-white w-full mt-2 font-bold shadow-sm';
+        ? 'text-white border-0 bg-emerald-600 hover:bg-emerald-700 w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all' 
+        : 'text-white border-0 bg-[#ea580c] hover:bg-[#c2410c] w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all';
 
     return (
         <Card className={`shadow-sm border-2 ${cardBorderColor} h-full flex flex-col rounded-xl overflow-hidden`}>
@@ -119,7 +119,6 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                     <Button 
                         onClick={addPeriod}
                         className={btnClass}
-                        variant="outline"
                     >
                         {title.includes('DUE') ? 'PROMOTION / TIMEBOUND DETAILS + Add Period' : 'PROMOTION / TIMEBOUND DETAILS + Add Period'}
                     </Button>
