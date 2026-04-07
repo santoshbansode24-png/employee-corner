@@ -19,6 +19,27 @@ const PDFDownloadLink = dynamic(() => import('@react-pdf/renderer').then(mod => 
   loading: () => <Button disabled className="w-full bg-blue-300">Loading PDF Engine...</Button>
 });
 
+const MemoizedPDFDownload = React.memo(({ basicInfo, customColumns, results }: any) => {
+    return (
+        <PDFDownloadLink 
+            document={<ArrearsPDFDocument basicInfo={basicInfo} customColumns={customColumns} results={results} />} 
+            fileName={`Arrears_Statement_${basicInfo.empName || 'Employee'}.pdf`}
+            className="w-full md:w-auto"
+        >
+            {({ blob, url, loading, error }) => (
+                <Button 
+                    size="lg" 
+                    className="w-full md:w-96 h-14 text-lg font-bold shadow-xl shadow-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex items-center gap-2 rounded-full transition-all hover:scale-105"
+                    disabled={loading}
+                >
+                    <Download size={24} />
+                    {loading ? 'Rendering PDF...' : 'Download PDF Statement'}
+                </Button>
+            )}
+        </PDFDownloadLink>
+    );
+});
+
 export default function ArrearsPage() {
     const [calculationResults, setCalculationResults] = useState<any[]>([]);
 
@@ -151,22 +172,11 @@ export default function ArrearsPage() {
                 </div>
 
                 <div className="flex justify-center mt-12 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <PDFDownloadLink 
-                        document={<ArrearsPDFDocument basicInfo={debouncedBasicInfo} customColumns={debouncedCustomColumns} results={calculationResults} />} 
-                        fileName={`Arrears_Statement_${debouncedBasicInfo.empName || 'Employee'}.pdf`}
-                        className="w-full md:w-auto"
-                    >
-                        {({ blob, url, loading, error }) => (
-                            <Button 
-                                size="lg" 
-                                className="w-full md:w-96 h-14 text-lg font-bold shadow-xl shadow-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex items-center gap-2 rounded-full transition-all hover:scale-105"
-                                disabled={loading}
-                            >
-                                <Download size={24} />
-                                {loading ? 'Rendering PDF...' : 'Download PDF Statement'}
-                            </Button>
-                        )}
-                    </PDFDownloadLink>
+                    <MemoizedPDFDownload 
+                        basicInfo={debouncedBasicInfo} 
+                        customColumns={debouncedCustomColumns} 
+                        results={calculationResults} 
+                    />
                 </div>
 
             </div>

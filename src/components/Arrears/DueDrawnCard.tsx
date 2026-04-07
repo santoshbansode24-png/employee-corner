@@ -88,7 +88,21 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                                     placeholder="Basic Pay" 
                                     value={period.pay || ''} 
                                     onChange={(e) => updatePromotionPeriod(type, idx, 'pay', Number(e.target.value))} 
-                                    className="w-28 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                    className="w-24 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                />
+                                <input 
+                                    type="number" 
+                                    placeholder="DA %" 
+                                    value={period.daRate || ''} 
+                                    onChange={(e) => updatePromotionPeriod(type, idx, 'daRate', Number(e.target.value))} 
+                                    className="w-20 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                />
+                                <input 
+                                    type="number" 
+                                    placeholder="HRA %" 
+                                    value={period.hraRate || ''} 
+                                    onChange={(e) => updatePromotionPeriod(type, idx, 'hraRate', Number(e.target.value))} 
+                                    className="w-20 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
                                 />
                                 <input 
                                     type="number" 
