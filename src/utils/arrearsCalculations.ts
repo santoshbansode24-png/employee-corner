@@ -20,6 +20,7 @@ export const DA_RATES_MAHARASHTRA = [
     { date: '2024-01-01', rate: 50 },
     { date: '2024-07-01', rate: 53 },
     { date: '2025-01-01', rate: 55 },
+    { date: '2025-07-01', rate: 58 },
 ];
 
 export const HRA_RATES_Z = [
