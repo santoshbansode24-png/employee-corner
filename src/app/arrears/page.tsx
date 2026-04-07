@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useDebounce } from 'use-debounce';
 import { calculateArrearsLogic } from '@/utils/arrearsCalculations';
 import EmployeeDetailsCard from '@/components/Arrears/EmployeeDetailsCard';
 import ConfigurationCard from '@/components/Arrears/ConfigurationCard';
@@ -74,14 +75,26 @@ export default function ArrearsPage() {
         setNewColumn({ label: '', type: 'manual', percent: 0 });
     };
 
+    const [debouncedBasicInfo] = useDebounce(basicInfo, 800);
+    const [debouncedDueComponents] = useDebounce(dueComponents, 800);
+    const [debouncedDrawnComponents] = useDebounce(drawnComponents, 800);
+    const [debouncedDuePromotionPeriods] = useDebounce(duePromotionPeriods, 800);
+    const [debouncedDrawnPromotionPeriods] = useDebounce(drawnPromotionPeriods, 800);
+    const [debouncedToggles] = useDebounce(toggles, 800);
+    const [debouncedCustomColumns] = useDebounce(customColumns, 800);
+
     useEffect(() => {
         const results = calculateArrearsLogic({
-            basicInfo, dueComponents, drawnComponents, 
-            duePromotionPeriods, drawnPromotionPeriods, 
-            toggles, customColumns
+            basicInfo: debouncedBasicInfo, 
+            dueComponents: debouncedDueComponents, 
+            drawnComponents: debouncedDrawnComponents, 
+            duePromotionPeriods: debouncedDuePromotionPeriods, 
+            drawnPromotionPeriods: debouncedDrawnPromotionPeriods, 
+            toggles: debouncedToggles, 
+            customColumns: debouncedCustomColumns
         });
         setCalculationResults(results);
-    }, [basicInfo, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods, toggles, customColumns]);
+    }, [debouncedBasicInfo, debouncedDueComponents, debouncedDrawnComponents, debouncedDuePromotionPeriods, debouncedDrawnPromotionPeriods, debouncedToggles, debouncedCustomColumns]);
 
     const formatDate = (date: Date) => date ? date.toISOString().split('T')[0].substring(0, 7) : '';
     
@@ -139,8 +152,8 @@ export default function ArrearsPage() {
 
                 <div className="flex justify-center mt-12 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <PDFDownloadLink 
-                        document={<ArrearsPDFDocument basicInfo={basicInfo} customColumns={customColumns} results={calculationResults} />} 
-                        fileName={`Arrears_Statement_${basicInfo.empName || 'Employee'}.pdf`}
+                        document={<ArrearsPDFDocument basicInfo={debouncedBasicInfo} customColumns={debouncedCustomColumns} results={calculationResults} />} 
+                        fileName={`Arrears_Statement_${debouncedBasicInfo.empName || 'Employee'}.pdf`}
                         className="w-full md:w-auto"
                     >
                         {({ blob, url, loading, error }) => (
