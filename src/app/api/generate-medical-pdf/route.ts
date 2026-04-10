@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
+            delimiters: {
+                start: '{{',
+                end: '}}',
+            },
         });
 
         // Compute flat object combining data and totals for docxtemplater variables
