@@ -10,31 +10,51 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FileImage, Activity, HeartPulse, Receipt, Download, Plus, Trash2 } from "lucide-react";
 import { MedicalFormData, initialMedicalFormData, calculateMedicalTotals } from '@/utils/medicalCalculations';
-import MedicalPDFDocument from '@/components/Medical/MedicalPDFDocument';
-
-// Dynamically import PDFDownloadLink
-const PDFDownloadLink = dynamic(() => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink), {
-  ssr: false,
-  loading: () => <Button disabled className="w-full bg-blue-300">Loading Report Engine...</Button>
-});
-
 const MemoizedMedicalPDF = React.memo(({ data, totals }: { data: MedicalFormData, totals: any }) => {
+    const [loading, setLoading] = React.useState(false);
+
+    const handleDownload = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/generate-medical-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data, totals })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to generate PDF');
+            }
+
+            const isFallback = res.headers.get('X-Fallback') === 'True';
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Medical-Form-${(data.emp_name_english || 'Proposal').replace(/\s+/g, '-')}.${isFallback ? 'docx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error: any) {
+            console.error(error);
+            alert('Failed to generate document: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <PDFDownloadLink 
-            document={<MedicalPDFDocument data={data} totals={totals} />} 
-            fileName={`Medical-Form-${(data.emp_name_english || 'Proposal').replace(/\s+/g, '-')}.pdf`}
+        <Button 
+            size="lg"
+            onClick={handleDownload}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 h-auto text-lg whitespace-nowrap"
+            disabled={loading || !data.emp_name_english}
         >
-            {({ blob, url, loading, error }) => (
-                <Button 
-                    size="lg"
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 h-auto text-lg whitespace-nowrap"
-                    disabled={loading || !data.emp_name_english}
-                >
-                    <Download size={24} />
-                    {loading ? 'Compiling Official Proposal...' : 'Download Form C/D PDF'}
-                </Button>
-            )}
-        </PDFDownloadLink>
+            <Download size={24} />
+            {loading ? 'Generating Official Document...' : 'Download Form C/D PDF'}
+        </Button>
     );
 });
 
