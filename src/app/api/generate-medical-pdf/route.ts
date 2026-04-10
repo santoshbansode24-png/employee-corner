@@ -10,8 +10,9 @@ import PizZip from 'pizzip';
 // @ts-ignore
 import Docxtemplater from 'docxtemplater';
 // @ts-ignore
-import libre from 'libreoffice-convert';
+import rawLibre from 'libreoffice-convert';
 
+const libre: any = rawLibre;
 libre.convertAsync = util.promisify(libre.convert);
 
 export async function POST(req: NextRequest) {
