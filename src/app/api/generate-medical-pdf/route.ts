@@ -107,6 +107,16 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error('API Error:', error);
+        
+        // Detailed Docxtemplater error logging
+        if (error.properties && error.properties.errors instanceof Array) {
+            const errorMessages = error.properties.errors
+                .map((err: any) => err.properties.explanation || err.message)
+                .join(', ');
+            console.error('Docxtemplater detailed errors:', errorMessages);
+            return NextResponse.json({ error: `Template Error: ${errorMessages}` }, { status: 500 });
+        }
+
         return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }
