@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         } catch (convertErr: any) {
             console.error("LibreOffice conversion failed:", convertErr);
             // Fallback: If libreoffice fails (e.g. local dev windows without libreoffice), just return the DOCX directly so it doesn't crash completely.
-            return new NextResponse(buf, {
+            return new NextResponse(buf as any, {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return new NextResponse(pdfBuf, {
+        return new NextResponse(pdfBuf as any, {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
