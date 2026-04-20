@@ -36,7 +36,7 @@ export const getMaharashtraHRARate = (month: number, year: number, category: str
 
     const daRate = customDaRate !== undefined ? customDaRate : getMaharashtraDARate(month, year);
     let zRate = 8;
-    if (daRate >= 50) {
+    if (daRate > 50) {
         zRate = 10;
     } else if (daRate >= 25) {
         zRate = 9;
