@@ -139,7 +139,7 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns, resu
                         {isNps && (
                             <React.Fragment>
                                 <View style={[styles.tableCol, { width: pw(dcpsWidth) }]}><Text style={styles.tableCell}>{row.dcps}</Text></View>
-                                <View style={[styles.tableCol, { width: pw(npsWidth) }]}><Text style={styles.tableCell}>{Math.round(row.diff.total * 0.14)}</Text></View>
+                                <View style={[styles.tableCol, { width: pw(npsWidth) }]}><Text style={styles.tableCell}>{row.nps14}</Text></View>
                             </React.Fragment>
                         )}
                     </View>
@@ -173,7 +173,7 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns, resu
                     {isNps && (
                         <React.Fragment>
                             <View style={[styles.tableColHeader, { width: pw(dcpsWidth) }]}><Text style={styles.tableCellHeader}>{results.reduce((s, r) => s + r.dcps, 0)}</Text></View>
-                            <View style={[styles.tableColHeader, { width: pw(npsWidth) }]}><Text style={styles.tableCellHeader}>{results.reduce((s, r) => s + Math.round(r.diff.total * 0.14), 0)}</Text></View>
+                            <View style={[styles.tableColHeader, { width: pw(npsWidth) }]}><Text style={styles.tableCellHeader}>{results.reduce((s, r) => s + r.nps14, 0)}</Text></View>
                         </React.Fragment>
                     )}
                 </View>

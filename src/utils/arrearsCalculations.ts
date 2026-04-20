@@ -85,9 +85,12 @@ export const getValueForMonth = (comps: any[], month: number, year: number) => {
     if (!comps || comps.length === 0) return null;
     const dateStr = `${year}-${String(month).padStart(2, '0')}`;
     let latestVal: number | null = null;
-    for (let item of comps) {
-        if (item.from && item.from.substring(0, 7) <= dateStr) {
-            latestVal = item.amount !== '' && item.amount !== undefined ? parseFloat(item.amount) : null;
+    for (let i = 0; i < comps.length; i++) {
+        const item = comps[i];
+        if (i === 0 && (!item.from || item.from === '')) {
+            latestVal = item.amount !== '' && item.amount !== undefined && item.amount !== null ? parseFloat(item.amount) : null;
+        } else if (item.from && item.from.substring(0, 7) <= dateStr) {
+            latestVal = item.amount !== '' && item.amount !== undefined && item.amount !== null ? parseFloat(item.amount) : null;
         } else if (item.from && item.from.substring(0, 7) > dateStr) {
             break;
         }
@@ -238,7 +241,8 @@ export const calculateArrearsLogic = (params: any) => {
         const diffCustom: Record<string, number> = {};
         customColumns.forEach((col: any) => { diffCustom[col.id] = (dueCustomValues[col.id] || 0) - (drawnCustomValues[col.id] || 0); });
 
-        let dcps = basicInfo.category === 'NPS' ? Math.round(diffTotal * 0.10) : 0;
+        let dcps = basicInfo.category === 'NPS' ? Math.round((diffPay + diffDA) * 0.10) : 0;
+        const nps14 = basicInfo.category === 'NPS' ? Math.round((diffPay + diffDA) * 0.14) : 0;
         const finalAmount = diffTotal - dcps;
 
         results.push({
@@ -248,6 +252,7 @@ export const calculateArrearsLogic = (params: any) => {
             drawn: { pay: runningDrawnPay, daRate: drawnDARate, da: drawnDAAmt, hraRate: drawnHRA, hra: drawnHRAAmt, ta: drawnTA, custom: drawnCustomValues, total: drawnTotal },
             diff: { pay: diffPay, da: diffDA, hra: diffHRA, ta: diffTA, custom: diffCustom, total: diffTotal },
             dcps,
+            nps14,
             finalAmount
         });
     });
