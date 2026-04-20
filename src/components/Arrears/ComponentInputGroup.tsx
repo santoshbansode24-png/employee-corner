@@ -41,8 +41,6 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
 
                 // Show manual input if user overrides, otherwise show auto value. 
                 // For non-auto components, directly use item.amount.
-                let displayValue = (item.amount !== '' && item.amount !== undefined && item.amount !== null) ? item.amount : autoValue;
-                if (!isAutoDA && !isAutoHRA) displayValue = item.amount || '';
 
                 return (
                 <div key={idx} className={`relative pt-4 ${idx < comps.length - 1 ? 'mb-4' : ''}`}>
@@ -57,7 +55,7 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
                         <Input
                             type="number"
                             placeholder={isAutoDA || isAutoHRA ? autoValue.toString() : "0"}
-                            value={displayValue}
+                            value={item.amount || ''}
                             onChange={(e) => updateComponent(type, compKey, idx, 'amount', e.target.value)}
                             className={`bg-transparent border-none text-lg font-semibold text-gray-800 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-300 py-6 pr-4 pl-0 ${(isAutoDA || isAutoHRA) && (item.amount === '' || item.amount === undefined || item.amount === null) ? 'text-blue-600 bg-blue-50/10' : ''}`}
                             style={{ boxShadow: 'none' }}
