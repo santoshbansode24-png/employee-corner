@@ -30,11 +30,11 @@ export const HRA_RATES_Z = [
     { start: '2024-01-01', end: '2099-12-31', rate: 10 },
 ];
 
-export const getMaharashtraHRARate = (month: number, year: number, category: string) => {
+export const getMaharashtraHRARate = (month: number, year: number, category: string, customDaRate?: number) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
     if (dateStr < '2019-01-01') return 0;
 
-    const daRate = getMaharashtraDARate(month, year);
+    const daRate = customDaRate !== undefined ? customDaRate : getMaharashtraDARate(month, year);
     let zRate = 8;
     if (daRate >= 50) {
         zRate = 10;
@@ -175,13 +175,17 @@ export const calculateArrearsLogic = (params: any) => {
 
         let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
         let dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+        
+        if (duePromotionPeriod && duePromotionPeriod.daRate > 0) {
+            dueDARate = duePromotionPeriod.daRate;
+        }
+
         let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
-        let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : 0);
+        let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, dueDARate) : 0);
         let dueTA = runningDueTA !== null ? runningDueTA : (getValueForMonth(dueComponents.ta, month, year) || 0);
 
-        if (duePromotionPeriod) {
-            if (duePromotionPeriod.daRate > 0) dueDARate = duePromotionPeriod.daRate;
-            if (duePromotionPeriod.hraRate > 0) dueHRA = duePromotionPeriod.hraRate;
+        if (duePromotionPeriod && duePromotionPeriod.hraRate > 0) {
+            dueHRA = duePromotionPeriod.hraRate;
         }
 
         const dueDAAmt = Math.round(runningPay * dueDARate / 100);
@@ -206,13 +210,17 @@ export const calculateArrearsLogic = (params: any) => {
         // Drawn Calcs
         let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
         let drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+
+        if (drawnPromotionPeriod && drawnPromotionPeriod.daRate > 0) {
+            drawnDARate = drawnPromotionPeriod.daRate;
+        }
+
         let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
-        let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory) : 0);
+        let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, drawnDARate) : 0);
         let drawnTA = runningDrawnTA !== null ? runningDrawnTA : (getValueForMonth(drawnComponents.ta, month, year) || 0);
 
-        if (drawnPromotionPeriod) {
-            if (drawnPromotionPeriod.daRate > 0) drawnDARate = drawnPromotionPeriod.daRate;
-            if (drawnPromotionPeriod.hraRate > 0) drawnHRA = drawnPromotionPeriod.hraRate;
+        if (drawnPromotionPeriod && drawnPromotionPeriod.hraRate > 0) {
+            drawnHRA = drawnPromotionPeriod.hraRate;
         }
 
         const drawnDAAmt = Math.round(runningDrawnPay * drawnDARate / 100);

@@ -36,8 +36,14 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
                 const isAutoHRA = compKey === 'hraRate' && toggles.autoHRAMaharashtra;
                 
                 let autoValue: string | number = '';
-                if (isAutoDA) autoValue = getMaharashtraDARate(startMonth, startYear);
-                if (isAutoHRA) autoValue = getMaharashtraHRARate(startMonth, startYear, basicInfo.cityCategory);
+                if (isAutoDA) {
+                    autoValue = getMaharashtraDARate(startMonth, startYear);
+                }
+                if (isAutoHRA) {
+                    const daAmt = components['daRate']?.[idx]?.amount;
+                    const customDaRate = daAmt && !isNaN(parseFloat(daAmt)) ? parseFloat(daAmt) : undefined;
+                    autoValue = getMaharashtraHRARate(startMonth, startYear, basicInfo.cityCategory, customDaRate);
+                }
 
                 // Show manual input if user overrides, otherwise show auto value. 
                 // For non-auto components, directly use item.amount.
