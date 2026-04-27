@@ -97,6 +97,22 @@ export const getValueForMonth = (comps: any[], month: number, year: number) => {
     }
     return latestVal;
 };
+export const getPromotionPeriodForMonth = (periods: any[], month: number, year: number) => {
+    if (!periods || periods.length === 0) return null;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}`;
+    let latest: any = null;
+    for (const p of periods) {
+        if (p.from && p.from.substring(0, 7) <= dateStr) {
+            latest = p;
+        } else {
+            // Periods should be sorted by date ideally, but we'll find the closest one that is <= dateStr
+        }
+    }
+    // To be safe, sort by 'from' and get the actual latest one that is <= dateStr
+    const sorted = [...periods].filter(p => p.from && p.from.substring(0, 7) <= dateStr)
+                               .sort((a, b) => b.from.localeCompare(a.from));
+    return sorted.length > 0 ? sorted[0] : null;
+};
 
 export const calculateArrearsLogic = (params: any) => {
     const { basicInfo, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods, toggles, customColumns } = params;
@@ -106,14 +122,8 @@ export const calculateArrearsLogic = (params: any) => {
     let runningPay = (dueComponents.pay && dueComponents.pay.length > 0) ? parseFloat(dueComponents.pay[0].amount) || 0 : 0;
     let runningDrawnPay = (drawnComponents.pay && drawnComponents.pay.length > 0) ? parseFloat(drawnComponents.pay[0].amount) || 0 : 0;
 
-    let runningDueTA: number | null = null;
-    let runningDrawnTA: number | null = null;
-    let runningDueDARateOverride: number | null = null;
-    let runningDueHRARateOverride: number | null = null;
-    let runningDrawnDARateOverride: number | null = null;
-    let runningDrawnHRARateOverride: number | null = null;
-    const runningDueCustom: Record<string, number> = {};
-    const runningDrawnCustom: Record<string, number> = {};
+    let latestDuePromotionPay = 0;
+    let latestDrawnPromotionPay = 0;
 
     months.forEach((m, index) => {
         const { month, year, label } = m;
@@ -135,21 +145,21 @@ export const calculateArrearsLogic = (params: any) => {
             }
         }
 
-        // Due Promotion
-        const duePromotionPeriod = duePromotionPeriods.find((p: any) => p.from && p.from.startsWith(dateStr));
-        if (duePromotionPeriod) {
-            if (duePromotionPeriod.pay > 0) runningPay = duePromotionPeriod.pay;
-            if (duePromotionPeriod.ta !== undefined && duePromotionPeriod.ta !== '') runningDueTA = parseFloat(duePromotionPeriod.ta) || 0;
-            if (duePromotionPeriod.daRate > 0) runningDueDARateOverride = parseFloat(duePromotionPeriod.daRate);
-            if (duePromotionPeriod.hraRate > 0) runningDueHRARateOverride = parseFloat(duePromotionPeriod.hraRate);
-            if (duePromotionPeriod.custom) {
-                Object.keys(duePromotionPeriod.custom).forEach(key => {
-                    if (duePromotionPeriod.custom[key] !== undefined && duePromotionPeriod.custom[key] !== '') {
-                        runningDueCustom[key] = parseFloat(duePromotionPeriod.custom[key]) || 0;
-                    }
-                });
-            }
+        // Due Promotion Entry (Only if it starts THIS month we update the compounded runningPay)
+        const duePromotionPeriodEntry = duePromotionPeriods.find((p: any) => p.from && p.from.substring(0, 7) === dateStr);
+        if (duePromotionPeriodEntry && duePromotionPeriodEntry.pay > 0) {
+            runningPay = parseFloat(duePromotionPeriodEntry.pay) || 0;
+            latestDuePromotionPay = runningPay;
         }
+
+        // Active Due Promotion Period for DA/HRA/TA lookup
+        const activeDuePromotion = getPromotionPeriodForMonth(duePromotionPeriods, month, year);
+        
+        let dueTA = getValueForMonth(dueComponents.ta, month, year) || 0;
+        if (activeDuePromotion && activeDuePromotion.ta !== undefined && activeDuePromotion.ta !== '') {
+            dueTA = parseFloat(activeDuePromotion.ta) || 0;
+        }
+        
 
         // Drawn Pay
         const drawnStartEntry = drawnComponents.pay ? drawnComponents.pay.find((c: any) => c.from && c.from.substring(0, 7) === dateStr) : null;
@@ -165,35 +175,33 @@ export const calculateArrearsLogic = (params: any) => {
             }
         }
 
-        // Drawn Promotion
-        const drawnPromotionPeriod = drawnPromotionPeriods.find((p: any) => p.from && p.from.startsWith(dateStr));
-        if (drawnPromotionPeriod) {
-            if (drawnPromotionPeriod.pay > 0) runningDrawnPay = drawnPromotionPeriod.pay;
-            if (drawnPromotionPeriod.ta !== undefined && drawnPromotionPeriod.ta !== '') runningDrawnTA = parseFloat(drawnPromotionPeriod.ta) || 0;
-            if (drawnPromotionPeriod.daRate > 0) runningDrawnDARateOverride = parseFloat(drawnPromotionPeriod.daRate);
-            if (drawnPromotionPeriod.hraRate > 0) runningDrawnHRARateOverride = parseFloat(drawnPromotionPeriod.hraRate);
-            if (drawnPromotionPeriod.custom) {
-                Object.keys(drawnPromotionPeriod.custom).forEach(key => {
-                    if (drawnPromotionPeriod.custom[key] !== undefined && drawnPromotionPeriod.custom[key] !== '') {
-                        runningDrawnCustom[key] = parseFloat(drawnPromotionPeriod.custom[key]) || 0;
-                    }
-                });
-            }
+        // Drawn Promotion Entry
+        const drawnPromotionPeriodEntry = drawnPromotionPeriods.find((p: any) => p.from && p.from.substring(0, 7) === dateStr);
+        if (drawnPromotionPeriodEntry && drawnPromotionPeriodEntry.pay > 0) {
+            runningDrawnPay = parseFloat(drawnPromotionPeriodEntry.pay) || 0;
+            latestDrawnPromotionPay = runningDrawnPay;
+        }
+
+        // Active Drawn Promotion Period
+        const activeDrawnPromotion = getPromotionPeriodForMonth(drawnPromotionPeriods, month, year);
+
+        let drawnTA = getValueForMonth(drawnComponents.ta, month, year) || 0;
+        if (activeDrawnPromotion && activeDrawnPromotion.ta !== undefined && activeDrawnPromotion.ta !== '') {
+            drawnTA = parseFloat(activeDrawnPromotion.ta) || 0;
         }
 
         let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
         let dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
         
-        if (runningDueDARateOverride !== null) {
-            dueDARate = runningDueDARateOverride;
+        if (activeDuePromotion && activeDuePromotion.daRate > 0) {
+            dueDARate = parseFloat(activeDuePromotion.daRate);
         }
 
         let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
         let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, dueDARate) : 0);
-        let dueTA = runningDueTA !== null ? runningDueTA : (getValueForMonth(dueComponents.ta, month, year) || 0);
 
-        if (runningDueHRARateOverride !== null) {
-            dueHRA = runningDueHRARateOverride;
+        if (activeDuePromotion && activeDuePromotion.hraRate > 0) {
+            dueHRA = parseFloat(activeDuePromotion.hraRate);
         }
 
         const dueDAAmt = Math.round(runningPay * dueDARate / 100);
@@ -204,7 +212,14 @@ export const calculateArrearsLogic = (params: any) => {
             let val = 0;
             if (col.type === 'basic_percent') val = Math.round(runningPay * (col.percent / 100));
             else if (col.type === 'basic_da_percent') val = Math.round((runningPay + dueDAAmt) * (col.percent / 100));
-            else val = runningDueCustom[col.id] !== undefined ? runningDueCustom[col.id] : (getValueForMonth(dueComponents[col.id] || [], month, year) || 0);
+            else {
+                // Check Promotion Period custom override first
+                if (activeDuePromotion && activeDuePromotion.custom && activeDuePromotion.custom[col.id] !== undefined && activeDuePromotion.custom[col.id] !== '') {
+                    val = parseFloat(activeDuePromotion.custom[col.id]) || 0;
+                } else {
+                    val = getValueForMonth(dueComponents[col.id] || [], month, year) || 0;
+                }
+            }
             dueCustomValues[col.id] = val;
             dueCustomTotal += val;
         });
@@ -219,16 +234,15 @@ export const calculateArrearsLogic = (params: any) => {
         let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
         let drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
 
-        if (runningDrawnDARateOverride !== null) {
-            drawnDARate = runningDrawnDARateOverride;
+        if (activeDrawnPromotion && activeDrawnPromotion.daRate > 0) {
+            drawnDARate = parseFloat(activeDrawnPromotion.daRate);
         }
 
         let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
         let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, drawnDARate) : 0);
-        let drawnTA = runningDrawnTA !== null ? runningDrawnTA : (getValueForMonth(drawnComponents.ta, month, year) || 0);
 
-        if (runningDrawnHRARateOverride !== null) {
-            drawnHRA = runningDrawnHRARateOverride;
+        if (activeDrawnPromotion && activeDrawnPromotion.hraRate > 0) {
+            drawnHRA = parseFloat(activeDrawnPromotion.hraRate);
         }
 
         const drawnDAAmt = Math.round(runningDrawnPay * drawnDARate / 100);
@@ -239,7 +253,13 @@ export const calculateArrearsLogic = (params: any) => {
             let val = 0;
             if (col.type === 'basic_percent') val = Math.round(runningDrawnPay * (col.percent / 100));
             else if (col.type === 'basic_da_percent') val = Math.round((runningDrawnPay + drawnDAAmt) * (col.percent / 100));
-            else val = runningDrawnCustom[col.id] !== undefined ? runningDrawnCustom[col.id] : (getValueForMonth(drawnComponents[col.id] || [], month, year) || 0);
+            else {
+                if (activeDrawnPromotion && activeDrawnPromotion.custom && activeDrawnPromotion.custom[col.id] !== undefined && activeDrawnPromotion.custom[col.id] !== '') {
+                    val = parseFloat(activeDrawnPromotion.custom[col.id]) || 0;
+                } else {
+                    val = getValueForMonth(drawnComponents[col.id] || [], month, year) || 0;
+                }
+            }
             drawnCustomValues[col.id] = val;
             drawnCustomTotal += val;
         });
