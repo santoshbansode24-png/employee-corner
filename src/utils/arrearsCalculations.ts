@@ -108,6 +108,10 @@ export const calculateArrearsLogic = (params: any) => {
 
     let runningDueTA: number | null = null;
     let runningDrawnTA: number | null = null;
+    let runningDueDARateOverride: number | null = null;
+    let runningDueHRARateOverride: number | null = null;
+    let runningDrawnDARateOverride: number | null = null;
+    let runningDrawnHRARateOverride: number | null = null;
     const runningDueCustom: Record<string, number> = {};
     const runningDrawnCustom: Record<string, number> = {};
 
@@ -136,6 +140,8 @@ export const calculateArrearsLogic = (params: any) => {
         if (duePromotionPeriod) {
             if (duePromotionPeriod.pay > 0) runningPay = duePromotionPeriod.pay;
             if (duePromotionPeriod.ta !== undefined && duePromotionPeriod.ta !== '') runningDueTA = parseFloat(duePromotionPeriod.ta) || 0;
+            if (duePromotionPeriod.daRate > 0) runningDueDARateOverride = parseFloat(duePromotionPeriod.daRate);
+            if (duePromotionPeriod.hraRate > 0) runningDueHRARateOverride = parseFloat(duePromotionPeriod.hraRate);
             if (duePromotionPeriod.custom) {
                 Object.keys(duePromotionPeriod.custom).forEach(key => {
                     if (duePromotionPeriod.custom[key] !== undefined && duePromotionPeriod.custom[key] !== '') {
@@ -164,6 +170,8 @@ export const calculateArrearsLogic = (params: any) => {
         if (drawnPromotionPeriod) {
             if (drawnPromotionPeriod.pay > 0) runningDrawnPay = drawnPromotionPeriod.pay;
             if (drawnPromotionPeriod.ta !== undefined && drawnPromotionPeriod.ta !== '') runningDrawnTA = parseFloat(drawnPromotionPeriod.ta) || 0;
+            if (drawnPromotionPeriod.daRate > 0) runningDrawnDARateOverride = parseFloat(drawnPromotionPeriod.daRate);
+            if (drawnPromotionPeriod.hraRate > 0) runningDrawnHRARateOverride = parseFloat(drawnPromotionPeriod.hraRate);
             if (drawnPromotionPeriod.custom) {
                 Object.keys(drawnPromotionPeriod.custom).forEach(key => {
                     if (drawnPromotionPeriod.custom[key] !== undefined && drawnPromotionPeriod.custom[key] !== '') {
@@ -176,16 +184,16 @@ export const calculateArrearsLogic = (params: any) => {
         let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
         let dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
         
-        if (duePromotionPeriod && duePromotionPeriod.daRate > 0) {
-            dueDARate = duePromotionPeriod.daRate;
+        if (runningDueDARateOverride !== null) {
+            dueDARate = runningDueDARateOverride;
         }
 
         let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
         let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, dueDARate) : 0);
         let dueTA = runningDueTA !== null ? runningDueTA : (getValueForMonth(dueComponents.ta, month, year) || 0);
 
-        if (duePromotionPeriod && duePromotionPeriod.hraRate > 0) {
-            dueHRA = duePromotionPeriod.hraRate;
+        if (runningDueHRARateOverride !== null) {
+            dueHRA = runningDueHRARateOverride;
         }
 
         const dueDAAmt = Math.round(runningPay * dueDARate / 100);
@@ -211,16 +219,16 @@ export const calculateArrearsLogic = (params: any) => {
         let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
         let drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
 
-        if (drawnPromotionPeriod && drawnPromotionPeriod.daRate > 0) {
-            drawnDARate = drawnPromotionPeriod.daRate;
+        if (runningDrawnDARateOverride !== null) {
+            drawnDARate = runningDrawnDARateOverride;
         }
 
         let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
         let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, drawnDARate) : 0);
         let drawnTA = runningDrawnTA !== null ? runningDrawnTA : (getValueForMonth(drawnComponents.ta, month, year) || 0);
 
-        if (drawnPromotionPeriod && drawnPromotionPeriod.hraRate > 0) {
-            drawnHRA = drawnPromotionPeriod.hraRate;
+        if (runningDrawnHRARateOverride !== null) {
+            drawnHRA = runningDrawnHRARateOverride;
         }
 
         const drawnDAAmt = Math.round(runningDrawnPay * drawnDARate / 100);
