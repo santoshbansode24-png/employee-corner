@@ -30,7 +30,15 @@ const ComponentInputGroup: React.FC<InputGroupProps> = ({
         <React.Fragment>
             {comps.map((item: any, idx: number) => {
                 const dateStr = idx === 0 ? basicInfo.fromMonth : (item.from || basicInfo.fromMonth);
-                const [startYear, startMonth] = dateStr ? dateStr.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
+                let startYear = new Date().getFullYear();
+                let startMonth = new Date().getMonth() + 1;
+                if (dateStr) {
+                    const parts = dateStr.split('-').map(Number);
+                    if (parts[0] && parts[1]) {
+                        startYear = parts[0];
+                        startMonth = parts[1];
+                    }
+                }
                 
                 const isAutoDA = compKey === 'daRate' && toggles.autoDAMaharashtra;
                 const isAutoHRA = compKey === 'hraRate' && toggles.autoHRAMaharashtra;

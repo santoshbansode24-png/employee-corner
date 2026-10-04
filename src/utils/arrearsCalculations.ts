@@ -21,6 +21,7 @@ export const DA_RATES_MAHARASHTRA = [
     { date: '2024-07-01', rate: 53 },
     { date: '2025-01-01', rate: 55 },
     { date: '2025-07-01', rate: 58 },
+    { date: '2026-01-01', rate: 60 },
 ];
 
 export const HRA_RATES_Z = [
@@ -36,7 +37,8 @@ export const getMaharashtraHRARate = (month: number, year: number, category: str
 
     const daRate = customDaRate !== undefined ? customDaRate : getMaharashtraDARate(month, year);
     let zRate = 8;
-    if (daRate > 50) {
+    // 7th CPC rule: When DA reaches 50% (>= 50), HRA increases to 30%, 20%, 10%
+    if (daRate >= 50) {
         zRate = 10;
     } else if (daRate >= 25) {
         zRate = 9;
@@ -62,21 +64,34 @@ export const getMaharashtraDARate = (month: number, year: number) => {
 
 export const getMonthYearList = (startStr: string, endStr: string) => {
     if (!startStr || !endStr) return [];
-    const s = startStr.length === 7 ? `${startStr}-01` : startStr;
-    const e = endStr.length === 7 ? `${endStr}-01` : endStr;
-    const start = new Date(s);
-    const end = new Date(e);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+    
+    // Parse year and month directly to prevent timezone shift issues
+    const startParts = startStr.split('-').map(Number);
+    const endParts = endStr.split('-').map(Number);
+    if (!startParts[0] || !startParts[1] || !endParts[0] || !endParts[1]) return [];
+
+    let currentYear = startParts[0];
+    let currentMonth = startParts[1];
+    const endYear = endParts[0];
+    const endMonth = endParts[1];
+
+    if (currentYear > endYear || (currentYear === endYear && currentMonth > endMonth)) {
+        return [];
+    }
+
     const list = [];
-    let current = new Date(start.getFullYear(), start.getMonth(), 1);
-    const loopEnd = new Date(end.getFullYear(), end.getMonth(), 1);
-    while (current <= loopEnd) {
+    while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
         list.push({
-            month: current.getMonth() + 1,
-            year: current.getFullYear(),
-            label: `01.${String(current.getMonth() + 1).padStart(2, '0')}.${current.getFullYear()}`
+            month: currentMonth,
+            year: currentYear,
+            label: `01.${String(currentMonth).padStart(2, '0')}.${currentYear}`,
+            monthName: MONTHS[currentMonth - 1]
         });
-        current.setMonth(current.getMonth() + 1);
+        currentMonth++;
+        if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
+        }
     }
     return list;
 };
@@ -227,7 +242,7 @@ export const calculateArrearsLogic = (params: any) => {
         const getMinHRA = (cat: string) => { if (cat === 'X') return 5400; if (cat === 'Y') return 3600; if (cat === 'Z') return 1800; return 0; };
         const minHRA = getMinHRA(basicInfo.cityCategory);
         let dueHRAAmt = Math.round(runningPay * dueHRA / 100);
-        if (dueHRAAmt < minHRA) dueHRAAmt = minHRA;
+        if (dueHRA > 0 && dueHRAAmt < minHRA) dueHRAAmt = minHRA;
         const dueTotal = runningPay + dueDAAmt + dueHRAAmt + dueTA + dueCustomTotal;
 
         // Drawn Calcs
@@ -265,7 +280,7 @@ export const calculateArrearsLogic = (params: any) => {
         });
 
         let drawnHRAAmt = Math.round(runningDrawnPay * drawnHRA / 100);
-        if (drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
+        if (drawnHRA > 0 && drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
         const drawnTotal = runningDrawnPay + drawnDAAmt + drawnHRAAmt + drawnTA + drawnCustomTotal;
 
         // Diff
@@ -294,4 +309,72 @@ export const calculateArrearsLogic = (params: any) => {
     });
 
     return results;
+};
+
+export const getArrearsSummary = (results: any[], customColumns: any[] = []) => {
+    const summary = {
+        totalDuePay: 0,
+        totalDueDA: 0,
+        totalDueHRA: 0,
+        totalDueTA: 0,
+        totalDueCustom: {} as Record<string, number>,
+        totalDue: 0,
+
+        totalDrawnPay: 0,
+        totalDrawnDA: 0,
+        totalDrawnHRA: 0,
+        totalDrawnTA: 0,
+        totalDrawnCustom: {} as Record<string, number>,
+        totalDrawn: 0,
+
+        totalDiffPay: 0,
+        totalDiffDA: 0,
+        totalDiffHRA: 0,
+        totalDiffTA: 0,
+        totalDiffCustom: {} as Record<string, number>,
+        totalDiff: 0,
+
+        totalDCPS: 0,
+        totalNPS14: 0,
+        netPayable: 0,
+        monthCount: results.length
+    };
+
+    customColumns.forEach(col => {
+        summary.totalDueCustom[col.id] = 0;
+        summary.totalDrawnCustom[col.id] = 0;
+        summary.totalDiffCustom[col.id] = 0;
+    });
+
+    for (const row of results) {
+        summary.totalDuePay += row.due.pay || 0;
+        summary.totalDueDA += row.due.da || 0;
+        summary.totalDueHRA += row.due.hra || 0;
+        summary.totalDueTA += row.due.ta || 0;
+        summary.totalDue += row.due.total || 0;
+
+        summary.totalDrawnPay += row.drawn.pay || 0;
+        summary.totalDrawnDA += row.drawn.da || 0;
+        summary.totalDrawnHRA += row.drawn.hra || 0;
+        summary.totalDrawnTA += row.drawn.ta || 0;
+        summary.totalDrawn += row.drawn.total || 0;
+
+        summary.totalDiffPay += row.diff.pay || 0;
+        summary.totalDiffDA += row.diff.da || 0;
+        summary.totalDiffHRA += row.diff.hra || 0;
+        summary.totalDiffTA += row.diff.ta || 0;
+        summary.totalDiff += row.diff.total || 0;
+
+        summary.totalDCPS += row.dcps || 0;
+        summary.totalNPS14 += row.nps14 || 0;
+        summary.netPayable += row.finalAmount || 0;
+
+        customColumns.forEach(col => {
+            summary.totalDueCustom[col.id] += (row.due.custom?.[col.id] || 0);
+            summary.totalDrawnCustom[col.id] += (row.drawn.custom?.[col.id] || 0);
+            summary.totalDiffCustom[col.id] += (row.diff.custom?.[col.id] || 0);
+        });
+    }
+
+    return summary;
 };

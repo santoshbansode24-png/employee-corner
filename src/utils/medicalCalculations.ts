@@ -8,6 +8,7 @@ export interface MedicalFormData {
     // Step 1: Employee & Patient
     emp_name_designation_marathi: string;
     office_name_marathi: string;
+    office_name_english?: string;
     emp_name_english: string;
     emp_designation_english: string;
     basic_pay: string | number;
@@ -75,7 +76,7 @@ export interface MedicalTotals {
 }
 
 export const initialMedicalFormData: MedicalFormData = {
-    emp_name_designation_marathi: '', office_name_marathi: '', emp_name_english: '', emp_designation_english: '', basic_pay: '', appointment_date: '', res_address_english: '',
+    emp_name_designation_marathi: '', office_name_marathi: '', office_name_english: '', emp_name_english: '', emp_designation_english: '', basic_pay: '', appointment_date: '', res_address_english: '',
     patient_name_english: '', patient_name: '', patient_relation: '', patient_age: '', place_of_illness: '', hospital_name_english: '', treating_doctor_name_english: '', admit_date_from: '', admit_date_to: '',
     gw_days: '', gw_rates: '', gw_total: '', semi_days: '', semi_rates: '', semi_total: '', pvt_days: '', pvt_rates: '', pvt_total: '', icu_days: '', icu_rates: '', icu_total: '',
     pathology_receipts: [], medicine_receipts: [],

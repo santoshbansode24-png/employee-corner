@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Landmark, TrendingDown } from "lucide-react";
 
+import { Trash2 } from "lucide-react";
+
 interface DueDrawnProps {
     type: 'due' | 'drawn';
     title: string;
@@ -17,6 +19,7 @@ interface DueDrawnProps {
     promotionPeriods: any[];
     updatePromotionPeriod: (type: string, idx: number, field: string, val: any) => void;
     addPeriod: () => void;
+    removePeriod?: (type: string, idx: number) => void;
     renderComponentInputs: (type: string, key: string, label: string, inputClass: string) => React.ReactNode;
 }
 
@@ -32,6 +35,7 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     promotionPeriods,
     updatePromotionPeriod,
     addPeriod,
+    removePeriod,
     renderComponentInputs
 }) => {
     const isDue = type === 'due';
@@ -39,12 +43,11 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     
     // Tailwind specific styling logic to replace custom CSS
     const cardBorderColor = isDue ? 'border-emerald-200 shadow-emerald-100' : 'border-orange-200 shadow-orange-100';
-    const headerBg = isDue ? 'bg-[#10b981]' : 'bg-[#facc15] bg-opacity-90'; // Approximate to exact match on image (green & orange/amber)
     const titleColor = 'text-white';
     const inputClass = isDue ? 'focus:ring-emerald-500 border-emerald-400' : 'focus:ring-orange-500 border-orange-400';
     const btnClass = isDue 
-        ? 'text-white border-0 bg-emerald-600 hover:bg-emerald-700 w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all' 
-        : 'text-white border-0 bg-[#ea580c] hover:bg-[#c2410c] w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all';
+        ? 'text-white border-0 bg-emerald-600 hover:bg-emerald-700 w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all cursor-pointer' 
+        : 'text-white border-0 bg-[#ea580c] hover:bg-[#c2410c] w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all cursor-pointer';
 
     return (
         <Card className={`shadow-sm border-2 ${cardBorderColor} h-full flex flex-col rounded-xl overflow-hidden`}>
@@ -75,55 +78,86 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                             Promotion / Timebound Overrides
                         </div>
                         {promotionPeriods.map((period, idx) => (
-                            <div key={idx} className={`flex flex-wrap gap-2 p-3 bg-gray-50 border rounded-lg items-center ${isDue ? 'border-emerald-200 focus-within:ring-emerald-500' : 'border-orange-200 focus-within:ring-orange-500'} transition-all`}>
-                                <span className="text-gray-400 text-xs font-bold w-4 flex-shrink-0">{idx + 1}</span>
-                                <input 
-                                    type="month" 
-                                    value={period.from} 
-                                    onChange={(e) => updatePromotionPeriod(type, idx, 'from', e.target.value)} 
-                                    className="w-32 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                />
-                                <input 
-                                    type="number" 
-                                    placeholder="Basic Pay" 
-                                    value={period.pay || ''} 
-                                    onChange={(e) => updatePromotionPeriod(type, idx, 'pay', Number(e.target.value))} 
-                                    className="w-24 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                />
-                                <input 
-                                    type="number" 
-                                    placeholder="DA %" 
-                                    value={period.daRate || ''} 
-                                    onChange={(e) => updatePromotionPeriod(type, idx, 'daRate', Number(e.target.value))} 
-                                    className="w-20 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                />
-                                <input 
-                                    type="number" 
-                                    placeholder="HRA %" 
-                                    value={period.hraRate || ''} 
-                                    onChange={(e) => updatePromotionPeriod(type, idx, 'hraRate', Number(e.target.value))} 
-                                    className="w-20 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                />
-                                <input 
-                                    type="number" 
-                                    placeholder="TA" 
-                                    value={period.ta || ''} 
-                                    onChange={(e) => updatePromotionPeriod(type, idx, 'ta', Number(e.target.value))} 
-                                    className="w-20 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                />
-                                {customColumns.map(col => (
-                                    <input 
-                                        key={col.id}
-                                        type="number" 
-                                        placeholder={col.label} 
-                                        value={(period.custom && period.custom[col.id]) || ''} 
-                                        onChange={(e) => {
-                                            const updatedCustom = { ...(period.custom || {}), [col.id]: Number(e.target.value) };
-                                            updatePromotionPeriod(type, idx, 'custom', updatedCustom);
-                                        }} 
-                                        className="w-24 bg-white border border-gray-200 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                    />
-                                ))}
+                            <div key={idx} className={`p-3 bg-gray-50 border rounded-lg space-y-2 ${isDue ? 'border-emerald-200' : 'border-orange-200'} transition-all`}>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-gray-500">Period #{idx + 1}</span>
+                                    {removePeriod && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removePeriod(type, idx)}
+                                            className="text-red-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
+                                            title="Delete period"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Month</label>
+                                        <input 
+                                            type="month" 
+                                            value={period.from} 
+                                            onChange={(e) => updatePromotionPeriod(type, idx, 'from', e.target.value)} 
+                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">New Basic (₹)</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="Basic Pay" 
+                                            value={period.pay || ''} 
+                                            onChange={(e) => updatePromotionPeriod(type, idx, 'pay', Number(e.target.value))} 
+                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">DA (%)</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="DA %" 
+                                            value={period.daRate || ''} 
+                                            onChange={(e) => updatePromotionPeriod(type, idx, 'daRate', Number(e.target.value))} 
+                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">HRA (%)</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="HRA %" 
+                                            value={period.hraRate || ''} 
+                                            onChange={(e) => updatePromotionPeriod(type, idx, 'hraRate', Number(e.target.value))} 
+                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">TA (₹)</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="TA" 
+                                            value={period.ta || ''} 
+                                            onChange={(e) => updatePromotionPeriod(type, idx, 'ta', Number(e.target.value))} 
+                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                        />
+                                    </div>
+                                    {customColumns.map(col => (
+                                        <div key={col.id}>
+                                            <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">{col.label}</label>
+                                            <input 
+                                                type="number" 
+                                                placeholder={col.label} 
+                                                value={(period.custom && period.custom[col.id]) || ''} 
+                                                onChange={(e) => {
+                                                    const updatedCustom = { ...(period.custom || {}), [col.id]: Number(e.target.value) };
+                                                    updatePromotionPeriod(type, idx, 'custom', updatedCustom);
+                                                }} 
+                                                className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         ))}
                     </div>

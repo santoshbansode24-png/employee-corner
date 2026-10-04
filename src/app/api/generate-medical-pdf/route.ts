@@ -70,6 +70,21 @@ export async function POST(req: NextRequest) {
         // Get the zip document and generate it as a nodebuffer
         const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
+        // If docx format requested or LibreOffice conversion fallback
+        const url = new URL(req.url);
+        const format = url.searchParams.get('format');
+        const cleanName = (data.emp_name_english || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
+        if (format === 'docx') {
+            return new NextResponse(buf as any, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.docx"`,
+                },
+            });
+        }
+
         // Setup temporary paths for conversion
         const timestamp = Date.now();
         const tempPrefix = path.join(os.tmpdir(), `medical_form_${timestamp}`);
@@ -78,22 +93,24 @@ export async function POST(req: NextRequest) {
         // Write the populated DOCX back to disk temporarily
         fs.writeFileSync(tempDocxPath, buf);
 
-        let pdfBuf: Buffer;
+        let pdfBuf: Buffer | null = null;
         try {
-            // Attempt conversion using libreoffice-convert
-            // This requires libreoffice to be installed on the system/alpine container
-            pdfBuf = await libre.convertAsync(buf, '.pdf', undefined);
+            // Attempt conversion using libreoffice-convert with 3s timeout
+            pdfBuf = await Promise.race([
+                new Promise<Buffer>((resolve, reject) => {
+                    try {
+                        libre.convert(buf, '.pdf', undefined, (err: any, result: Buffer) => {
+                            if (err) reject(err);
+                            else resolve(result);
+                        });
+                    } catch (e) {
+                        reject(e);
+                    }
+                }),
+                new Promise<null>((_, reject) => setTimeout(() => reject(new Error('LibreOffice conversion timeout')), 3000))
+            ]);
         } catch (convertErr: any) {
-            console.error("LibreOffice conversion failed:", convertErr);
-            // Fallback: If libreoffice fails (e.g. local dev windows without libreoffice), just return the DOCX directly so it doesn't crash completely.
-            return new NextResponse(buf as any, {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'Content-Disposition': `attachment; filename="Medical-Form-${(data.emp_name_english || 'Proposal').replace(/\s+/g, '-')}-FALLBACK.docx"`,
-                    'X-Fallback': 'True', // Custom header to let frontend know it is docx
-                },
-            });
+            console.log("LibreOffice conversion not available or timed out:", convertErr?.message || convertErr);
         } finally {
             // Clean up temporary docx
             if (fs.existsSync(tempDocxPath)) {
@@ -101,11 +118,23 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        return new NextResponse(pdfBuf as any, {
+        if (pdfBuf) {
+            return new NextResponse(pdfBuf as any, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.pdf"`,
+                },
+            });
+        }
+
+        // Return populated DOCX
+        return new NextResponse(buf as any, {
             status: 200,
             headers: {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="Medical-Form-${(data.emp_name_english || 'Proposal').replace(/\s+/g, '-')}.pdf"`,
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.docx"`,
+                'X-Fallback': 'True',
             },
         });
 
