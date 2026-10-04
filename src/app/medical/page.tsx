@@ -170,22 +170,33 @@ export default function MedicalPage() {
         });
     };
 
-    // Direct Instant Client-side PDF Generation & Download
+    // Direct Download Official Maharashtra Medical Proposal PDF (Image 2 official format)
     const handleDownloadPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
-        if (!empName && !formData.patient_name_english) {
+        if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
             alert('Please enter Employee Name or Patient Name before downloading the PDF.');
             return;
         }
         setIsPdfGenerating(true);
         try {
-            const { pdf } = await import('@react-pdf/renderer');
-            const blob = await pdf(<MedicalPDFDocument data={formData} totals={totals} />).toBlob();
+            const res = await fetch('/api/generate-medical-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: formData, totals })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to generate PDF');
+            }
+
+            const isFallback = res.headers.get('X-Fallback') === 'True';
+            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const safeName = (empName || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-            a.download = `Medical-Claim-FormCD-${safeName}.pdf`;
+            const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            a.download = `Medical-Proposal-${safeName}.${isFallback ? 'docx' : 'pdf'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -198,17 +209,27 @@ export default function MedicalPage() {
         }
     };
 
-    // Direct Instant PDF Preview / Print in New Tab
+    // Direct Instant Official PDF Preview / Print in New Tab
     const handlePreviewPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
-        if (!empName && !formData.patient_name_english) {
+        if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
             alert('Please enter Employee Name or Patient Name before previewing the PDF.');
             return;
         }
         setIsPdfGenerating(true);
         try {
-            const { pdf } = await import('@react-pdf/renderer');
-            const blob = await pdf(<MedicalPDFDocument data={formData} totals={totals} />).toBlob();
+            const res = await fetch('/api/generate-medical-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: formData, totals })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to generate PDF');
+            }
+
+            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
             setTimeout(() => window.URL.revokeObjectURL(url), 60000);
@@ -905,7 +926,7 @@ export default function MedicalPage() {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row items-center gap-3">
-                                    {/* Direct Instant PDF Generation & Download */}
+                                    {/* Direct Official Proposal PDF Generation & Download */}
                                     <Button 
                                         size="lg"
                                         onClick={handleDownloadPDF}
@@ -915,12 +936,12 @@ export default function MedicalPage() {
                                         {isPdfGenerating ? (
                                             <>
                                                 <Loader2 size={20} className="animate-spin" />
-                                                <span>Compiling PDF...</span>
+                                                <span>Generating Proposal PDF...</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Download size={20} />
-                                                <span>Download Form C & D (PDF)</span>
+                                                <span>Download Official Proposal (PDF)</span>
                                             </>
                                         )}
                                     </Button>
@@ -934,7 +955,7 @@ export default function MedicalPage() {
                                         className="bg-slate-800/90 hover:bg-slate-700 text-white border-slate-700 font-semibold py-3.5 px-5 rounded-xl transition-all flex items-center gap-2 h-auto text-base cursor-pointer disabled:opacity-50"
                                     >
                                         <Printer size={18} className="text-indigo-400" />
-                                        <span>Preview / Print</span>
+                                        <span>Preview / Print (PDF)</span>
                                     </Button>
 
                                     {/* Pre-filled Official Word DOCX Download */}

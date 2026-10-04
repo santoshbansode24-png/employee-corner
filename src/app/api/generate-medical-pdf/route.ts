@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { exec } from 'child_process';
 import util from 'util';
 
 // @ts-ignore
@@ -12,7 +13,7 @@ import Docxtemplater from 'docxtemplater';
 import rawLibre from 'libreoffice-convert';
 
 const libre: any = rawLibre;
-libre.convertAsync = util.promisify(libre.convert);
+const execPromise = util.promisify(exec);
 
 export async function POST(req: NextRequest) {
     try {
@@ -203,70 +204,85 @@ export async function POST(req: NextRequest) {
         // Get the zip document and generate it as a nodebuffer
         const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
-        // If docx format requested or LibreOffice conversion fallback
+        // If docx format requested explicitly
         const url = new URL(req.url);
         const format = url.searchParams.get('format');
-        const cleanName = (data.emp_name_english || data.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        const cleanName = (data.emp_name_english || data.emp_name_marathi || 'Medical_Proposal').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
         if (format === 'docx') {
             return new NextResponse(buf as any, {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.docx"`,
+                    'Content-Disposition': `attachment; filename="Medical-Proposal-${cleanName}.docx"`,
                 },
             });
         }
 
         // Setup temporary paths for conversion
         const timestamp = Date.now();
-        const tempPrefix = path.join(os.tmpdir(), `medical_form_${timestamp}`);
-        const tempDocxPath = `${tempPrefix}.docx`;
+        const tmpDir = os.tmpdir();
+        const tempDocxPath = path.join(tmpDir, `med_${timestamp}.docx`);
+        const tempPdfPath = path.join(tmpDir, `med_${timestamp}.pdf`);
 
-        // Write the populated DOCX back to disk temporarily
         fs.writeFileSync(tempDocxPath, buf);
 
         let pdfBuf: Buffer | null = null;
+
+        // Method 1: Direct native soffice command (Fastest & most accurate on Linux / Alpine container)
         try {
-            // Attempt conversion using libreoffice-convert with 3s timeout
-            pdfBuf = await Promise.race([
-                new Promise<Buffer>((resolve, reject) => {
-                    try {
-                        libre.convert(buf, '.pdf', undefined, (err: any, result: Buffer) => {
-                            if (err) reject(err);
-                            else resolve(result);
-                        });
-                    } catch (e) {
-                        reject(e);
-                    }
-                }),
-                new Promise<null>((_, reject) => setTimeout(() => reject(new Error('LibreOffice conversion timeout')), 3000))
-            ]);
-        } catch (convertErr: any) {
-            console.log("LibreOffice conversion not available or timed out:", convertErr?.message || convertErr);
-        } finally {
-            // Clean up temporary docx
-            if (fs.existsSync(tempDocxPath)) {
-                fs.unlinkSync(tempDocxPath);
+            await execPromise(`soffice --headless --convert-to pdf --outdir "${tmpDir}" "${tempDocxPath}"`, { timeout: 45000 });
+            if (fs.existsSync(tempPdfPath)) {
+                pdfBuf = fs.readFileSync(tempPdfPath);
+            }
+        } catch (execErr: any) {
+            console.log("Direct soffice CLI attempt failed/not found:", execErr?.message || execErr);
+        }
+
+        // Method 2: Fallback to libreoffice-convert package
+        if (!pdfBuf) {
+            try {
+                pdfBuf = await Promise.race([
+                    new Promise<Buffer>((resolve, reject) => {
+                        try {
+                            libre.convert(buf, '.pdf', undefined, (err: any, result: Buffer) => {
+                                if (err) reject(err);
+                                else resolve(result);
+                            });
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }),
+                    new Promise<null>((_, reject) => setTimeout(() => reject(new Error('LibreOffice convert timeout')), 45000))
+                ]);
+            } catch (convertErr: any) {
+                console.log("libreoffice-convert fallback failed:", convertErr?.message || convertErr);
             }
         }
 
+        // Clean up temporary files
+        try {
+            if (fs.existsSync(tempDocxPath)) fs.unlinkSync(tempDocxPath);
+            if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath);
+        } catch (_) {}
+
+        // Return generated official PDF
         if (pdfBuf) {
             return new NextResponse(pdfBuf as any, {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/pdf',
-                    'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.pdf"`,
+                    'Content-Disposition': `attachment; filename="Medical-Proposal-${cleanName}.pdf"`,
                 },
             });
         }
 
-        // Return populated DOCX as fallback
+        // Fallback: If LibreOffice is completely absent (e.g. local Windows dev without LibreOffice installed), return DOCX with notice header
         return new NextResponse(buf as any, {
             status: 200,
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition': `attachment; filename="Medical-Claim-FormCD-${cleanName}.docx"`,
+                'Content-Disposition': `attachment; filename="Medical-Proposal-${cleanName}.docx"`,
                 'X-Fallback': 'True',
             },
         });

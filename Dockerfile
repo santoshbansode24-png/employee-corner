@@ -25,11 +25,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install LibreOffice in the runner for PDF conversion
+# Install LibreOffice in the runner for PDF conversion with Marathi Devanagari fonts
 RUN apk add --no-cache libreoffice ttf-freefont font-noto-devanagari fontconfig && fc-cache -fv
 
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 --home /home/nextjs nextjs
+RUN mkdir -p /home/nextjs/.config/libreoffice && chown -R nextjs:nodejs /home/nextjs /tmp
+ENV HOME=/home/nextjs
 
 # Copy public folder
 COPY --from=builder /app/public ./public
