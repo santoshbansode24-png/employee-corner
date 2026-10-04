@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import { exec } from 'child_process';
 import util from 'util';
+import { calculateMedicalTotals } from '@/utils/medicalCalculations';
 
 // @ts-ignore
 import PizZip from 'pizzip';
@@ -15,10 +16,77 @@ import rawLibre from 'libreoffice-convert';
 const libre: any = rawLibre;
 const execPromise = util.promisify(exec);
 
+function escapeXml(unsafe: any): string {
+    if (unsafe === undefined || unsafe === null) return '';
+    return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+function findLoopRange(xml: string, loopVar: string) {
+    const marker = xml.indexOf(loopVar);
+    if (marker === -1) return null;
+    const trStart = xml.lastIndexOf('<w:tr', marker);
+    const endforMarker = xml.indexOf('endfor', marker);
+    if (endforMarker === -1) return null;
+    const trEndTag = '</w:tr>';
+    const trEnd = xml.indexOf(trEndTag, endforMarker);
+    if (trEnd === -1) return null;
+    return { start: trStart, end: trEnd + trEndTag.length };
+}
+
+function generatePathologyRows(receipts: any[]): string {
+    if (!receipts || receipts.length === 0) {
+        return `<w:tr w:rsidR="00351EDB" w:rsidRPr="00791672" w:rsidTr="003E6A32">
+            <w:trPr><w:trHeight w:val="450"/></w:trPr>
+            <w:tc><w:tcPr><w:tcW w:w="1350" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>1</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="4126" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1836" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="2228" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>0</w:t></w:r></w:p></w:tc>
+        </w:tr>`;
+    }
+    return receipts.map((r, i) => {
+        const amt = r.amount ? Number(r.amount).toLocaleString('en-IN') : '0';
+        return `<w:tr w:rsidR="00351EDB" w:rsidRPr="00791672" w:rsidTr="003E6A32">
+            <w:trPr><w:trHeight w:val="450"/></w:trPr>
+            <w:tc><w:tcPr><w:tcW w:w="1350" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${i + 1}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="4126" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.receipt_no || r.bill_no || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1836" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.date || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="2228" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>${escapeXml(amt)}</w:t></w:r></w:p></w:tc>
+        </w:tr>`;
+    }).join('');
+}
+
+function generateMedicineRows(receipts: any[]): string {
+    if (!receipts || receipts.length === 0) {
+        return `<w:tr w:rsidR="00351EDB" w:rsidRPr="00791672" w:rsidTr="003E6A32">
+            <w:trPr><w:trHeight w:val="450"/></w:trPr>
+            <w:tc><w:tcPr><w:tcW w:w="1530" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>1</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="3330" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1890" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="2520" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>0</w:t></w:r></w:p></w:tc>
+        </w:tr>`;
+    }
+    return receipts.map((r, i) => {
+        const amt = r.amount ? Number(r.amount).toLocaleString('en-IN') : '0';
+        return `<w:tr w:rsidR="00351EDB" w:rsidRPr="00791672" w:rsidTr="003E6A32">
+            <w:trPr><w:trHeight w:val="450"/></w:trPr>
+            <w:tc><w:tcPr><w:tcW w:w="1530" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${i + 1}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="3330" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.receipt_no || r.bill_no || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1890" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.date || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="2520" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>${escapeXml(amt)}</w:t></w:r></w:p></w:tc>
+        </w:tr>`;
+    }).join('');
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { data, totals } = body;
+        const effectiveTotals = totals || calculateMedicalTotals(data);
 
         // Path to the template
         const templatePath = path.join(process.cwd(), 'public', 'medical_form.docx');
@@ -29,8 +97,33 @@ export async function POST(req: NextRequest) {
         // Load the docx file as binary
         const content = fs.readFileSync(templatePath, 'binary');
 
-        // Load PizZip and Docxtemplater with nullGetter to NEVER emit 'undefined'
+        // Load PizZip and modify XML for dynamic tables and clean breaks
         const zip = new PizZip(content);
+        const docFile = zip.file('word/document.xml');
+        if (docFile) {
+            let docXml = docFile.asText();
+
+            // 1. Deduplicate any double page breaks to prevent blank pages
+            const duplicateBreakRegex = /(<w:br\s+w:type="page"\s*\/?>)((?:<[^>]+>|\s)*?)(<w:br\s+w:type="page"\s*\/?>)/g;
+            while (duplicateBreakRegex.test(docXml)) {
+                docXml = docXml.replace(duplicateBreakRegex, (_, p1, p2, p3) => p2 + p3);
+            }
+
+            // 2. Populate dynamic receipts tables (Medicine and Pathology)
+            // Replace from highest index to lowest so character offsets remain exact
+            const medRange = findLoopRange(docXml, 'medicine_receipts');
+            if (medRange) {
+                docXml = docXml.slice(0, medRange.start) + generateMedicineRows(data.medicine_receipts || []) + docXml.slice(medRange.end);
+            }
+
+            const pathRange = findLoopRange(docXml, 'pathology_receipts');
+            if (pathRange) {
+                docXml = docXml.slice(0, pathRange.start) + generatePathologyRows(data.pathology_receipts || []) + docXml.slice(pathRange.end);
+            }
+
+            zip.file('word/document.xml', docXml);
+        }
+
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
@@ -80,7 +173,7 @@ export async function POST(req: NextRequest) {
         const icuTotal = (data.icu_total !== '' && data.icu_total !== undefined) ? Number(data.icu_total) || 0 : (icuDays * icuRates);
 
         const stayTotal = gwTotal + semiTotal + pvtTotal + icuTotal;
-        const grandClaim = totals?.grand_claim ?? (stayTotal + (totals?.procedural_total || 0) + (totals?.path_total || 0) + (totals?.med_total || 0));
+        const grandClaim = effectiveTotals?.grand_claim ?? (stayTotal + (effectiveTotals?.procedural_total || 0) + (effectiveTotals?.path_total || 0) + (effectiveTotals?.med_total || 0));
 
         // Base data copy
         for (const [key, value] of Object.entries(data)) {
@@ -90,8 +183,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Totals copy
-        if (totals) {
-            for (const [key, value] of Object.entries(totals)) {
+        if (effectiveTotals) {
+            for (const [key, value] of Object.entries(effectiveTotals)) {
                 if (typeof value === 'number') {
                     docxData[key] = Number(value).toLocaleString('en-IN');
                 } else if (typeof value === 'string') {
@@ -134,18 +227,19 @@ export async function POST(req: NextRequest) {
         // Amounts and calculations
         docxData.grand_total_claim = Number(grandClaim).toLocaleString('en-IN');
         docxData.total_claim_amount = Number(grandClaim).toLocaleString('en-IN');
-        docxData.pathology_charges = Number(totals?.path_total || 0).toLocaleString('en-IN');
-        docxData.medicine_charges = Number(totals?.med_total || 0).toLocaleString('en-IN');
+        docxData.stay_and_all_total = Number(grandClaim).toLocaleString('en-IN');
+        docxData.pathology_charges = Number(effectiveTotals?.path_total || 0).toLocaleString('en-IN');
+        docxData.medicine_charges = Number(effectiveTotals?.med_total || 0).toLocaleString('en-IN');
         docxData.stay_grand_total = Number(stayTotal).toLocaleString('en-IN');
-        docxData.total_hospital_bill_amount = Number((totals?.form_d_total || stayTotal)).toLocaleString('en-IN');
-        docxData.total_hospital_bill_inc_lab = Number((totals?.form_d_total || stayTotal) + (totals?.path_total || 0)).toLocaleString('en-IN');
-        docxData.external_lab_charges = Number(totals?.path_total || 0).toLocaleString('en-IN');
+        docxData.total_hospital_bill_amount = Number((effectiveTotals?.form_d_total || stayTotal)).toLocaleString('en-IN');
+        docxData.total_hospital_bill_inc_lab = Number((effectiveTotals?.form_d_total || stayTotal) + (effectiveTotals?.path_total || 0)).toLocaleString('en-IN');
+        docxData.external_lab_charges = Number(effectiveTotals?.path_total || 0).toLocaleString('en-IN');
 
-        docxData.total_hospital_bill_90_percent = Number((totals?.admissible_procedural || 0)).toLocaleString('en-IN');
-        docxData.medicine_charges_90_percent = Number((totals?.admissible_meds || 0)).toLocaleString('en-IN');
-        docxData.external_lab_charges_90_percent = Number((totals?.admissible_path || 0)).toLocaleString('en-IN');
-        docxData.total_room_rent_admissible = Number((totals?.admissible_stay || 0)).toLocaleString('en-IN');
-        docxData.grand_total_admissible_amount = Number((totals?.grand_admissible || 0)).toLocaleString('en-IN');
+        docxData.total_hospital_bill_90_percent = Number((effectiveTotals?.admissible_procedural || 0)).toLocaleString('en-IN');
+        docxData.medicine_charges_90_percent = Number((effectiveTotals?.admissible_meds || 0)).toLocaleString('en-IN');
+        docxData.external_lab_charges_90_percent = Number((effectiveTotals?.admissible_path || 0)).toLocaleString('en-IN');
+        docxData.total_room_rent_admissible = Number((effectiveTotals?.admissible_stay || 0)).toLocaleString('en-IN');
+        docxData.grand_total_admissible_amount = Number((effectiveTotals?.grand_admissible || 0)).toLocaleString('en-IN');
 
         // Room Stay
         docxData.gw_dates = `${data.admit_date_from || ''} to ${data.admit_date_to || ''}`;
