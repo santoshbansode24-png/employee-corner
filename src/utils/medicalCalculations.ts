@@ -6,23 +6,35 @@ export interface Receipt {
 
 export interface MedicalFormData {
     // Step 1: Employee & Patient
+    emp_name_english: string;
+    emp_designation_english: string;
+    emp_name_marathi?: string;
+    emp_designation_marathi?: string;
     emp_name_designation_marathi: string;
     office_name_marathi: string;
     office_name_english?: string;
-    emp_name_english: string;
-    emp_designation_english: string;
+    work_place_marathi?: string;
     basic_pay: string | number;
     appointment_date: string;
+    retirement_date?: string;
     res_address_english: string;
+    res_address_marathi?: string;
+
     patient_name_english: string;
     patient_name: string;
+    patient_name_marathi?: string;
     patient_relation: string;
+    patient_relation_marathi?: string;
     patient_age: string | number;
     place_of_illness: string;
     hospital_name_english: string;
+    hospital_name_marathi?: string;
     treating_doctor_name_english: string;
+    dr_name_marathi?: string;
     admit_date_from: string;
     admit_date_to: string;
+    cert_place?: string;
+    cert_date?: string;
 
     // Step 2: Hospital Stay
     gw_days: string | number; gw_rates: string | number; gw_total: string | number;
@@ -76,18 +88,98 @@ export interface MedicalTotals {
 }
 
 export const initialMedicalFormData: MedicalFormData = {
-    emp_name_designation_marathi: '', office_name_marathi: '', office_name_english: '', emp_name_english: '', emp_designation_english: '', basic_pay: '', appointment_date: '', res_address_english: '',
-    patient_name_english: '', patient_name: '', patient_relation: '', patient_age: '', place_of_illness: '', hospital_name_english: '', treating_doctor_name_english: '', admit_date_from: '', admit_date_to: '',
-    gw_days: '', gw_rates: '', gw_total: '', semi_days: '', semi_rates: '', semi_total: '', pvt_days: '', pvt_rates: '', pvt_total: '', icu_days: '', icu_rates: '', icu_total: '',
-    pathology_receipts: [], medicine_receipts: [],
-    admission_charges: 0, surgeon_charges: 0, asst_surgeon_charges: 0, anesthesia_charges: 0, ot_charges: 0, ot_assistant_charges: 0, rmo_charges: 0, nursing_charges: 0, iv_infusion_charges: 0, doctor_visit_charges: 0, special_visit_charges: 0, monitor_charges: 0, oxygen_charges: 0, radiology_charges: 0, ecg_charges: 0, bsl_charges: 0, other_charges: 0,
-    m_name_1: '', m_rel_1: '', m_age_1: '', m_name_2: '', m_rel_2: '', m_age_2: '', m_name_3: '', m_rel_3: '', m_age_3: '', m_name_4: '', m_rel_4: '', m_age_4: '', m_name_5: '', m_rel_5: '', m_age_5: ''
+    emp_name_english: '',
+    emp_designation_english: '',
+    emp_name_marathi: '',
+    emp_designation_marathi: '',
+    emp_name_designation_marathi: '',
+    office_name_marathi: '',
+    office_name_english: '',
+    work_place_marathi: '',
+    basic_pay: '',
+    appointment_date: '',
+    retirement_date: '',
+    res_address_english: '',
+    res_address_marathi: '',
+
+    patient_name_english: '',
+    patient_name: '',
+    patient_name_marathi: '',
+    patient_relation: 'Self',
+    patient_relation_marathi: 'स्वतः',
+    patient_age: '',
+    place_of_illness: '',
+    hospital_name_english: '',
+    hospital_name_marathi: '',
+    treating_doctor_name_english: '',
+    dr_name_marathi: '',
+    admit_date_from: '',
+    admit_date_to: '',
+    cert_place: '',
+    cert_date: '',
+
+    gw_days: '', gw_rates: '', gw_total: '',
+    semi_days: '', semi_rates: '', semi_total: '',
+    pvt_days: '', pvt_rates: '', pvt_total: '',
+    icu_days: '', icu_rates: '', icu_total: '',
+
+    pathology_receipts: [],
+    medicine_receipts: [],
+
+    admission_charges: 0,
+    surgeon_charges: 0,
+    asst_surgeon_charges: 0,
+    anesthesia_charges: 0,
+    ot_charges: 0,
+    ot_assistant_charges: 0,
+    rmo_charges: 0,
+    nursing_charges: 0,
+    iv_infusion_charges: 0,
+    doctor_visit_charges: 0,
+    special_visit_charges: 0,
+    monitor_charges: 0,
+    oxygen_charges: 0,
+    radiology_charges: 0,
+    ecg_charges: 0,
+    bsl_charges: 0,
+    other_charges: 0,
+
+    m_name_1: '', m_rel_1: '', m_age_1: '',
+    m_name_2: '', m_rel_2: '', m_age_2: '',
+    m_name_3: '', m_rel_3: '', m_age_3: '',
+    m_name_4: '', m_rel_4: '', m_age_4: '',
+    m_name_5: '', m_rel_5: '', m_age_5: ''
 };
 
 export const calculateMedicalTotals = (data: MedicalFormData): MedicalTotals => {
-    const stay_total = (Number(data.gw_total) || 0) + (Number(data.semi_total) || 0) + (Number(data.pvt_total) || 0) + (Number(data.icu_total) || 0);
-    const path_total = data.pathology_receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-    const med_total = data.medicine_receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    // Dynamic fallback: compute days * rates if total is not directly set
+    const gw_days_num = Number(data.gw_days) || 0;
+    const gw_rates_num = Number(data.gw_rates) || 0;
+    const gw_total = (data.gw_total !== '' && data.gw_total !== undefined) 
+        ? Number(data.gw_total) || 0 
+        : (gw_days_num * gw_rates_num);
+
+    const semi_days_num = Number(data.semi_days) || 0;
+    const semi_rates_num = Number(data.semi_rates) || 0;
+    const semi_total = (data.semi_total !== '' && data.semi_total !== undefined) 
+        ? Number(data.semi_total) || 0 
+        : (semi_days_num * semi_rates_num);
+
+    const pvt_days_num = Number(data.pvt_days) || 0;
+    const pvt_rates_num = Number(data.pvt_rates) || 0;
+    const pvt_total = (data.pvt_total !== '' && data.pvt_total !== undefined) 
+        ? Number(data.pvt_total) || 0 
+        : (pvt_days_num * pvt_rates_num);
+
+    const icu_days_num = Number(data.icu_days) || 0;
+    const icu_rates_num = Number(data.icu_rates) || 0;
+    const icu_total = (data.icu_total !== '' && data.icu_total !== undefined) 
+        ? Number(data.icu_total) || 0 
+        : (icu_days_num * icu_rates_num);
+
+    const stay_total = gw_total + semi_total + pvt_total + icu_total;
+    const path_total = (data.pathology_receipts || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const med_total = (data.medicine_receipts || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
     const procedural_fields: (keyof MedicalFormData)[] = [
         'admission_charges', 'surgeon_charges', 'asst_surgeon_charges', 'anesthesia_charges', 'ot_charges', 'ot_assistant_charges',
@@ -100,9 +192,9 @@ export const calculateMedicalTotals = (data: MedicalFormData): MedicalTotals => 
     const grand_claim = form_d_total + med_total + path_total;
 
     // Admissibility Limits (Govt Rules)
-    const admissible_stay = (Number(data.gw_total) * 0.95 || 0) + (Number(data.semi_total) * 0.90 || 0) + (Number(data.pvt_total) * 0.75 || 0) + (Number(data.icu_total) * 1.0 || 0);
+    const admissible_stay = (gw_total * 0.95) + (semi_total * 0.90) + (pvt_total * 0.75) + (icu_total * 1.0);
     
-    // Most procedural, meds, and path are capped at 90% typically unless special case
+    // Most procedural, meds, and path are capped at 90% typically under MS (MA) Rules
     const admissible_procedural = procedural_total * 0.90;
     const admissible_meds = med_total * 0.90;
     const admissible_path = path_total * 0.90;

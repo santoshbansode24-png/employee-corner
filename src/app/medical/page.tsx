@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import {
     FileImage, Plus, Trash2, Download, ArrowRight, ArrowLeft, 
     Activity, HeartPulse, Receipt, Sparkles, Loader2, Printer, 
     FileText, CheckCircle2, User, Building, Users, Calendar, 
-    Stethoscope, Clock, ShieldCheck 
+    Stethoscope, Clock, ShieldCheck, MapPin 
 } from 'lucide-react';
 import { 
     MedicalFormData, 
@@ -32,11 +32,26 @@ export default function MedicalPage() {
         setFormData(prev => {
             const next: MedicalFormData = { ...prev, [`${prefix}_${field}`]: value };
             if (field === 'days' || field === 'rates') {
-                const days = field === 'days' ? Number(value) || 0 : Number((prev as any)[`${prefix}_days`]) || 0;
-                const rate = field === 'rates' ? Number(value) || 0 : Number((prev as any)[`${prefix}_rates`]) || 0;
-                (next as any)[`${prefix}_total`] = (days > 0 && rate > 0) ? (days * rate) : (days * rate || '');
+                const days = field === 'days' ? (Number(value) || 0) : (Number((prev as any)[`${prefix}_days`]) || 0);
+                const rate = field === 'rates' ? (Number(value) || 0) : (Number((prev as any)[`${prefix}_rates`]) || 0);
+                (next as any)[`${prefix}_total`] = (days > 0 && rate > 0) ? (days * rate) : '';
             }
             return next;
+        });
+    };
+
+    // Auto-compose emp_name_designation_marathi when name or designation changes
+    const handleMarathiNameOrDesigChange = (field: 'emp_name_marathi' | 'emp_designation_marathi', val: string) => {
+        setFormData(prev => {
+            const updated = { ...prev, [field]: val };
+            const name = field === 'emp_name_marathi' ? val : prev.emp_name_marathi || '';
+            const desig = field === 'emp_designation_marathi' ? val : prev.emp_designation_marathi || '';
+            if (name && desig) {
+                updated.emp_name_designation_marathi = `${name} (${desig})`;
+            } else if (name) {
+                updated.emp_name_designation_marathi = name;
+            }
+            return updated;
         });
     };
 
@@ -59,13 +74,13 @@ export default function MedicalPage() {
     // Handle Receipt Arrays
     const addPathology = () => {
         if (!newPathology.receipt_no || !newPathology.amount) return;
-        setFormData(prev => ({ ...prev, pathology_receipts: [...prev.pathology_receipts, newPathology] }));
+        setFormData(prev => ({ ...prev, pathology_receipts: [...(prev.pathology_receipts || []), newPathology] }));
         setNewPathology({ receipt_no: '', date: '', amount: '' });
     };
 
     const addMedicine = () => {
         if (!newMedicine.receipt_no || !newMedicine.amount) return;
-        setFormData(prev => ({ ...prev, medicine_receipts: [...prev.medicine_receipts, newMedicine] }));
+        setFormData(prev => ({ ...prev, medicine_receipts: [...(prev.medicine_receipts || []), newMedicine] }));
         setNewMedicine({ receipt_no: '', date: '', amount: '' });
     };
 
@@ -83,48 +98,60 @@ export default function MedicalPage() {
     // Load sample data for 1-click test
     const loadSampleData = () => {
         setFormData({
-            emp_name_english: 'Shri Rajesh K. Patil',
-            emp_name_designation_marathi: 'श्री. राजेश के. पाटील (सहाय्यक अभियंता)',
-            office_name_english: 'Executive Engineer, P.W.D. Division, Pune',
-            office_name_marathi: 'कार्यकारी अभियंता, सार्वजनिक बांधकाम विभाग, पुणे',
-            emp_designation_english: 'Assistant Engineer Gr-I',
-            basic_pay: 56100,
-            appointment_date: '2015-08-10',
-            res_address_english: 'Flat 402, Shivneri Residency, Kothrud, Pune - 411038',
-            patient_name_english: 'Mrs. Sunita R. Patil',
-            patient_name: 'सौ. सुनिता राजेश पाटील',
-            patient_relation: 'Wife',
-            patient_age: 42,
-            place_of_illness: 'Pune',
-            hospital_name_english: 'Deenanath Mangeshkar Hospital & Research Center, Pune',
-            treating_doctor_name_english: 'Dr. Suresh N. Joshi, MS (Gen Surgery)',
-            admit_date_from: '2025-01-12',
-            admit_date_to: '2025-01-16',
+            emp_name_english: 'Shri Santosh Bansode',
+            emp_designation_english: 'Account Clerk',
+            emp_name_marathi: 'श्री. संतोष बनसोडे',
+            emp_designation_marathi: 'लेखा लिपिक',
+            emp_name_designation_marathi: 'श्री. संतोष बनसोडे (लेखा लिपिक)',
+            office_name_english: 'Treasury Office, Latur',
+            office_name_marathi: 'कोषागार कार्यालय लातूर',
+            work_place_marathi: 'लातूर',
+            basic_pay: 25500,
+            appointment_date: '2019-12-09',
+            retirement_date: '2045-05-31',
+            res_address_english: 'Plot 15, Shivaji Nagar, Latur - 413512',
+            res_address_marathi: 'प्लॉट क्र. १५, शिवाजी नगर, लातूर - ४१३५१२',
 
-            gw_days: '', gw_rates: '', gw_total: 0,
-            semi_days: 4, semi_rates: 1800, semi_total: 7200,
-            pvt_days: '', pvt_rates: '', pvt_total: 0,
-            icu_days: 1, icu_rates: 4500, icu_total: 4500,
+            patient_name_english: 'Santosh Bansode',
+            patient_name: 'संतोष बनसोडे',
+            patient_name_marathi: 'संतोष बनसोडे',
+            patient_relation: 'Self',
+            patient_relation_marathi: 'स्वतः',
+            patient_age: 36,
+            place_of_illness: 'Latur',
+            hospital_name_english: 'Patil Multispeciality Hospital, Latur',
+            hospital_name_marathi: 'पाटील मल्टीस्पेशालिटी हॉस्पिटल, लातूर',
+            treating_doctor_name_english: 'Dr. Suresh N. Patil, MS',
+            dr_name_marathi: 'डॉ. सुरेश एन. पाटील',
+            admit_date_from: '2026-09-01',
+            admit_date_to: '2026-09-10',
+            cert_place: 'लातूर',
+            cert_date: '2026-09-10',
+
+            gw_days: 5, gw_rates: 1000, gw_total: 5000,
+            semi_days: '', semi_rates: '', semi_total: '',
+            pvt_days: '', pvt_rates: '', pvt_total: '',
+            icu_days: 5, icu_rates: 2000, icu_total: 10000,
 
             pathology_receipts: [
-                { receipt_no: 'DMH-LAB-10492', date: '2025-01-12', amount: 1650 },
-                { receipt_no: 'DMH-LAB-10515', date: '2025-01-13', amount: 2800 },
-                { receipt_no: 'DMH-LAB-10602', date: '2025-01-15', amount: 950 }
+                { receipt_no: 'LAB-10492', date: '2026-09-02', amount: 1650 },
+                { receipt_no: 'LAB-10515', date: '2026-09-05', amount: 2800 },
+                { receipt_no: 'LAB-10602', date: '2026-09-08', amount: 950 }
             ],
             medicine_receipts: [
-                { receipt_no: 'MED-78901', date: '2025-01-12', amount: 4850 },
-                { receipt_no: 'MED-78945', date: '2025-01-14', amount: 3620 },
-                { receipt_no: 'MED-79012', date: '2025-01-16', amount: 1450 }
+                { receipt_no: 'MED-78901', date: '2026-09-02', amount: 4850 },
+                { receipt_no: 'MED-78945', date: '2026-09-06', amount: 3620 },
+                { receipt_no: 'MED-79012', date: '2026-09-09', amount: 1450 }
             ],
 
-            admission_charges: 1000,
-            surgeon_charges: 18000,
-            asst_surgeon_charges: 4500,
-            anesthesia_charges: 6000,
-            ot_charges: 12000,
-            ot_assistant_charges: 1500,
-            rmo_charges: 2000,
-            nursing_charges: 2500,
+            admission_charges: 500,
+            surgeon_charges: 50000,
+            asst_surgeon_charges: 0,
+            anesthesia_charges: 5000,
+            ot_charges: 4000,
+            ot_assistant_charges: 5000,
+            rmo_charges: 0,
+            nursing_charges: 4500,
             iv_infusion_charges: 800,
             doctor_visit_charges: 3000,
             special_visit_charges: 2500,
@@ -135,17 +162,18 @@ export default function MedicalPage() {
             bsl_charges: 300,
             other_charges: 1000,
 
-            m_name_1: 'Mrs. Sunita R. Patil', m_rel_1: 'Wife', m_age_1: 42,
-            m_name_2: 'Master Rohan R. Patil', m_rel_2: 'Son', m_age_2: 14,
-            m_name_3: 'Kumari Sneha R. Patil', m_rel_3: 'Daughter', m_age_3: 10,
-            m_name_4: 'Smt. Parvati K. Patil', m_rel_4: 'Mother', m_age_4: 68,
+            m_name_1: 'Sunita S. Bansode', m_rel_1: 'Wife', m_age_1: 32,
+            m_name_2: 'Rohan S. Bansode', m_rel_2: 'Son', m_age_2: 8,
+            m_name_3: '', m_rel_3: '', m_age_3: '',
+            m_name_4: '', m_rel_4: '', m_age_4: '',
             m_name_5: '', m_rel_5: '', m_age_5: ''
         });
     };
 
     // Direct Instant Client-side PDF Generation & Download
     const handleDownloadPDF = async () => {
-        if (!formData.emp_name_english && !formData.patient_name_english) {
+        const empName = formData.emp_name_english || formData.emp_name_marathi;
+        if (!empName && !formData.patient_name_english) {
             alert('Please enter Employee Name or Patient Name before downloading the PDF.');
             return;
         }
@@ -156,7 +184,7 @@ export default function MedicalPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const safeName = (formData.emp_name_english || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const safeName = (empName || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
             a.download = `Medical-Claim-FormCD-${safeName}.pdf`;
             document.body.appendChild(a);
             a.click();
@@ -172,7 +200,8 @@ export default function MedicalPage() {
 
     // Direct Instant PDF Preview / Print in New Tab
     const handlePreviewPDF = async () => {
-        if (!formData.emp_name_english && !formData.patient_name_english) {
+        const empName = formData.emp_name_english || formData.emp_name_marathi;
+        if (!empName && !formData.patient_name_english) {
             alert('Please enter Employee Name or Patient Name before previewing the PDF.');
             return;
         }
@@ -191,7 +220,7 @@ export default function MedicalPage() {
         }
     };
 
-    // Download DOCX template from API route
+    // Download populated Word DOCX template from API route
     const handleDownloadDocx = async () => {
         setDocxLoading(true);
         try {
@@ -210,7 +239,7 @@ export default function MedicalPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const safeName = (formData.emp_name_english || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
             a.download = `Medical-Claim-FormCD-${safeName}.docx`;
             document.body.appendChild(a);
             a.click();
@@ -283,37 +312,99 @@ export default function MedicalPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {/* Marathi Name & Designation explicitly separated */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                        कर्मचाऱ्याचे नाव (मराठी) *
+                                    </Label>
+                                    <Input 
+                                        name="emp_name_marathi" 
+                                        value={formData.emp_name_marathi || ''} 
+                                        onChange={(e) => handleMarathiNameOrDesigChange('emp_name_marathi', e.target.value)} 
+                                        placeholder="उदा: श्री. संतोष बनसोडे" 
+                                        className="bg-white border-blue-200" 
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                        कर्मचाऱ्याचे पदनाम (मराठी) *
+                                    </Label>
+                                    <Input 
+                                        name="emp_designation_marathi" 
+                                        value={formData.emp_designation_marathi || ''} 
+                                        onChange={(e) => handleMarathiNameOrDesigChange('emp_designation_marathi', e.target.value)} 
+                                        placeholder="उदा: लेखा लिपिक" 
+                                        className="bg-white border-blue-200" 
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs">
+                                        नाव व पदनाम एकत्रित (मराठी)
+                                    </Label>
+                                    <Input 
+                                        name="emp_name_designation_marathi" 
+                                        value={formData.emp_name_designation_marathi || ''} 
+                                        onChange={handleInputChange} 
+                                        placeholder="उदा: श्री. संतोष बनसोडे (लेखा लिपिक)" 
+                                        className="bg-slate-50 font-medium" 
+                                    />
+                                </div>
+
+                                {/* English Name & Designation */}
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Employee Name (English) *</Label>
-                                    <Input name="emp_name_english" value={formData.emp_name_english} onChange={handleInputChange} placeholder="Ex: Shri Rajesh K. Patil" className="bg-white" required />
+                                    <Input name="emp_name_english" value={formData.emp_name_english} onChange={handleInputChange} placeholder="Ex: Shri Santosh Bansode" className="bg-white" required />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">कर्मचाऱ्याचे नाव (मराठी)</Label>
-                                    <Input name="emp_name_designation_marathi" value={formData.emp_name_designation_marathi} onChange={handleInputChange} placeholder="उदा: श्री. राजेश के. पाटील" className="bg-white" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Designation / Cadre (पदनाम)</Label>
-                                    <Input name="emp_designation_english" value={formData.emp_designation_english} onChange={handleInputChange} placeholder="Ex: Assistant Engineer Gr-I" className="bg-white" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Office / Department (English)</Label>
-                                    <Input name="office_name_english" value={formData.office_name_english || ''} onChange={handleInputChange} placeholder="Ex: Executive Engineer, PWD Division, Pune" className="bg-white" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">कार्यालयाचे नाव (मराठी)</Label>
-                                    <Input name="office_name_marathi" value={formData.office_name_marathi} onChange={handleInputChange} placeholder="उदा: कार्यकारी अभियंता, सा. बां. विभाग, पुणे" className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Designation (English)</Label>
+                                    <Input name="emp_designation_english" value={formData.emp_designation_english} onChange={handleInputChange} placeholder="Ex: Account Clerk" className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Basic Pay / मूळ वेतन (₹)</Label>
-                                    <Input name="basic_pay" type="number" value={formData.basic_pay} onChange={handleInputChange} placeholder="Ex: 56100" className="bg-white" />
+                                    <Input name="basic_pay" type="number" value={formData.basic_pay} onChange={handleInputChange} placeholder="Ex: 25500" className="bg-white" />
                                 </div>
+
+                                {/* Offices and Work Place */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                        कार्यालयाचे नाव (मराठी) *
+                                    </Label>
+                                    <Input name="office_name_marathi" value={formData.office_name_marathi} onChange={handleInputChange} placeholder="उदा: कोषागार कार्यालय लातूर" className="bg-white border-blue-200" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs">Office Name (English)</Label>
+                                    <Input name="office_name_english" value={formData.office_name_english || ''} onChange={handleInputChange} placeholder="Ex: Treasury Office, Latur" className="bg-white" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                        कामाचे ठिकाण (मराठी)
+                                    </Label>
+                                    <Input name="work_place_marathi" value={formData.work_place_marathi || ''} onChange={handleInputChange} placeholder="उदा: लातूर" className="bg-white border-blue-200" />
+                                </div>
+
+                                {/* Dates and Addresses */}
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Date of Appointment (नियुक्ती दिनांक)</Label>
                                     <Input name="appointment_date" type="date" value={formData.appointment_date} onChange={handleInputChange} className="bg-white" />
                                 </div>
-                                <div className="space-y-1.5 lg:col-span-2">
-                                    <Label className="text-slate-700 font-semibold text-xs">Residential Address (राहण्याचा पत्ता)</Label>
-                                    <Input name="res_address_english" value={formData.res_address_english} onChange={handleInputChange} placeholder="Ex: Flat 402, Shivneri Residency, Kothrud, Pune - 411038" className="bg-white" />
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs">Date of Retirement (सेवानिवृत्ती दिनांक)</Label>
+                                    <Input name="retirement_date" type="date" value={formData.retirement_date || ''} onChange={handleInputChange} className="bg-white" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs">Certificate Place (स्थळ)</Label>
+                                    <Input name="cert_place" value={formData.cert_place || ''} onChange={handleInputChange} placeholder="उदा: लातूर" className="bg-white" />
+                                </div>
+
+                                <div className="space-y-1.5 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-slate-700 font-semibold text-xs text-blue-900">राहण्याचा पत्ता (मराठी)</Label>
+                                        <Input name="res_address_marathi" value={formData.res_address_marathi || ''} onChange={handleInputChange} placeholder="उदा: प्लॉट क्र. १५, शिवाजी नगर, लातूर" className="bg-white border-blue-200" />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-700 font-semibold text-xs">Residential Address (English)</Label>
+                                        <Input name="res_address_english" value={formData.res_address_english} onChange={handleInputChange} placeholder="Ex: Plot 15, Shivaji Nagar, Latur" className="bg-white" />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -335,12 +426,14 @@ export default function MedicalPage() {
                             </CardHeader>
                             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Patient Name (English) *</Label>
-                                    <Input name="patient_name_english" value={formData.patient_name_english} onChange={handleInputChange} placeholder="Ex: Mrs. Sunita R. Patil" className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs text-indigo-900">रुग्णाचे नाव (मराठी) *</Label>
+                                    <Input name="patient_name_marathi" value={formData.patient_name_marathi || formData.patient_name || ''} onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, patient_name_marathi: e.target.value, patient_name: e.target.value }));
+                                    }} placeholder="उदा: संतोष बनसोडे" className="bg-white border-indigo-200" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">रुग्णाचे नाव (मराठी)</Label>
-                                    <Input name="patient_name" value={formData.patient_name} onChange={handleInputChange} placeholder="उदा: सौ. सुनिता राजेश पाटील" className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Patient Name (English) *</Label>
+                                    <Input name="patient_name_english" value={formData.patient_name_english} onChange={handleInputChange} placeholder="Ex: Santosh Bansode" className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Relationship with Employee (नाते)</Label>
@@ -360,22 +453,29 @@ export default function MedicalPage() {
                                         <option value="Other">Other Dependent (इतर अवलंबून)</option>
                                     </select>
                                 </div>
+
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Patient Age (वय - वर्षे)</Label>
-                                    <Input name="patient_age" type="number" value={formData.patient_age} onChange={handleInputChange} placeholder="Ex: 42" className="bg-white" />
+                                    <Input name="patient_age" type="number" value={formData.patient_age} onChange={handleInputChange} placeholder="Ex: 36" className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Place of Illness (आजाराचे ठिकाण)</Label>
-                                    <Input name="place_of_illness" value={formData.place_of_illness} onChange={handleInputChange} placeholder="Ex: Pune" className="bg-white" />
+                                    <Input name="place_of_illness" value={formData.place_of_illness} onChange={handleInputChange} placeholder="Ex: Latur" className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Treating Doctor / Specialist Name</Label>
-                                    <Input name="treating_doctor_name_english" value={formData.treating_doctor_name_english} onChange={handleInputChange} placeholder="Ex: Dr. Suresh N. Joshi, MS" className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Treating Doctor (उपचार करणारे डॉक्टर)</Label>
+                                    <Input name="treating_doctor_name_english" value={formData.treating_doctor_name_english} onChange={handleInputChange} placeholder="Ex: Dr. Suresh N. Patil" className="bg-white" />
                                 </div>
+
                                 <div className="space-y-1.5 lg:col-span-2">
                                     <Label className="text-slate-700 font-semibold text-xs">Hospital Name & Address (रुग्णालयाचे नाव व पत्ता)</Label>
-                                    <Input name="hospital_name_english" value={formData.hospital_name_english} onChange={handleInputChange} placeholder="Ex: Deenanath Mangeshkar Hospital, Pune" className="bg-white" />
+                                    <Input name="hospital_name_english" value={formData.hospital_name_english} onChange={handleInputChange} placeholder="Ex: Patil Multispeciality Hospital, Latur" className="bg-white" />
                                 </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-indigo-900">रुग्णालयाचे नाव (मराठी)</Label>
+                                    <Input name="hospital_name_marathi" value={formData.hospital_name_marathi || ''} onChange={handleInputChange} placeholder="उदा: पाटील हॉस्पिटल, लातूर" className="bg-white border-indigo-200" />
+                                </div>
+
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Admission Date (दाखल दिनांक)</Label>
                                     <Input name="admit_date_from" type="date" value={formData.admit_date_from} onChange={handleInputChange} className="bg-white" />
@@ -402,7 +502,7 @@ export default function MedicalPage() {
                                 <p className="text-xs text-slate-500">
                                     Enter eligible family members wholly dependent on the employee as per Maharashtra Medical Attendance Rules.
                                 </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
                                     {[
                                         { num: 1, nameKey: 'm_name_1', relKey: 'm_rel_1', ageKey: 'm_age_1', defRel: 'Wife/Husband' },
                                         { num: 2, nameKey: 'm_name_2', relKey: 'm_rel_2', ageKey: 'm_age_2', defRel: 'Child 1' },
@@ -426,7 +526,7 @@ export default function MedicalPage() {
                                                     name={m.relKey} 
                                                     value={(formData as any)[m.relKey] || ''} 
                                                     onChange={handleInputChange} 
-                                                    placeholder="Relationship" 
+                                                    placeholder="Relation" 
                                                     className="h-8 text-xs bg-slate-50/50" 
                                                 />
                                                 <Input 
@@ -455,7 +555,7 @@ export default function MedicalPage() {
                         </Card>
                     </TabsContent>
 
-                    {/* Step 2: Stay Rates */}
+                    {/* Step 2: Stay Rates - Automatic Real-Time Calculation */}
                     <TabsContent value="stay" className="m-0 space-y-6">
                         <Card className="shadow-lg border-blue-50">
                             <CardHeader className="bg-blue-50/70 border-b border-blue-100">
@@ -465,7 +565,7 @@ export default function MedicalPage() {
                                         Hospital Room Rent & Bed Charges (रुग्णालय निवास खर्च)
                                     </span>
                                     <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                                        Auto-calculated: Days × Rate
+                                        ⚡ Real-Time Auto-Calculation: Days × Rate = Total Claimed
                                     </span>
                                 </CardTitle>
                             </CardHeader>
@@ -478,7 +578,7 @@ export default function MedicalPage() {
                                                 <th className="px-4 py-3">Admissible Limit</th>
                                                 <th className="px-4 py-3">Days Admitted</th>
                                                 <th className="px-4 py-3">Daily Rate (₹)</th>
-                                                <th className="px-4 py-3">Total Claim (₹)</th>
+                                                <th className="px-4 py-3">Total Claimed (₹)</th>
                                                 <th className="px-4 py-3 text-right">Admissible (₹)</th>
                                             </tr>
                                         </thead>
@@ -489,8 +589,17 @@ export default function MedicalPage() {
                                                 { label: 'Private Room', limit: '75% Admissible', prefix: 'pvt' as const, factor: 0.75 },
                                                 { label: 'ICU / ICCU', limit: '100% Admissible', prefix: 'icu' as const, factor: 1.0 },
                                             ].map((ward) => {
-                                                const totalVal = Number(formData[`${ward.prefix}_total` as keyof MedicalFormData]) || 0;
+                                                const dVal = Number(formData[`${ward.prefix}_days` as keyof MedicalFormData]) || 0;
+                                                const rVal = Number(formData[`${ward.prefix}_rates` as keyof MedicalFormData]) || 0;
+                                                const rawTotal = formData[`${ward.prefix}_total` as keyof MedicalFormData];
+                                                
+                                                // Automatic dynamic display: if total exists use it, otherwise compute immediately
+                                                const totalVal = (rawTotal !== '' && rawTotal !== undefined) 
+                                                    ? Number(rawTotal) || 0 
+                                                    : (dVal > 0 && rVal > 0 ? dVal * rVal : 0);
+                                                
                                                 const admVal = totalVal * ward.factor;
+
                                                 return (
                                                     <tr key={ward.prefix} className="hover:bg-slate-50/80">
                                                         <td className="px-4 py-3 font-semibold text-slate-800">{ward.label}</td>
@@ -516,9 +625,10 @@ export default function MedicalPage() {
                                                         <td className="px-4 py-3">
                                                             <Input 
                                                                 type="number" 
-                                                                value={formData[`${ward.prefix}_total` as keyof MedicalFormData] as string} 
+                                                                value={totalVal > 0 ? totalVal : (formData[`${ward.prefix}_total` as keyof MedicalFormData] as string)} 
                                                                 onChange={(e) => handleRoomChange(ward.prefix, 'total', e.target.value)} 
-                                                                className="w-32 bg-slate-50 font-bold" 
+                                                                placeholder="0"
+                                                                className="w-32 bg-slate-50 font-bold text-blue-900" 
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3 text-right font-semibold text-emerald-700">
@@ -787,7 +897,7 @@ export default function MedicalPage() {
                                         </span>
                                     </p>
 
-                                    {!formData.emp_name_english && (
+                                    {!formData.emp_name_english && !formData.emp_name_marathi && (
                                         <div className="p-3 bg-amber-500/10 border border-amber-400/30 text-amber-200 rounded-xl text-xs font-medium">
                                             ⚠️ Notice: Please enter Employee Name in Tab 1 (Patient Info) to generate official documents.
                                         </div>
@@ -799,7 +909,7 @@ export default function MedicalPage() {
                                     <Button 
                                         size="lg"
                                         onClick={handleDownloadPDF}
-                                        disabled={isPdfGenerating || !formData.emp_name_english}
+                                        disabled={isPdfGenerating || (!formData.emp_name_english && !formData.emp_name_marathi)}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 h-auto text-base cursor-pointer disabled:opacity-50"
                                     >
                                         {isPdfGenerating ? (
@@ -820,7 +930,7 @@ export default function MedicalPage() {
                                         size="lg"
                                         variant="outline"
                                         onClick={handlePreviewPDF}
-                                        disabled={isPdfGenerating || !formData.emp_name_english}
+                                        disabled={isPdfGenerating || (!formData.emp_name_english && !formData.emp_name_marathi)}
                                         className="bg-slate-800/90 hover:bg-slate-700 text-white border-slate-700 font-semibold py-3.5 px-5 rounded-xl transition-all flex items-center gap-2 h-auto text-base cursor-pointer disabled:opacity-50"
                                     >
                                         <Printer size={18} className="text-indigo-400" />
@@ -832,7 +942,7 @@ export default function MedicalPage() {
                                         size="lg"
                                         variant="outline"
                                         onClick={handleDownloadDocx}
-                                        disabled={docxLoading || !formData.emp_name_english}
+                                        disabled={docxLoading || (!formData.emp_name_english && !formData.emp_name_marathi)}
                                         className="bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700 font-semibold py-3.5 px-5 rounded-xl transition-all flex items-center gap-2 h-auto text-base cursor-pointer disabled:opacity-50"
                                     >
                                         {docxLoading ? (
