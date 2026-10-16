@@ -1,6 +1,28 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 import { MedicalFormData, MedicalTotals } from '@/utils/medicalCalculations';
+
+// Register Nirmala font for crystal-clear English & Marathi Unicode rendering without glyph overlap
+const isBrowser = typeof window !== 'undefined';
+try {
+    Font.register({
+        family: 'Nirmala',
+        fonts: [
+            {
+                src: isBrowser ? `${window.location.origin}/fonts/Nirmala.ttf` : require('path').resolve('public/fonts/Nirmala.ttf'),
+                fontWeight: 'normal'
+            },
+            {
+                src: isBrowser ? `${window.location.origin}/fonts/NirmalaB.ttf` : require('path').resolve('public/fonts/NirmalaB.ttf'),
+                fontWeight: 'bold'
+            }
+        ]
+    });
+} catch (e) {
+    console.warn('Font registration notice:', e);
+}
+
+Font.registerHyphenationCallback(word => [word]);
 
 const styles = StyleSheet.create({
     page: {
@@ -8,7 +30,7 @@ const styles = StyleSheet.create({
         paddingBottom: 34,
         paddingHorizontal: 26,
         backgroundColor: '#ffffff',
-        fontFamily: 'Helvetica',
+        fontFamily: 'Nirmala',
         fontSize: 8,
         color: '#0f172a'
     },
@@ -217,19 +239,19 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
 
                 <Text style={styles.sectionHeader}>I. Government Servant & Patient Particulars</Text>
                 <View style={styles.gridContainer}>
-                    {renderDetailRow('1', 'Name of Government Servant', data.emp_name_english || data.emp_name_designation_marathi || '-')}
-                    {renderDetailRow('2', 'Designation & Cadre', data.emp_designation_english || '-')}
-                    {renderDetailRow('3', 'Office / Department', data.office_name_english || data.office_name_marathi || '-')}
-                    {renderDetailRow('4', 'Basic Pay (Level Matrix)', data.basic_pay ? `Rs. ${fmtInt(data.basic_pay)}` : '-')}
-                    {renderDetailRow('5', 'Date of Appointment', data.appointment_date || '-')}
-                    {renderDetailRow('6', 'Residential Address', data.res_address_english || '-')}
-                    {renderDetailRow('7', 'Name of Patient', data.patient_name_english || data.patient_name || '-')}
-                    {renderDetailRow('8', 'Relationship with Govt Servant', data.patient_relation || 'Self')}
-                    {renderDetailRow('9', 'Age of Patient', data.patient_age ? `${data.patient_age} Years` : '-')}
-                    {renderDetailRow('10', 'Place Where Illness Incurred', data.place_of_illness || '-')}
-                    {renderDetailRow('11', 'Name & Address of Hospital', data.hospital_name_english || '-')}
-                    {renderDetailRow('12', 'Treating Medical Officer / Specialist', data.treating_doctor_name_english || '-')}
-                    {renderDetailRow('13', 'Hospitalization Period', `${data.admit_date_from || '-'}  to  ${data.admit_date_to || '-'}`)}
+                    {renderDetailRow('1', 'Name of Government Servant (कर्मचाऱ्याचे नाव)', data.emp_name_marathi || data.emp_name_english || data.emp_name_designation_marathi || '-')}
+                    {renderDetailRow('2', 'Designation & Cadre (पदनाम)', data.emp_designation_marathi || data.emp_designation_english || '-')}
+                    {renderDetailRow('3', 'Office / Department (कार्यालय)', data.office_name_marathi || data.office_name_english || '-')}
+                    {renderDetailRow('4', 'Basic Pay (Level Matrix) (मूळ वेतन)', data.basic_pay ? `Rs. ${fmtInt(data.basic_pay)}` : '-')}
+                    {renderDetailRow('5', 'Date of Appointment (नियुक्ती दिनांक)', data.appointment_date || '-')}
+                    {renderDetailRow('6', 'Residential Address (पत्ता)', data.res_address_marathi || data.res_address_english || '-')}
+                    {renderDetailRow('7', 'Name of Patient (रुग्णाचे नाव)', data.patient_name_marathi || data.patient_name_english || data.patient_name || '-')}
+                    {renderDetailRow('8', 'Relationship with Govt Servant (नाते)', data.patient_relation_marathi || data.patient_relation || 'Self')}
+                    {renderDetailRow('9', 'Age of Patient (वय)', data.patient_age ? `${data.patient_age} Years` : '-')}
+                    {renderDetailRow('10', 'Place Where Illness Incurred (आजाराचे ठिकाण)', data.place_of_illness || '-')}
+                    {renderDetailRow('11', 'Name & Address of Hospital (रुग्णालय)', data.hospital_name_marathi || data.hospital_name_english || '-')}
+                    {renderDetailRow('12', 'Treating Medical Officer / Specialist (वैद्यकीय अधिकारी)', data.dr_name_marathi || data.treating_doctor_name_english || '-')}
+                    {renderDetailRow('13', 'Hospitalization Period (उपचार कालावधी)', `${data.admit_date_from || '-'}  to  ${data.admit_date_to || '-'}`)}
                 </View>
 
                 {/* Admission Room Matrix */}

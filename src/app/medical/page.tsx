@@ -40,18 +40,27 @@ export default function MedicalPage() {
         });
     };
 
-    // Auto-compose emp_name_designation_marathi when name or designation changes
-    const handleMarathiNameOrDesigChange = (field: 'emp_name_marathi' | 'emp_designation_marathi', val: string) => {
+    // Auto-compose emp_name_designation_marathi when employee name or designation changes
+    const handleEmployeeFieldChange = (field: string, val: string) => {
         setFormData(prev => {
-            const updated = { ...prev, [field]: val };
-            const name = field === 'emp_name_marathi' ? val : prev.emp_name_marathi || '';
-            const desig = field === 'emp_designation_marathi' ? val : prev.emp_designation_marathi || '';
-            if (name && desig) {
-                updated.emp_name_designation_marathi = `${name} (${desig})`;
-            } else if (name) {
-                updated.emp_name_designation_marathi = name;
+            const next = { ...prev, [field]: val };
+            const mName = field === 'emp_name_marathi' ? val : (prev.emp_name_marathi || '');
+            const mDesig = field === 'emp_designation_marathi' ? val : (prev.emp_designation_marathi || '');
+            const eName = field === 'emp_name_english' ? val : (prev.emp_name_english || '');
+            const eDesig = field === 'emp_designation_english' ? val : (prev.emp_designation_english || '');
+
+            if (mName && mDesig) {
+                next.emp_name_designation_marathi = `${mName} (${mDesig})`;
+            } else if (mName) {
+                next.emp_name_designation_marathi = mName;
+            } else if (eName && eDesig) {
+                next.emp_name_designation_marathi = `${eName} (${eDesig})`;
+            } else if (eName) {
+                next.emp_name_designation_marathi = eName;
+            } else {
+                next.emp_name_designation_marathi = '';
             }
-            return updated;
+            return next;
         });
     };
 
@@ -170,37 +179,29 @@ export default function MedicalPage() {
         });
     };
 
-    // Direct Download Official Maharashtra Medical Proposal PDF (Image 2 official format)
+    // Direct Client-Side Download of Official Maharashtra Medical Proposal PDF
     const handleDownloadPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
-            alert('Please enter Employee Name or Patient Name before downloading the PDF.');
+            alert('कृपया कर्मचाऱ्याचे नाव किंवा रुग्णाचे नाव प्रविष्ट करा / Please enter Employee Name or Patient Name before downloading the PDF.');
             return;
         }
         setIsPdfGenerating(true);
         try {
-            const res = await fetch('/api/generate-medical-pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: formData, totals })
-            });
+            const { pdf } = await import('@react-pdf/renderer');
+            const blob = await pdf(
+                <MedicalPDFDocument data={formData} totals={totals} />
+            ).toBlob();
 
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Failed to generate PDF');
-            }
-
-            const isFallback = res.headers.get('X-Fallback') === 'True';
-            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-            a.download = `Medical-Proposal-${safeName}.${isFallback ? 'docx' : 'pdf'}`;
+            a.download = `Medical-Proposal-${safeName}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
         } catch (error: any) {
             console.error('PDF generation failed:', error);
             alert('Failed to generate PDF: ' + (error?.message || 'Unknown error'));
@@ -209,27 +210,20 @@ export default function MedicalPage() {
         }
     };
 
-    // Direct Instant Official PDF Preview / Print in New Tab
+    // Direct Instant Client-Side PDF Preview / Print in New Tab
     const handlePreviewPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
-            alert('Please enter Employee Name or Patient Name before previewing the PDF.');
+            alert('कृपया कर्मचाऱ्याचे नाव किंवा रुग्णाचे नाव प्रविष्ट करा / Please enter Employee Name or Patient Name before previewing the PDF.');
             return;
         }
         setIsPdfGenerating(true);
         try {
-            const res = await fetch('/api/generate-medical-pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: formData, totals })
-            });
+            const { pdf } = await import('@react-pdf/renderer');
+            const blob = await pdf(
+                <MedicalPDFDocument data={formData} totals={totals} />
+            ).toBlob();
 
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Failed to generate PDF');
-            }
-
-            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
             setTimeout(() => window.URL.revokeObjectURL(url), 60000);
@@ -265,7 +259,7 @@ export default function MedicalPage() {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
         } catch (error: any) {
             console.error(error);
             alert('Failed to generate document: ' + error.message);
@@ -329,61 +323,80 @@ export default function MedicalPage() {
                             <CardHeader className="bg-blue-50/70 border-b border-blue-100 py-4">
                                 <CardTitle className="text-blue-900 flex items-center gap-2 text-base font-bold">
                                     <User size={18} className="text-blue-600" /> 
-                                    I. Government Servant Particulars (शासकीय कर्मचाऱ्याची माहिती)
+                                    I. Employee Details (कर्मचाऱ्याचे नाव व तपशील)
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {/* Marathi Name & Designation explicitly separated */}
+                                {/* Employee Name (Marathi) */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                    <Label className="text-slate-700 font-bold text-xs text-blue-900">
                                         कर्मचाऱ्याचे नाव (मराठी) *
                                     </Label>
                                     <Input 
                                         name="emp_name_marathi" 
                                         value={formData.emp_name_marathi || ''} 
-                                        onChange={(e) => handleMarathiNameOrDesigChange('emp_name_marathi', e.target.value)} 
-                                        placeholder="उदा: श्री. संतोष बनसोडे" 
-                                        className="bg-white border-blue-200" 
+                                        onChange={(e) => handleEmployeeFieldChange('emp_name_marathi', e.target.value)} 
+                                        placeholder="कर्मचाऱ्याचे नाव प्रविष्ट करा (उदा: श्री. संतोष बनसोडे)" 
+                                        className="bg-white border-blue-300 focus:border-blue-500 font-medium" 
                                     />
                                 </div>
+
+                                {/* Employee Name (English) */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs text-blue-900">
+                                    <Label className="text-slate-700 font-bold text-xs text-blue-900">
+                                        Employee Name (English) *
+                                    </Label>
+                                    <Input 
+                                        name="emp_name_english" 
+                                        value={formData.emp_name_english || ''} 
+                                        onChange={(e) => handleEmployeeFieldChange('emp_name_english', e.target.value)} 
+                                        placeholder="Enter Employee Name (Ex: Shri Santosh Bansode)" 
+                                        className="bg-white border-blue-300 focus:border-blue-500 font-medium" 
+                                        required 
+                                    />
+                                </div>
+
+                                {/* Basic Pay */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs">Basic Pay / मूळ वेतन (₹)</Label>
+                                    <Input 
+                                        name="basic_pay" 
+                                        type="number" 
+                                        value={formData.basic_pay} 
+                                        onChange={handleInputChange} 
+                                        placeholder="उदा: 25500" 
+                                        className="bg-white" 
+                                    />
+                                </div>
+
+                                {/* Marathi Designation */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-slate-700 font-semibold text-xs text-slate-800">
                                         कर्मचाऱ्याचे पदनाम (मराठी) *
                                     </Label>
                                     <Input 
                                         name="emp_designation_marathi" 
                                         value={formData.emp_designation_marathi || ''} 
-                                        onChange={(e) => handleMarathiNameOrDesigChange('emp_designation_marathi', e.target.value)} 
+                                        onChange={(e) => handleEmployeeFieldChange('emp_designation_marathi', e.target.value)} 
                                         placeholder="उदा: लेखा लिपिक" 
-                                        className="bg-white border-blue-200" 
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">
-                                        नाव व पदनाम एकत्रित (मराठी)
-                                    </Label>
-                                    <Input 
-                                        name="emp_name_designation_marathi" 
-                                        value={formData.emp_name_designation_marathi || ''} 
-                                        onChange={handleInputChange} 
-                                        placeholder="उदा: श्री. संतोष बनसोडे (लेखा लिपिक)" 
-                                        className="bg-slate-50 font-medium" 
+                                        className="bg-white border-slate-200" 
                                     />
                                 </div>
 
-                                {/* English Name & Designation */}
+                                {/* English Designation */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Employee Name (English) *</Label>
-                                    <Input name="emp_name_english" value={formData.emp_name_english} onChange={handleInputChange} placeholder="Ex: Shri Santosh Bansode" className="bg-white" required />
+                                    <Label className="text-slate-700 font-semibold text-xs text-slate-800">
+                                        Designation (English)
+                                    </Label>
+                                    <Input 
+                                        name="emp_designation_english" 
+                                        value={formData.emp_designation_english || ''} 
+                                        onChange={(e) => handleEmployeeFieldChange('emp_designation_english', e.target.value)} 
+                                        placeholder="Ex: Account Clerk" 
+                                        className="bg-white" 
+                                    />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Designation (English)</Label>
-                                    <Input name="emp_designation_english" value={formData.emp_designation_english} onChange={handleInputChange} placeholder="Ex: Account Clerk" className="bg-white" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Basic Pay / मूळ वेतन (₹)</Label>
-                                    <Input name="basic_pay" type="number" value={formData.basic_pay} onChange={handleInputChange} placeholder="Ex: 25500" className="bg-white" />
-                                </div>
+
 
                                 {/* Offices and Work Place */}
                                 <div className="space-y-1.5">
@@ -920,7 +933,7 @@ export default function MedicalPage() {
 
                                     {!formData.emp_name_english && !formData.emp_name_marathi && (
                                         <div className="p-3 bg-amber-500/10 border border-amber-400/30 text-amber-200 rounded-xl text-xs font-medium">
-                                            ⚠️ Notice: Please enter Employee Name in Tab 1 (Patient Info) to generate official documents.
+                                            ⚠️ Notice: कृपया Tab 1 (Patient & Employee) मध्ये कर्मचाऱ्याचे नाव (Employee Name) प्रविष्ट करा.
                                         </div>
                                     )}
                                 </div>
