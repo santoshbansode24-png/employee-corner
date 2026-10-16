@@ -3,24 +3,24 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Landmark, TrendingDown } from "lucide-react";
-
-import { Trash2 } from "lucide-react";
+import { Landmark, TrendingDown, Trash2 } from "lucide-react";
+import ComponentInputGroup from './ComponentInputGroup';
 
 interface DueDrawnProps {
     type: 'due' | 'drawn';
     title: string;
     subtitle: string;
     components: any;
-    updateComponent: any;
-    toggles: any;
+    updateComponent: (type: string, key: string, idx: number, field: string, val: any) => void;
+    autoDAMaharashtra: boolean;
+    autoHRAMaharashtra: boolean;
+    fromMonth: string;
+    cityCategory: string;
     customColumns: any[];
-    basicInfo: any;
     promotionPeriods: any[];
     updatePromotionPeriod: (type: string, idx: number, field: string, val: any) => void;
-    addPeriod: () => void;
+    addPeriod: (type: string) => void;
     removePeriod?: (type: string, idx: number) => void;
-    renderComponentInputs: (type: string, key: string, label: string, inputClass: string) => React.ReactNode;
 }
 
 const DueDrawnCard: React.FC<DueDrawnProps> = ({ 
@@ -29,14 +29,15 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     subtitle, 
     components, 
     updateComponent, 
-    toggles, 
-    customColumns, 
-    basicInfo,
-    promotionPeriods,
+    autoDAMaharashtra,
+    autoHRAMaharashtra,
+    fromMonth,
+    cityCategory,
+    customColumns = [], 
+    promotionPeriods = [],
     updatePromotionPeriod,
     addPeriod,
-    removePeriod,
-    renderComponentInputs
+    removePeriod
 }) => {
     const isDue = type === 'due';
     const Icon = isDue ? Landmark : TrendingDown;
@@ -49,6 +50,8 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
         ? 'text-white border-0 bg-emerald-600 hover:bg-emerald-700 w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all cursor-pointer' 
         : 'text-white border-0 bg-[#ea580c] hover:bg-[#c2410c] w-full mt-2 font-bold shadow-md h-12 rounded-xl transition-all cursor-pointer';
 
+    const daAmt = components['daRate']?.[0]?.amount;
+
     return (
         <Card className={`shadow-sm border-2 ${cardBorderColor} h-full flex flex-col rounded-xl overflow-hidden`}>
             <CardHeader className={`${isDue ? 'bg-emerald-600' : 'bg-[#ea580c]'} pb-4 pt-5 px-6`}>
@@ -58,18 +61,81 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                     </div>
                     <div>
                         <CardTitle className={`text-xl font-extrabold uppercase tracking-wide ${titleColor} mb-1 drop-shadow-sm`}>{title}</CardTitle>
-                        <p className={`text-sm text-white/90 font-medium tracking-wider`}>
+                        <p className="text-sm text-white/90 font-medium tracking-wider">
                             {subtitle}
                         </p>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="pt-8 px-6 flex-grow flex flex-col gap-5">
-                {renderComponentInputs(type, 'pay', 'Basic Pay', inputClass)}
-                {renderComponentInputs(type, 'daRate', `DA Rate ${toggles.autoDAMaharashtra ? '(Auto)' : ''}`, inputClass)}
-                {renderComponentInputs(type, 'hraRate', `HRA Rate ${toggles.autoHRAMaharashtra ? '(Auto)' : ''}`, inputClass)}
-                {renderComponentInputs(type, 'ta', 'Transport Allowance', inputClass)}
-                {customColumns.map(col => renderComponentInputs(type, col.id, col.label, inputClass))}
+                <ComponentInputGroup 
+                    type={type}
+                    compKey="pay"
+                    label="Basic Pay"
+                    inputClass={inputClass}
+                    items={components.pay}
+                    updateComponent={updateComponent}
+                    fromMonth={fromMonth}
+                    cityCategory={cityCategory}
+                    isAutoDA={false}
+                    isAutoHRA={false}
+                />
+                
+                <ComponentInputGroup 
+                    type={type}
+                    compKey="daRate"
+                    label={`DA Rate ${autoDAMaharashtra ? '(Auto)' : ''}`}
+                    inputClass={inputClass}
+                    items={components.daRate}
+                    updateComponent={updateComponent}
+                    fromMonth={fromMonth}
+                    cityCategory={cityCategory}
+                    isAutoDA={autoDAMaharashtra}
+                    isAutoHRA={false}
+                />
+
+                <ComponentInputGroup 
+                    type={type}
+                    compKey="hraRate"
+                    label={`HRA Rate ${autoHRAMaharashtra ? '(Auto)' : ''}`}
+                    inputClass={inputClass}
+                    items={components.hraRate}
+                    updateComponent={updateComponent}
+                    fromMonth={fromMonth}
+                    cityCategory={cityCategory}
+                    isAutoDA={false}
+                    isAutoHRA={autoHRAMaharashtra}
+                    daRateItemAmount={daAmt}
+                />
+
+                <ComponentInputGroup 
+                    type={type}
+                    compKey="ta"
+                    label="Transport Allowance"
+                    inputClass={inputClass}
+                    items={components.ta}
+                    updateComponent={updateComponent}
+                    fromMonth={fromMonth}
+                    cityCategory={cityCategory}
+                    isAutoDA={false}
+                    isAutoHRA={false}
+                />
+
+                {customColumns.map(col => (
+                    <ComponentInputGroup 
+                        key={col.id}
+                        type={type}
+                        compKey={col.id}
+                        label={col.label}
+                        inputClass={inputClass}
+                        items={components[col.id]}
+                        updateComponent={updateComponent}
+                        fromMonth={fromMonth}
+                        cityCategory={cityCategory}
+                        isAutoDA={false}
+                        isAutoHRA={false}
+                    />
+                ))}
                 
                 {/* PROMOTION PERIODS UI */}
                 {promotionPeriods && promotionPeriods.length > 0 && (
@@ -94,10 +160,10 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                     <div>
-                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Month</label>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Date (लागू दिनांक)</label>
                                         <input 
-                                            type="month" 
-                                            value={period.from} 
+                                            type="date" 
+                                            value={period.from ? (period.from.length === 7 ? `${period.from}-01` : period.from) : ''} 
                                             onChange={(e) => updatePromotionPeriod(type, idx, 'from', e.target.value)} 
                                             className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
                                         />
@@ -165,10 +231,11 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                 
                 <div className="mt-auto pt-4 border-t border-gray-100 -mx-2 px-2">
                     <Button 
-                        onClick={addPeriod}
+                        type="button"
+                        onClick={() => addPeriod(type)}
                         className={btnClass}
                     >
-                        {title.includes('DUE') ? 'PROMOTION / TIMEBOUND DETAILS + Add Period' : 'PROMOTION / TIMEBOUND DETAILS + Add Period'}
+                        PROMOTION / TIMEBOUND DETAILS + Add Period
                     </Button>
                 </div>
             </CardContent>
@@ -176,4 +243,4 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     );
 };
 
-export default DueDrawnCard;
+export default React.memo(DueDrawnCard);

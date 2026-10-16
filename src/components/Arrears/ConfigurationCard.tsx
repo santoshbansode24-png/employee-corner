@@ -5,25 +5,30 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
 import { Trash2 } from "lucide-react";
 
 interface ConfigurationProps {
-    toggles: any;
-    setToggles: any;
-    basicInfo: any;
+    autoDAMaharashtra: boolean;
+    autoHRAMaharashtra: boolean;
+    onToggleChange: (key: string, value: boolean) => void;
+    category: string;
+    cityCategory: string;
+    incrementMonth: string;
     updateBasicInfo: (key: string, val: any) => void;
-    newColumn: any;
-    setNewColumn: any;
+    newColumn: { label: string; type: string; percent: number };
+    setNewColumn: React.Dispatch<React.SetStateAction<{ label: string; type: string; percent: number }>>;
     addCustomColumn: () => void;
     customColumns?: any[];
     removeCustomColumn?: (id: string) => void;
 }
 
 const ConfigurationCard: React.FC<ConfigurationProps> = ({ 
-    toggles, 
-    setToggles, 
-    basicInfo, 
+    autoDAMaharashtra,
+    autoHRAMaharashtra,
+    onToggleChange,
+    category,
+    cityCategory,
+    incrementMonth,
     updateBasicInfo, 
     newColumn, 
     setNewColumn, 
@@ -48,11 +53,11 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                             type="checkbox" 
                             id="autoDA"
                             className="w-4 h-4 text-purple-600 focus:ring-purple-500 rounded cursor-pointer" 
-                            checked={toggles.autoDAMaharashtra} 
-                            onChange={e => setToggles((p: any) => ({ ...p, autoDAMaharashtra: e.target.checked }))} 
+                            checked={autoDAMaharashtra} 
+                            onChange={e => onToggleChange('autoDAMaharashtra', e.target.checked)} 
                         />
                         <label htmlFor="autoDA" className="text-sm font-medium leading-none cursor-pointer">
-                            Auto-DA {toggles.autoDAMaharashtra ? 'ON (Active)' : 'OFF (Manual)'}
+                            Auto-DA {autoDAMaharashtra ? 'ON (Active)' : 'OFF (Manual)'}
                         </label>
                     </div>
                 </div>
@@ -64,11 +69,11 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                             type="checkbox" 
                             id="autoHRA"
                             className="w-4 h-4 text-pink-600 focus:ring-pink-500 rounded cursor-pointer" 
-                            checked={toggles.autoHRAMaharashtra} 
-                            onChange={e => setToggles((p: any) => ({ ...p, autoHRAMaharashtra: e.target.checked }))} 
+                            checked={autoHRAMaharashtra} 
+                            onChange={e => onToggleChange('autoHRAMaharashtra', e.target.checked)} 
                         />
                         <label htmlFor="autoHRA" className="text-sm font-medium leading-none cursor-pointer">
-                            Auto-HRA {toggles.autoHRAMaharashtra ? 'ON (Active)' : 'OFF (Manual)'}
+                            Auto-HRA {autoHRAMaharashtra ? 'ON (Active)' : 'OFF (Manual)'}
                         </label>
                     </div>
                 </div>
@@ -77,7 +82,7 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                     <Label className="text-gray-600 font-semibold">Pension Scheme</Label>
                     <select 
                         className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                        value={basicInfo.category} 
+                        value={category} 
                         onChange={e => updateBasicInfo('category', e.target.value)}
                     >
                         <option value="NPS">NPS / DCPS (10% Employee + 14% Govt)</option>
@@ -89,7 +94,7 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                     <Label className="text-gray-600 font-semibold">City Category (HRA Classification)</Label>
                     <select 
                         className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium" 
-                        value={basicInfo.cityCategory} 
+                        value={cityCategory} 
                         onChange={e => updateBasicInfo('cityCategory', e.target.value)}
                     >
                         <option value="X">X - Metro (Mumbai, Pune, Thane) — 30% HRA (Min ₹5,400)</option>
@@ -102,7 +107,7 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                     <Label className="text-gray-600 font-semibold">Annual Increment Month</Label>
                     <select 
                         className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                        value={basicInfo.incrementMonth} 
+                        value={incrementMonth} 
                         onChange={e => updateBasicInfo('incrementMonth', e.target.value)}
                     >
                         <option value="No Increment">None</option>
@@ -186,4 +191,4 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
     );
 };
 
-export default ConfigurationCard;
+export default React.memo(ConfigurationCard);

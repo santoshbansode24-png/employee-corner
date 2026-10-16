@@ -1,16 +1,30 @@
 "use client";
 
 import React from 'react';
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface EmployeeDetailsProps {
-    basicInfo: any;
+    basicInfo: {
+        empName: string;
+        designation: string;
+        fromMonth: string;
+        toMonth: string;
+        orderNo: string;
+    };
     updateBasicInfo: (key: string, val: any) => void;
     onLoadSampleData?: () => void;
 }
+
+const normalizeDateForInput = (val: string, isEnd = false) => {
+    if (!val) return '';
+    // If it's YYYY-MM, append appropriate day
+    if (val.length === 7) {
+        return isEnd ? `${val}-30` : `${val}-01`;
+    }
+    return val;
+};
 
 const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, updateBasicInfo, onLoadSampleData }) => {
     return (
@@ -35,7 +49,7 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                     <Label className="text-gray-600 font-semibold">Employee Name</Label>
                     <Input 
                         placeholder="e.g. Ramesh S. Patil"
-                        value={basicInfo.empName} 
+                        value={basicInfo.empName || ''} 
                         onChange={e => updateBasicInfo('empName', e.target.value)} 
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
@@ -44,25 +58,25 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                     <Label className="text-gray-600 font-semibold">Designation</Label>
                     <Input 
                         placeholder="e.g. Assistant Teacher / Clerk" 
-                        value={basicInfo.designation} 
+                        value={basicInfo.designation || ''} 
                         onChange={e => updateBasicInfo('designation', e.target.value)} 
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">From Month (प्रारंभ महिना)</Label>
+                    <Label className="text-gray-600 font-semibold">From Date (प्रारंभ दिनांक)</Label>
                     <Input 
-                        type="month"
-                        value={basicInfo.fromMonth ? basicInfo.fromMonth.substring(0, 7) : ''}
+                        type="date"
+                        value={normalizeDateForInput(basicInfo.fromMonth, false)}
                         onChange={e => updateBasicInfo('fromMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">To Month (अखेर महिना)</Label>
+                    <Label className="text-gray-600 font-semibold">To Date (अखेर दिनांक)</Label>
                     <Input 
-                        type="month"
-                        value={basicInfo.toMonth ? basicInfo.toMonth.substring(0, 7) : ''}
+                        type="date"
+                        value={normalizeDateForInput(basicInfo.toMonth, true)}
                         onChange={e => updateBasicInfo('toMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
@@ -71,7 +85,7 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                     <Label className="text-gray-600 font-semibold">GR / Order Title (शासन निर्णय / आदेश क्रमांक)</Label>
                     <Input 
                         placeholder="e.g. महाराष्ट्र शासन वित्त विभाग शासन निर्णय क्र. वेतन-११२४/प्र.क्र..." 
-                        value={basicInfo.orderNo} 
+                        value={basicInfo.orderNo || ''} 
                         onChange={e => updateBasicInfo('orderNo', e.target.value)} 
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
@@ -81,4 +95,4 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
     );
 };
 
-export default EmployeeDetailsCard;
+export default React.memo(EmployeeDetailsCard);
