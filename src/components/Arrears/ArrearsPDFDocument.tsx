@@ -47,14 +47,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold', 
         color: '#1e3a8a', 
         textAlign: 'center', 
-        marginBottom: 3 
-    },
-    subTitle: { 
-        fontSize: 12, 
-        fontWeight: 'bold', 
-        color: '#475569', 
-        textAlign: 'center', 
-        marginBottom: 8 
+        marginBottom: 6 
     },
 
     // Employee & Statement Details Grid
@@ -327,9 +320,6 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
         <View style={styles.headerContainer} fixed>
             <Text style={styles.orderTitle}>
                 {basicInfo.orderNo || 'GOVERNMENT OF MAHARASHTRA • FINANCE DEPARTMENT'}
-            </Text>
-            <Text style={styles.subTitle}>
-                ARREARS STATEMENT (7th PAY COMMISSION) • वेतन थकबाकी विवरणपत्र
             </Text>
 
             <View style={styles.detailsBox}>
