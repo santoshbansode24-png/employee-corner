@@ -291,17 +291,17 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
     const isNps = basicInfo.category === 'NPS';
 
     // Proportional, balanced column width calculations
-    // Eliminates excessive whitespace in Net Payable by distributing width proportionally across all columns
+    // Tightens DCPS 10% and Net Payable to eliminate blank whitespace, redistributing space to Month, Pay, DA, HRA & Totals
     const wSr = 3.0;
-    const wMonth = 7.2;
-    const wPay = 5.8;
-    const wDa = 5.4;
-    const wHra = 5.0;
+    const wMonth = 8.8;
+    const wPay = 6.2;
+    const wDa = 5.8;
+    const wHra = 5.2;
     const wTa = 4.8;
     const wCustom = 5.0;
-    const wTotal = 6.8;
-    const wDcps = isNps ? 6.2 : 0;
-    const wNet = 7.0;
+    const wTotal = 7.2;
+    const wDcps = isNps ? 4.0 : 0;
+    const wNet = 5.0;
 
     const groupWeight = wPay + wDa + wHra + wTa + (customColumns.length * wCustom) + wTotal;
     const totalWeight = wSr + wMonth + (groupWeight * 3) + wDcps + wNet;
@@ -390,13 +390,13 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 {/* DCPS 10% */}
                 {isNps && (
                     <View style={[styles.headerGroupCell, { width: pw(dcpsWidth), backgroundColor: '#fef3c7' }]}>
-                        <Text style={[styles.headerGroupText, { color: '#92400e' }]}>DCPS 10%</Text>
+                        <Text style={[styles.headerGroupText, { color: '#92400e', fontSize: 9.5 }]}>DCPS 10%</Text>
                     </View>
                 )}
 
                 {/* Net Payable */}
                 <View style={[styles.headerGroupCell, { width: pw(netWidth), backgroundColor: '#dcfce7' }]}>
-                    <Text style={[styles.headerGroupText, { color: '#14532d' }]}>NET PAYABLE (निव्वळ)</Text>
+                    <Text style={[styles.headerGroupText, { color: '#14532d', fontSize: 8.5 }]}>NET PAYABLE (निव्वळ)</Text>
                 </View>
             </View>
 
@@ -450,11 +450,11 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 {/* DCPS & Net Payable Sub Headers */}
                 {isNps && (
                     <View style={[styles.subHeaderCell, { width: pw(dcpsWidth), backgroundColor: '#fef3c7' }]}>
-                        <Text style={[styles.subHeaderText, { color: '#92400e' }]}>कपात (10%)</Text>
+                        <Text style={[styles.subHeaderText, { color: '#92400e', fontSize: 8.5 }]}>कपात (10%)</Text>
                     </View>
                 )}
                 <View style={[styles.subHeaderCell, { width: pw(netWidth), backgroundColor: '#bbf7d0' }]}>
-                    <Text style={[styles.subHeaderText, { color: '#14532d' }]}>निव्वळ देय</Text>
+                    <Text style={[styles.subHeaderText, { color: '#14532d', fontSize: 8.5 }]}>निव्वळ देय</Text>
                 </View>
             </View>
 
