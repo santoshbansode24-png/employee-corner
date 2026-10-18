@@ -159,19 +159,19 @@ const styles = StyleSheet.create({
     },
     cellNumberText: { 
         fontSize: 10, 
-        textAlign: 'right', 
+        textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNumberBold: { 
         fontSize: 10, 
         fontWeight: 'bold', 
-        textAlign: 'right', 
+        textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNetPayableText: { 
         fontSize: 10, 
         fontWeight: 'bold', 
-        textAlign: 'right', 
+        textAlign: 'center', 
         color: '#047857' 
     },
 
@@ -203,13 +203,13 @@ const styles = StyleSheet.create({
     totalTextNumber: { 
         fontSize: 10.5, 
         fontWeight: 'bold', 
-        textAlign: 'right', 
+        textAlign: 'center', 
         color: '#0f172a' 
     },
     totalTextNet: { 
         fontSize: 11, 
         fontWeight: 'bold', 
-        textAlign: 'right', 
+        textAlign: 'center', 
         color: '#065f46' 
     },
 
