@@ -27,9 +27,10 @@ Font.registerHyphenationCallback(word => [word]);
 
 const styles = StyleSheet.create({
     page: { 
-        paddingTop: 16, 
-        paddingBottom: 22, 
-        paddingHorizontal: 20, 
+        paddingTop: 24, 
+        paddingBottom: 28, 
+        paddingLeft: 36, 
+        paddingRight: 28, 
         backgroundColor: '#ffffff', 
         flexDirection: 'column', 
         fontFamily: 'Nirmala',
@@ -255,7 +256,7 @@ const styles = StyleSheet.create({
     pageNumber: { 
         position: 'absolute', 
         fontSize: 9, 
-        bottom: 8, 
+        bottom: 10, 
         left: 0, 
         right: 0, 
         textAlign: 'center', 
