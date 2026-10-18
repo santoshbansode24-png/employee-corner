@@ -4,6 +4,9 @@ import path from 'path';
 import os from 'os';
 import { exec } from 'child_process';
 import util from 'util';
+import React from 'react';
+import ReactPDF from '@react-pdf/renderer';
+import MedicalPDFDocument from '@/components/Medical/MedicalPDFDocument';
 import { calculateMedicalTotals } from '@/utils/medicalCalculations';
 
 // @ts-ignore
@@ -26,10 +29,29 @@ function escapeXml(unsafe: any): string {
         .replace(/'/g, '&apos;');
 }
 
+function formatDisplayDate(d?: any): string {
+    if (!d) return '-';
+    const s = String(d).trim();
+    if (s.includes('-')) {
+        const parts = s.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+    }
+    return s;
+}
+
 function findLoopRange(xml: string, loopVar: string) {
     const marker = xml.indexOf(loopVar);
     if (marker === -1) return null;
-    const trStart = xml.lastIndexOf('<w:tr', marker);
+    let trStart = marker;
+    while (trStart > 0) {
+        if (xml.startsWith('<w:tr ', trStart) || xml.startsWith('<w:tr>', trStart)) {
+            break;
+        }
+        trStart--;
+    }
+    if (trStart <= 0) return null;
     const endforMarker = xml.indexOf('endfor', marker);
     if (endforMarker === -1) return null;
     const trEndTag = '</w:tr>';
@@ -54,7 +76,7 @@ function generatePathologyRows(receipts: any[]): string {
             <w:trPr><w:trHeight w:val="450"/></w:trPr>
             <w:tc><w:tcPr><w:tcW w:w="1350" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${i + 1}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="4126" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.receipt_no || r.bill_no || '-')}</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="1836" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.date || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1836" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(formatDisplayDate(r.date))}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="2228" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>${escapeXml(amt)}</w:t></w:r></w:p></w:tc>
         </w:tr>`;
     }).join('');
@@ -76,7 +98,7 @@ function generateMedicineRows(receipts: any[]): string {
             <w:trPr><w:trHeight w:val="450"/></w:trPr>
             <w:tc><w:tcPr><w:tcW w:w="1530" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${i + 1}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="3330" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.receipt_no || r.bill_no || '-')}</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="1890" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(r.date || '-')}</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1890" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/></w:rPr><w:t>${escapeXml(formatDisplayDate(r.date))}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="2520" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Mangal" w:hAnsi="Mangal" w:cs="Mangal"/><w:b/><w:bCs/></w:rPr><w:t>${escapeXml(amt)}</w:t></w:r></w:p></w:tc>
         </w:tr>`;
     }).join('');
@@ -371,7 +393,23 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Fallback: If LibreOffice is completely absent (e.g. local Windows dev without LibreOffice installed), return DOCX with notice header
+        // Fallback: If LibreOffice is absent or failed, render official proposal PDF directly with @react-pdf/renderer
+        try {
+            const fallbackPdfBuf = await ReactPDF.renderToBuffer(
+                React.createElement(MedicalPDFDocument, { data, totals: effectiveTotals }) as any
+            );
+            return new NextResponse(fallbackPdfBuf as any, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `attachment; filename="Medical-Proposal-${cleanName}.pdf"`,
+                },
+            });
+        } catch (pdfErr) {
+            console.error('React-PDF fallback failed:', pdfErr);
+        }
+
+        // Final Fallback: Return DOCX with notice header
         return new NextResponse(buf as any, {
             status: 200,
             headers: {

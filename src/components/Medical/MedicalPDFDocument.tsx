@@ -218,6 +218,18 @@ const fmtInt = (val: number | string) => {
     return n.toLocaleString('en-IN');
 };
 
+const formatDateDisplay = (d?: string | number) => {
+    if (!d || d === '-') return '-';
+    const s = String(d).trim();
+    if (s.includes('-')) {
+        const parts = s.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+    }
+    return s;
+};
+
 const renderDetailRow = (num: string, label: string, value: string | number) => (
     <View style={styles.row} key={num} wrap={false}>
         <View style={styles.colSr}><Text style={{ lineHeight: 1.2 }}>{num}</Text></View>
@@ -243,7 +255,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     {renderDetailRow('2', 'Designation & Cadre (पदनाम)', data.emp_designation_marathi || data.emp_designation_english || '-')}
                     {renderDetailRow('3', 'Office / Department (कार्यालय)', data.office_name_marathi || data.office_name_english || '-')}
                     {renderDetailRow('4', 'Basic Pay (Level Matrix) (मूळ वेतन)', data.basic_pay ? `Rs. ${fmtInt(data.basic_pay)}` : '-')}
-                    {renderDetailRow('5', 'Date of Appointment (नियुक्ती दिनांक)', data.appointment_date || '-')}
+                    {renderDetailRow('5', 'Date of Appointment (नियुक्ती दिनांक)', formatDateDisplay(data.appointment_date))}
                     {renderDetailRow('6', 'Residential Address (पत्ता)', data.res_address_marathi || data.res_address_english || '-')}
                     {renderDetailRow('7', 'Name of Patient (रुग्णाचे नाव)', data.patient_name_marathi || data.patient_name_english || data.patient_name || '-')}
                     {renderDetailRow('8', 'Relationship with Govt Servant (नाते)', data.patient_relation_marathi || data.patient_relation || 'Self')}
@@ -251,7 +263,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     {renderDetailRow('10', 'Place Where Illness Incurred (आजाराचे ठिकाण)', data.place_of_illness || '-')}
                     {renderDetailRow('11', 'Name & Address of Hospital (रुग्णालय)', data.hospital_name_marathi || data.hospital_name_english || '-')}
                     {renderDetailRow('12', 'Treating Medical Officer / Specialist (वैद्यकीय अधिकारी)', data.dr_name_marathi || data.treating_doctor_name_english || '-')}
-                    {renderDetailRow('13', 'Hospitalization Period (उपचार कालावधी)', `${data.admit_date_from || '-'}  to  ${data.admit_date_to || '-'}`)}
+                    {renderDetailRow('13', 'Hospitalization Period (उपचार कालावधी)', `${formatDateDisplay(data.admit_date_from)}  to  ${formatDateDisplay(data.admit_date_to)}`)}
                 </View>
 
                 {/* Admission Room Matrix */}
@@ -323,9 +335,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     </View>
                 </View>
 
-                <Text style={styles.footer} fixed>
-                    Smart Toolkit 2.0 • Maharashtra Civil Services (Medical Attendance) Rules • Form-C (Page 1 of 3)
-                </Text>
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Maharashtra Civil Services (Medical Attendance) Rules • Form-C • Page ${pageNumber} of ${totalPages}`} fixed />
             </Page>
 
             {/* PAGE 2: FORM D - PROCEDURAL CHARGES & FINAL SUMMARY */}
@@ -445,9 +455,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     </View>
                 </View>
 
-                <Text style={styles.footer} fixed>
-                    Smart Toolkit 2.0 • Form "D" & Consolidated Sanction Proposal • (Page 2 of 3)
-                </Text>
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Form "D" & Consolidated Sanction Proposal • Page ${pageNumber} of ${totalPages}`} fixed />
             </Page>
 
             {/* PAGE 3: ITEMIZED RECEIPTS (PATHOLOGY & MEDICINES) & DECLARATION */}
@@ -458,37 +466,37 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     <Text style={styles.subTitle}>Itemized Statement of Pathology Reports & Pharmacy Receipts</Text>
                 </View>
 
-                {/* Side-by-Side Receipts Layout for Maximum Space & Zero Page Overflow */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }} wrap={false}>
+                {/* Side-by-Side Receipts Layout for Maximum Space & Clean Paging */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                     {/* Left: Pathology */}
                     <View style={{ width: '49%' }}>
                         <Text style={[styles.sectionHeader, { marginTop: 0 }]}>A. Pathology & Labs</Text>
                         <View style={styles.gridContainer}>
-                            <View style={styles.tableHeaderRow}>
-                                <View style={[styles.colSr, { width: '12%', fontWeight: 'bold' }]}><Text>#</Text></View>
-                                <View style={[styles.colLabel, { width: '40%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
+                            <View style={styles.tableHeaderRow} wrap={false}>
+                                <View style={[styles.colSr, { width: '10%', fontWeight: 'bold' }]}><Text>#</Text></View>
+                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
                                 <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Date</Text></View>
                                 <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Amt (Rs.)</Text></View>
                             </View>
                             {data.pathology_receipts && data.pathology_receipts.length > 0 ? (
                                 data.pathology_receipts.map((r, i) => (
-                                    <View key={i} style={styles.tableRow}>
-                                        <View style={[styles.colSr, { width: '12%' }]}><Text>{i + 1}</Text></View>
-                                        <View style={[styles.colLabel, { width: '40%' }]}><Text>{r.receipt_no}</Text></View>
-                                        <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'center' }}>{r.date}</Text></View>
+                                    <View key={i} style={styles.tableRow} wrap={false}>
+                                        <View style={[styles.colSr, { width: '10%' }]}><Text>{i + 1}</Text></View>
+                                        <View style={[styles.colLabel, { width: '42%' }]}><Text>{r.receipt_no || '-'}</Text></View>
+                                        <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'center' }}>{formatDateDisplay(r.date)}</Text></View>
                                         <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(r.amount)}</Text></View>
                                     </View>
                                 ))
                             ) : (
-                                <View style={styles.tableRow}>
+                                <View style={styles.tableRow} wrap={false}>
                                     <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>No bills added</Text></View>
                                 </View>
                             )}
-                            <View style={styles.totalRow}>
-                                <View style={[styles.colLabel, { width: '60%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
+                            <View style={styles.totalRow} wrap={false}>
+                                <View style={[styles.colLabel, { width: '52%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
                                     <Text style={{ fontWeight: 'bold' }}>Total Pathology</Text>
                                 </View>
-                                <View style={[styles.colVal, { width: '40%' }]}>
+                                <View style={[styles.colVal, { width: '48%' }]}>
                                     <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>{fmt(totals.path_total)}</Text>
                                 </View>
                             </View>
@@ -499,31 +507,31 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     <View style={{ width: '49%' }}>
                         <Text style={[styles.sectionHeader, { marginTop: 0 }]}>B. Pharmacy & Medicines</Text>
                         <View style={styles.gridContainer}>
-                            <View style={styles.tableHeaderRow}>
-                                <View style={[styles.colSr, { width: '12%', fontWeight: 'bold' }]}><Text>#</Text></View>
-                                <View style={[styles.colLabel, { width: '40%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
+                            <View style={styles.tableHeaderRow} wrap={false}>
+                                <View style={[styles.colSr, { width: '10%', fontWeight: 'bold' }]}><Text>#</Text></View>
+                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
                                 <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Date</Text></View>
                                 <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Amt (Rs.)</Text></View>
                             </View>
                             {data.medicine_receipts && data.medicine_receipts.length > 0 ? (
                                 data.medicine_receipts.map((r, i) => (
-                                    <View key={i} style={styles.tableRow}>
-                                        <View style={[styles.colSr, { width: '12%' }]}><Text>{i + 1}</Text></View>
-                                        <View style={[styles.colLabel, { width: '40%' }]}><Text>{r.receipt_no}</Text></View>
-                                        <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'center' }}>{r.date}</Text></View>
+                                    <View key={i} style={styles.tableRow} wrap={false}>
+                                        <View style={[styles.colSr, { width: '10%' }]}><Text>{i + 1}</Text></View>
+                                        <View style={[styles.colLabel, { width: '42%' }]}><Text>{r.receipt_no || '-'}</Text></View>
+                                        <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'center' }}>{formatDateDisplay(r.date)}</Text></View>
                                         <View style={[styles.colVal, { width: '24%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(r.amount)}</Text></View>
                                     </View>
                                 ))
                             ) : (
-                                <View style={styles.tableRow}>
+                                <View style={styles.tableRow} wrap={false}>
                                     <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>No bills added</Text></View>
                                 </View>
                             )}
-                            <View style={styles.totalRow}>
-                                <View style={[styles.colLabel, { width: '60%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
+                            <View style={styles.totalRow} wrap={false}>
+                                <View style={[styles.colLabel, { width: '52%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
                                     <Text style={{ fontWeight: 'bold' }}>Total Medicines</Text>
                                 </View>
-                                <View style={[styles.colVal, { width: '40%' }]}>
+                                <View style={[styles.colVal, { width: '48%' }]}>
                                     <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>{fmt(totals.med_total)}</Text>
                                 </View>
                             </View>
@@ -546,7 +554,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                         { sr: '3', name: data.m_name_3, rel: data.m_rel_3, age: data.m_age_3 },
                         { sr: '4', name: data.m_name_4, rel: data.m_rel_4, age: data.m_age_4 },
                     ].map((m) => (
-                        <View key={m.sr} style={styles.tableRow}>
+                        <View key={m.sr} style={styles.tableRow} wrap={false}>
                             <View style={[styles.colSr, { width: '8%' }]}><Text>{m.sr}</Text></View>
                             <View style={[styles.colLabel, { width: '52%' }]}><Text>{m.name || '-'}</Text></View>
                             <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'center' }}>{m.rel || '-'}</Text></View>
@@ -578,9 +586,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                     </View>
                 </View>
 
-                <Text style={styles.footer} fixed>
-                    Smart Toolkit 2.0 • Medical Claim Receipts & Family Annexure • (Page 3 of 3)
-                </Text>
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Medical Claim Receipts & Family Annexure • Page ${pageNumber} of ${totalPages}`} fixed />
             </Page>
         </Document>
     );

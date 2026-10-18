@@ -81,16 +81,63 @@ export default function MedicalPage() {
         return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive of discharge day
     }, [formData.admit_date_from, formData.admit_date_to]);
 
+    // Helper to format ISO YYYY-MM-DD or raw date into DD/MM/YYYY
+    const formatDateDisplay = (d?: string | number) => {
+        if (!d || d === '-') return '-';
+        const s = String(d).trim();
+        if (s.includes('-')) {
+            const parts = s.split('-');
+            if (parts.length === 3 && parts[0].length === 4) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+        }
+        return s;
+    };
+
     // Handle Receipt Arrays
     const addPathology = () => {
-        if (!newPathology.receipt_no || !newPathology.amount) return;
-        setFormData(prev => ({ ...prev, pathology_receipts: [...(prev.pathology_receipts || []), newPathology] }));
+        if (!newPathology.receipt_no.trim()) {
+            alert('कृपया चाचणी / लॅब बिल क्रमांक प्रविष्ट करा / Please enter Pathology Bill / Receipt No.');
+            return;
+        }
+        if (!newPathology.amount || Number(newPathology.amount) <= 0) {
+            alert('कृपया वैध रक्कम प्रविष्ट करा / Please enter a valid Amount.');
+            return;
+        }
+        setFormData(prev => ({ 
+            ...prev, 
+            pathology_receipts: [
+                ...(prev.pathology_receipts || []), 
+                {
+                    receipt_no: newPathology.receipt_no.trim(),
+                    date: newPathology.date || '',
+                    amount: Number(newPathology.amount)
+                }
+            ] 
+        }));
         setNewPathology({ receipt_no: '', date: '', amount: '' });
     };
 
     const addMedicine = () => {
-        if (!newMedicine.receipt_no || !newMedicine.amount) return;
-        setFormData(prev => ({ ...prev, medicine_receipts: [...(prev.medicine_receipts || []), newMedicine] }));
+        if (!newMedicine.receipt_no.trim()) {
+            alert('कृपया औषध बिल / पावती क्रमांक प्रविष्ट करा / Please enter Medicine Bill / Cash Memo No.');
+            return;
+        }
+        if (!newMedicine.amount || Number(newMedicine.amount) <= 0) {
+            alert('कृपया वैध रक्कम प्रविष्ट करा / Please enter a valid Amount.');
+            return;
+        }
+        setFormData(prev => ({ 
+            ...prev, 
+            medicine_receipts: [
+                ...(prev.medicine_receipts || []), 
+                {
+                    receipt_no: newMedicine.receipt_no.trim(),
+                    date: newMedicine.date || '',
+                    amount: Number(newMedicine.amount)
+                }
+            ] 
+        }));
         setNewMedicine({ receipt_no: '', date: '', amount: '' });
     };
 
@@ -180,7 +227,7 @@ export default function MedicalPage() {
         });
     };
 
-    // Direct Client-Side Download of Official Maharashtra Medical Proposal PDF
+    // Direct Client-Side Download of Official Maharashtra Medical Proposal PDF with Server Fallback
     const handleDownloadPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
@@ -188,6 +235,8 @@ export default function MedicalPage() {
             return;
         }
         setIsPdfGenerating(true);
+        const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
         try {
             const { pdf } = await import('@react-pdf/renderer');
             const blob = await pdf(
@@ -197,21 +246,39 @@ export default function MedicalPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
             a.download = `Medical-Proposal-${safeName}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             setTimeout(() => window.URL.revokeObjectURL(url), 10000);
         } catch (error: any) {
-            console.error('PDF generation failed:', error);
-            alert('Failed to generate PDF: ' + (error?.message || 'Unknown error'));
+            console.warn('Client PDF generation error, trying server fallback:', error);
+            try {
+                const res = await fetch('/api/generate-medical-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: formData, totals })
+                });
+                if (!res.ok) throw new Error('Server PDF route failed');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Medical-Proposal-${safeName}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+            } catch (serverErr: any) {
+                console.error('All PDF generation methods failed:', serverErr);
+                alert('Failed to generate PDF: ' + (error?.message || serverErr?.message || 'Unknown error'));
+            }
         } finally {
             setIsPdfGenerating(false);
         }
     };
 
-    // Direct Instant Client-Side PDF Preview / Print in New Tab
+    // Direct Instant PDF Preview / Print in New Tab with Popup Blocker Avoidance & Failover
     const handlePreviewPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
@@ -219,6 +286,18 @@ export default function MedicalPage() {
             return;
         }
         setIsPdfGenerating(true);
+
+        // Open blank popup synchronously inside user action to prevent browser popup blocker
+        let previewWindow: Window | null = null;
+        try {
+            previewWindow = window.open('about:blank', '_blank');
+            if (previewWindow) {
+                previewWindow.document.write('<div style="font-family:system-ui,-apple-system,sans-serif;padding:30px;color:#1e3a8a;text-align:center;"><h2>वैद्यकीय प्रतिपूर्ती प्रस्ताव (Medical Proposal PDF) तयार होत आहे...</h2><p style="color:#64748b;">Generating high-resolution official PDF document, please wait...</p></div>');
+            }
+        } catch (e) {
+            // Popup blocked or not supported
+        }
+
         try {
             const { pdf } = await import('@react-pdf/renderer');
             const blob = await pdf(
@@ -226,11 +305,34 @@ export default function MedicalPage() {
             ).toBlob();
 
             const url = window.URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            if (previewWindow && !previewWindow.closed) {
+                previewWindow.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
             setTimeout(() => window.URL.revokeObjectURL(url), 60000);
         } catch (error: any) {
-            console.error('PDF preview failed:', error);
-            alert('Failed to preview PDF: ' + (error?.message || 'Unknown error'));
+            console.warn('Client PDF preview error, trying server fallback:', error);
+            try {
+                const res = await fetch('/api/generate-medical-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: formData, totals })
+                });
+                if (!res.ok) throw new Error('Server PDF route failed');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                if (previewWindow && !previewWindow.closed) {
+                    previewWindow.location.href = url;
+                } else {
+                    window.open(url, '_blank');
+                }
+                setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+            } catch (serverErr: any) {
+                if (previewWindow) previewWindow.close();
+                console.error('PDF preview failed:', serverErr);
+                alert('Failed to preview PDF: ' + (error?.message || serverErr?.message || 'Unknown error'));
+            }
         } finally {
             setIsPdfGenerating(false);
         }
@@ -697,97 +799,263 @@ export default function MedicalPage() {
 
                     {/* Step 3: Receipts (Pathology and Medicines) */}
                     <TabsContent value="receipts" className="m-0 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Pathology */}
-                            <Card className="shadow-md border-purple-50">
-                                <CardHeader className="bg-purple-50/70 border-b border-purple-100">
-                                    <CardTitle className="text-purple-900 text-lg flex items-center justify-between">
-                                        <span className="flex items-center gap-2"><Receipt size={18}/> Pathology / Lab Tests</span>
-                                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold">90% Adm</span>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-6 space-y-4">
-                                    <div className="flex gap-2">
-                                        <Input placeholder="Receipt No" value={newPathology.receipt_no} onChange={(e) => setNewPathology({...newPathology, receipt_no: e.target.value})} className="bg-white" />
-                                        <div className="w-40">
-                                            <DateInput value={newPathology.date} onChange={(e) => setNewPathology({...newPathology, date: e.target.value})} className="bg-white" />
-                                        </div>
-                                        <Input 
-                                            type="number" 
-                                            placeholder="₹ Amount" 
-                                            value={newPathology.amount} 
-                                            onChange={(e) => setNewPathology({...newPathology, amount: e.target.value})} 
-                                            onKeyDown={(e) => { if (e.key === 'Enter') addPathology(); }}
-                                            className="bg-white w-28" 
-                                        />
-                                        <Button onClick={addPathology} className="bg-purple-600 hover:bg-purple-700 px-3 cursor-pointer"><Plus size={16}/></Button>
-                                    </div>
-                                    <div className="bg-slate-50 border rounded-lg overflow-y-auto h-48 divide-y divide-slate-100">
-                                        {formData.pathology_receipts.length === 0 ? (
-                                            <div className="text-center text-slate-400 py-16 text-sm">No pathology receipts added yet</div>
-                                        ) : (
-                                            formData.pathology_receipts.map((r, i) => (
-                                                <div key={i} className="flex justify-between items-center p-3 hover:bg-white text-sm">
-                                                    <span><span className="font-bold text-slate-700">#{r.receipt_no}</span> <span className="text-slate-400 text-xs ml-1">({r.date})</span></span>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="font-bold text-purple-700">₹ {Number(r.amount).toLocaleString('en-IN')}</span>
-                                                        <Button variant="ghost" size="sm" onClick={() => removePathology(i)} className="text-red-500 hover:text-red-700 h-6 px-2 cursor-pointer"><Trash2 size={14}/></Button>
-                                                    </div>
+                            <Card className="shadow-md border-purple-100 flex flex-col justify-between">
+                                <div>
+                                    <CardHeader className="bg-purple-50/80 border-b border-purple-100 py-3.5 px-5">
+                                        <CardTitle className="text-purple-900 text-base font-bold flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Receipt size={18} className="text-purple-600" />
+                                                Pathology & Lab Tests (प्रयोगशाळा तपासण्या)
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs bg-purple-200 text-purple-900 px-2.5 py-0.5 rounded-full font-bold">
+                                                    90% Adm
+                                                </span>
+                                                <span className="text-xs bg-purple-100 text-purple-700 px-2.5 py-0.5 rounded-full font-semibold">
+                                                    {formData.pathology_receipts?.length || 0} Bills
+                                                </span>
+                                            </div>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-4">
+                                        {/* Add Form */}
+                                        <div className="p-3.5 bg-purple-50/40 rounded-xl border border-purple-100/80 space-y-3">
+                                            <div className="text-xs font-bold text-purple-900 uppercase tracking-wide">
+                                                नवीन बिल जोडा / Add Pathology Bill
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                                                <div className="sm:col-span-5">
+                                                    <Input 
+                                                        placeholder="Bill / Receipt No (उदा: LAB-10492)" 
+                                                        value={newPathology.receipt_no} 
+                                                        onChange={(e) => setNewPathology({...newPathology, receipt_no: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addPathology(); }}
+                                                        className="bg-white text-sm" 
+                                                    />
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                    <div className="flex justify-between items-center bg-purple-50/50 p-3 rounded-lg text-sm">
-                                        <span className="text-purple-900 font-medium">Total Claim: ₹ {totals.path_total.toLocaleString('en-IN')}</span>
-                                        <span className="text-emerald-700 font-bold">Admissible (90%): ₹ {totals.admissible_path.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                                    </div>
-                                </CardContent>
+                                                <div className="sm:col-span-4">
+                                                    <DateInput 
+                                                        value={newPathology.date} 
+                                                        onChange={(e) => setNewPathology({...newPathology, date: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addPathology(); }}
+                                                        className="bg-white text-sm" 
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-3">
+                                                    <Input 
+                                                        type="number" 
+                                                        placeholder="₹ Amount" 
+                                                        value={newPathology.amount} 
+                                                        onChange={(e) => setNewPathology({...newPathology, amount: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addPathology(); }}
+                                                        className="bg-white text-sm font-semibold" 
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                                <Button 
+                                                    type="button" 
+                                                    onClick={addPathology} 
+                                                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-4 py-2 h-auto flex items-center gap-1.5 rounded-lg cursor-pointer shadow-sm"
+                                                >
+                                                    <Plus size={15} /> Add Pathology Bill
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Itemized Table */}
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                                            <div className="overflow-x-auto max-h-72">
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0 border-b border-slate-200">
+                                                        <tr>
+                                                            <th className="py-2.5 px-3 text-center w-12">#</th>
+                                                            <th className="py-2.5 px-3">Bill / Receipt No</th>
+                                                            <th className="py-2.5 px-3 text-center w-28">Date</th>
+                                                            <th className="py-2.5 px-3 text-right w-28">Amount (₹)</th>
+                                                            <th className="py-2.5 px-3 text-center w-14">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {!formData.pathology_receipts || formData.pathology_receipts.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                                                                    कोणतेही बिल प्रविष्ट केलेले नाही / No pathology bills added yet
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            formData.pathology_receipts.map((r, i) => (
+                                                                <tr key={i} className="hover:bg-purple-50/30 transition-colors">
+                                                                    <td className="py-2.5 px-3 text-center font-bold text-slate-500">{i + 1}</td>
+                                                                    <td className="py-2.5 px-3 font-semibold text-slate-800">{r.receipt_no}</td>
+                                                                    <td className="py-2.5 px-3 text-center text-slate-600 font-medium">
+                                                                        {formatDateDisplay(r.date)}
+                                                                    </td>
+                                                                    <td className="py-2.5 px-3 text-right font-bold text-purple-700">
+                                                                        ₹ {Number(r.amount).toLocaleString('en-IN')}
+                                                                    </td>
+                                                                    <td className="py-2.5 px-3 text-center">
+                                                                        <Button 
+                                                                            type="button" 
+                                                                            variant="ghost" 
+                                                                            size="sm" 
+                                                                            onClick={() => removePathology(i)} 
+                                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0 cursor-pointer rounded-full"
+                                                                            title="Delete receipt"
+                                                                        >
+                                                                            <Trash2 size={14} />
+                                                                        </Button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Totals Summary Footer */}
+                                            <div className="bg-purple-50/70 p-3 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-semibold">
+                                                <span className="text-purple-900 font-bold">
+                                                    Total Claim: <span className="text-purple-700 text-sm font-extrabold ml-1">₹ {totals.path_total.toLocaleString('en-IN')}</span>
+                                                </span>
+                                                <span className="text-emerald-800 font-bold">
+                                                    Admissible (90%): <span className="text-emerald-700 text-sm font-extrabold ml-1">₹ {totals.admissible_path.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </div>
                             </Card>
 
                             {/* Medicines */}
-                            <Card className="shadow-md border-emerald-50">
-                                <CardHeader className="bg-emerald-50/70 border-b border-emerald-100">
-                                    <CardTitle className="text-emerald-900 text-lg flex items-center justify-between">
-                                        <span className="flex items-center gap-2"><Receipt size={18}/> Medicine & Pharmacy</span>
-                                        <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full font-bold">90% Adm</span>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-6 space-y-4">
-                                    <div className="flex gap-2">
-                                        <Input placeholder="Receipt No" value={newMedicine.receipt_no} onChange={(e) => setNewMedicine({...newMedicine, receipt_no: e.target.value})} className="bg-white" />
-                                        <div className="w-40">
-                                            <DateInput value={newMedicine.date} onChange={(e) => setNewMedicine({...newMedicine, date: e.target.value})} className="bg-white" />
-                                        </div>
-                                        <Input 
-                                            type="number" 
-                                            placeholder="₹ Amount" 
-                                            value={newMedicine.amount} 
-                                            onChange={(e) => setNewMedicine({...newMedicine, amount: e.target.value})} 
-                                            onKeyDown={(e) => { if (e.key === 'Enter') addMedicine(); }}
-                                            className="bg-white w-28" 
-                                        />
-                                        <Button onClick={addMedicine} className="bg-emerald-600 hover:bg-emerald-700 px-3 cursor-pointer"><Plus size={16}/></Button>
-                                    </div>
-                                    <div className="bg-slate-50 border rounded-lg overflow-y-auto h-48 divide-y divide-slate-100">
-                                        {formData.medicine_receipts.length === 0 ? (
-                                            <div className="text-center text-slate-400 py-16 text-sm">No medicine receipts added yet</div>
-                                        ) : (
-                                            formData.medicine_receipts.map((r, i) => (
-                                                <div key={i} className="flex justify-between items-center p-3 hover:bg-white text-sm">
-                                                    <span><span className="font-bold text-slate-700">#{r.receipt_no}</span> <span className="text-slate-400 text-xs ml-1">({r.date})</span></span>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="font-bold text-emerald-700">₹ {Number(r.amount).toLocaleString('en-IN')}</span>
-                                                        <Button variant="ghost" size="sm" onClick={() => removeMedicine(i)} className="text-red-500 hover:text-red-700 h-6 px-2 cursor-pointer"><Trash2 size={14}/></Button>
-                                                    </div>
+                            <Card className="shadow-md border-emerald-100 flex flex-col justify-between">
+                                <div>
+                                    <CardHeader className="bg-emerald-50/80 border-b border-emerald-100 py-3.5 px-5">
+                                        <CardTitle className="text-emerald-900 text-base font-bold flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <Receipt size={18} className="text-emerald-600" />
+                                                Medicine & Pharmacy (औषध देयके)
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full font-bold">
+                                                    90% Adm
+                                                </span>
+                                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full font-semibold">
+                                                    {formData.medicine_receipts?.length || 0} Bills
+                                                </span>
+                                            </div>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-4">
+                                        {/* Add Form */}
+                                        <div className="p-3.5 bg-emerald-50/40 rounded-xl border border-emerald-100/80 space-y-3">
+                                            <div className="text-xs font-bold text-emerald-900 uppercase tracking-wide">
+                                                नवीन औषध बिल जोडा / Add Medicine Bill
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                                                <div className="sm:col-span-5">
+                                                    <Input 
+                                                        placeholder="Bill / Cash Memo No (उदा: MED-78901)" 
+                                                        value={newMedicine.receipt_no} 
+                                                        onChange={(e) => setNewMedicine({...newMedicine, receipt_no: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addMedicine(); }}
+                                                        className="bg-white text-sm" 
+                                                    />
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                    <div className="flex justify-between items-center bg-emerald-50/50 p-3 rounded-lg text-sm">
-                                        <span className="text-emerald-900 font-medium">Total Claim: ₹ {totals.med_total.toLocaleString('en-IN')}</span>
-                                        <span className="text-emerald-700 font-bold">Admissible (90%): ₹ {totals.admissible_meds.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                                    </div>
-                                </CardContent>
+                                                <div className="sm:col-span-4">
+                                                    <DateInput 
+                                                        value={newMedicine.date} 
+                                                        onChange={(e) => setNewMedicine({...newMedicine, date: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addMedicine(); }}
+                                                        className="bg-white text-sm" 
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-3">
+                                                    <Input 
+                                                        type="number" 
+                                                        placeholder="₹ Amount" 
+                                                        value={newMedicine.amount} 
+                                                        onChange={(e) => setNewMedicine({...newMedicine, amount: e.target.value})} 
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') addMedicine(); }}
+                                                        className="bg-white text-sm font-semibold" 
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                                <Button 
+                                                    type="button" 
+                                                    onClick={addMedicine} 
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 h-auto flex items-center gap-1.5 rounded-lg cursor-pointer shadow-sm"
+                                                >
+                                                    <Plus size={15} /> Add Medicine Bill
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Itemized Table */}
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                                            <div className="overflow-x-auto max-h-72">
+                                                <table className="w-full text-left text-xs border-collapse">
+                                                    <thead className="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0 border-b border-slate-200">
+                                                        <tr>
+                                                            <th className="py-2.5 px-3 text-center w-12">#</th>
+                                                            <th className="py-2.5 px-3">Bill / Cash Memo No</th>
+                                                            <th className="py-2.5 px-3 text-center w-28">Date</th>
+                                                            <th className="py-2.5 px-3 text-right w-28">Amount (₹)</th>
+                                                            <th className="py-2.5 px-3 text-center w-14">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {!formData.medicine_receipts || formData.medicine_receipts.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                                                                    कोणतेही बिल प्रविष्ट केलेले नाही / No medicine bills added yet
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            formData.medicine_receipts.map((r, i) => (
+                                                                <tr key={i} className="hover:bg-emerald-50/30 transition-colors">
+                                                                    <td className="py-2.5 px-3 text-center font-bold text-slate-500">{i + 1}</td>
+                                                                    <td className="py-2.5 px-3 font-semibold text-slate-800">{r.receipt_no}</td>
+                                                                    <td className="py-2.5 px-3 text-center text-slate-600 font-medium">
+                                                                        {formatDateDisplay(r.date)}
+                                                                    </td>
+                                                                    <td className="py-2.5 px-3 text-right font-bold text-emerald-700">
+                                                                        ₹ {Number(r.amount).toLocaleString('en-IN')}
+                                                                    </td>
+                                                                    <td className="py-2.5 px-3 text-center">
+                                                                        <Button 
+                                                                            type="button" 
+                                                                            variant="ghost" 
+                                                                            size="sm" 
+                                                                            onClick={() => removeMedicine(i)} 
+                                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0 cursor-pointer rounded-full"
+                                                                            title="Delete receipt"
+                                                                        >
+                                                                            <Trash2 size={14} />
+                                                                        </Button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Totals Summary Footer */}
+                                            <div className="bg-emerald-50/70 p-3 border-t border-emerald-100 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-semibold">
+                                                <span className="text-emerald-900 font-bold">
+                                                    Total Claim: <span className="text-emerald-700 text-sm font-extrabold ml-1">₹ {totals.med_total.toLocaleString('en-IN')}</span>
+                                                </span>
+                                                <span className="text-emerald-800 font-bold">
+                                                    Admissible (90%): <span className="text-emerald-700 text-sm font-extrabold ml-1">₹ {totals.admissible_meds.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </div>
                             </Card>
                         </div>
 
@@ -918,6 +1186,97 @@ export default function MedicalPage() {
                                 </CardContent>
                             </Card>
                         </div>
+
+                        {/* Receipts Breakdown Overview (देयके तपशील) */}
+                        {((formData.pathology_receipts && formData.pathology_receipts.length > 0) || 
+                          (formData.medicine_receipts && formData.medicine_receipts.length > 0)) && (
+                            <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+                                <CardHeader className="bg-slate-50/80 border-b border-slate-200 py-3.5 px-5">
+                                    <CardTitle className="text-slate-800 text-sm font-bold flex items-center justify-between">
+                                        <span className="flex items-center gap-2">
+                                            <Receipt size={16} className="text-blue-600" />
+                                            Itemized Receipts Overview (संलग्न देयके तपशील)
+                                        </span>
+                                        <span className="text-xs bg-blue-100 text-blue-800 font-bold px-2.5 py-0.5 rounded-full">
+                                            {(formData.pathology_receipts?.length || 0) + (formData.medicine_receipts?.length || 0)} Bills Total
+                                        </span>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Pathology Mini Table */}
+                                    <div className="border border-purple-100 rounded-lg overflow-hidden">
+                                        <div className="bg-purple-50 px-3 py-2 text-xs font-bold text-purple-900 border-b border-purple-100 flex justify-between items-center">
+                                            <span>Pathology & Labs ({formData.pathology_receipts?.length || 0})</span>
+                                            <span className="text-purple-700">Total: ₹ {totals.path_total.toLocaleString('en-IN')}</span>
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto">
+                                            <table className="w-full text-xs">
+                                                <thead className="bg-slate-50 text-slate-500 font-semibold border-b">
+                                                    <tr>
+                                                        <th className="py-1.5 px-2 text-center w-8">#</th>
+                                                        <th className="py-1.5 px-2">Bill No</th>
+                                                        <th className="py-1.5 px-2 text-center">Date</th>
+                                                        <th className="py-1.5 px-2 text-right">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {!formData.pathology_receipts || formData.pathology_receipts.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={4} className="py-4 text-center text-slate-400">No pathology bills</td>
+                                                        </tr>
+                                                    ) : (
+                                                        formData.pathology_receipts.map((r, i) => (
+                                                            <tr key={i} className="hover:bg-slate-50">
+                                                                <td className="py-1.5 px-2 text-center text-slate-400 font-bold">{i + 1}</td>
+                                                                <td className="py-1.5 px-2 font-semibold text-slate-800">{r.receipt_no}</td>
+                                                                <td className="py-1.5 px-2 text-center text-slate-500">{formatDateDisplay(r.date)}</td>
+                                                                <td className="py-1.5 px-2 text-right font-bold text-purple-700">₹ {Number(r.amount).toLocaleString('en-IN')}</td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Medicine Mini Table */}
+                                    <div className="border border-emerald-100 rounded-lg overflow-hidden">
+                                        <div className="bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 border-b border-emerald-100 flex justify-between items-center">
+                                            <span>Pharmacy & Medicines ({formData.medicine_receipts?.length || 0})</span>
+                                            <span className="text-emerald-700">Total: ₹ {totals.med_total.toLocaleString('en-IN')}</span>
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto">
+                                            <table className="w-full text-xs">
+                                                <thead className="bg-slate-50 text-slate-500 font-semibold border-b">
+                                                    <tr>
+                                                        <th className="py-1.5 px-2 text-center w-8">#</th>
+                                                        <th className="py-1.5 px-2">Bill No</th>
+                                                        <th className="py-1.5 px-2 text-center">Date</th>
+                                                        <th className="py-1.5 px-2 text-right">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {!formData.medicine_receipts || formData.medicine_receipts.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={4} className="py-4 text-center text-slate-400">No medicine bills</td>
+                                                        </tr>
+                                                    ) : (
+                                                        formData.medicine_receipts.map((r, i) => (
+                                                            <tr key={i} className="hover:bg-slate-50">
+                                                                <td className="py-1.5 px-2 text-center text-slate-400 font-bold">{i + 1}</td>
+                                                                <td className="py-1.5 px-2 font-semibold text-slate-800">{r.receipt_no}</td>
+                                                                <td className="py-1.5 px-2 text-center text-slate-500">{formatDateDisplay(r.date)}</td>
+                                                                <td className="py-1.5 px-2 text-right font-bold text-emerald-700">₹ {Number(r.amount).toLocaleString('en-IN')}</td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Proposal Consolidated Card */}
                         <Card className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-xl p-8 rounded-2xl">
