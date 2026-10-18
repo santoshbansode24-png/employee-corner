@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 
 interface EmployeeDetailsProps {
@@ -64,18 +65,16 @@ const EmployeeDetailsCard: React.FC<EmployeeDetailsProps> = ({ basicInfo, update
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">From Date (प्रारंभ दिनांक)</Label>
-                    <Input 
-                        type="date"
+                    <Label className="text-gray-600 font-semibold">From Date (प्रारंभ दिनांक) - DD/MM/YYYY</Label>
+                    <DateInput 
                         value={normalizeDateForInput(basicInfo.fromMonth, false)}
                         onChange={e => updateBasicInfo('fromMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-gray-600 font-semibold">To Date (अखेर दिनांक)</Label>
-                    <Input 
-                        type="date"
+                    <Label className="text-gray-600 font-semibold">To Date (अखेर दिनांक) - DD/MM/YYYY</Label>
+                    <DateInput 
                         value={normalizeDateForInput(basicInfo.toMonth, true)}
                         onChange={e => updateBasicInfo('toMonth', e.target.value)}
                         className="bg-gray-50 border-gray-200 focus:ring-blue-500"

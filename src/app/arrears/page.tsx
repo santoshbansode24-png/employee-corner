@@ -280,7 +280,7 @@ export default function ArrearsPage() {
                     <div className="max-w-md space-y-1">
                         <h3 className="text-xl font-bold text-slate-800">Ready to export official statement?</h3>
                         <p className="text-sm text-slate-500">
-                            Renders a high-resolution A3 landscape PDF complete with government order headers, monthly due-drawn breakups, and DDO signature blocks.
+                            Renders a high-resolution landscape PDF complete with government order headers, monthly due-drawn breakups, and clean net payable totals.
                         </p>
                     </div>
                     

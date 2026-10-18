@@ -27,13 +27,13 @@ Font.registerHyphenationCallback(word => [word]);
 
 const styles = StyleSheet.create({
     page: { 
-        paddingTop: 18, 
-        paddingBottom: 25, 
-        paddingHorizontal: 22, 
+        paddingTop: 16, 
+        paddingBottom: 22, 
+        paddingHorizontal: 20, 
         backgroundColor: '#ffffff', 
         flexDirection: 'column', 
         fontFamily: 'Nirmala',
-        fontSize: 9.5 
+        fontSize: 10 
     },
     
     // Header
@@ -42,14 +42,14 @@ const styles = StyleSheet.create({
         textAlign: 'center' 
     },
     orderTitle: { 
-        fontSize: 15, 
+        fontSize: 16, 
         fontWeight: 'bold', 
         color: '#1e3a8a', 
         textAlign: 'center', 
         marginBottom: 3 
     },
     subTitle: { 
-        fontSize: 11, 
+        fontSize: 12, 
         fontWeight: 'bold', 
         color: '#475569', 
         textAlign: 'center', 
@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
         width: '49%' 
     },
     detailText: { 
-        fontSize: 10, 
+        fontSize: 10.5, 
         color: '#334155' 
     },
     detailValue: { 
-        fontSize: 10, 
+        fontSize: 10.5, 
         fontWeight: 'bold', 
         color: '#0f172a' 
     },
@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
     tableRow: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 18 
+        minHeight: 20 
     },
     tableRowAlt: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 18, 
+        minHeight: 20, 
         backgroundColor: '#f8fafc' 
     },
     
@@ -113,11 +113,11 @@ const styles = StyleSheet.create({
         borderTopWidth: 0, 
         justifyContent: 'center', 
         alignItems: 'center',
-        paddingVertical: 3,
+        paddingVertical: 3.5,
         paddingHorizontal: 1
     },
     headerGroupText: { 
-        fontSize: 9.5, 
+        fontSize: 10.5, 
         fontWeight: 'bold', 
         textAlign: 'center' 
     },
@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
         borderTopWidth: 0, 
         justifyContent: 'center', 
         alignItems: 'center',
-        paddingVertical: 3,
+        paddingVertical: 3.5,
         paddingHorizontal: 1,
         backgroundColor: '#f1f5f9'
     },
     subHeaderText: { 
-        fontSize: 8.5, 
+        fontSize: 9.5, 
         fontWeight: 'bold', 
         textAlign: 'center',
         color: '#1e293b'
@@ -149,27 +149,27 @@ const styles = StyleSheet.create({
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center',
-        paddingVertical: 2.5,
-        paddingHorizontal: 3
+        paddingVertical: 3,
+        paddingHorizontal: 2.5
     },
     cellCenterText: { 
-        fontSize: 9, 
+        fontSize: 10, 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNumberText: { 
-        fontSize: 9, 
+        fontSize: 10, 
         textAlign: 'right', 
         color: '#0f172a' 
     },
     cellNumberBold: { 
-        fontSize: 9, 
+        fontSize: 10, 
         fontWeight: 'bold', 
         textAlign: 'right', 
         color: '#0f172a' 
     },
     cellNetPayableText: { 
-        fontSize: 9, 
+        fontSize: 10, 
         fontWeight: 'bold', 
         textAlign: 'right', 
         color: '#047857' 
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     totalRow: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 22, 
+        minHeight: 24, 
         backgroundColor: '#e2e8f0', 
         borderTopWidth: 1.5, 
         borderTopColor: '#0f172a' 
@@ -191,23 +191,23 @@ const styles = StyleSheet.create({
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center',
-        paddingVertical: 3,
-        paddingHorizontal: 3
+        paddingVertical: 3.5,
+        paddingHorizontal: 2.5
     },
     totalTextCenter: { 
-        fontSize: 9.5, 
+        fontSize: 10.5, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     totalTextNumber: { 
-        fontSize: 9.5, 
+        fontSize: 10.5, 
         fontWeight: 'bold', 
         textAlign: 'right', 
         color: '#0f172a' 
     },
     totalTextNet: { 
-        fontSize: 10, 
+        fontSize: 11, 
         fontWeight: 'bold', 
         textAlign: 'right', 
         color: '#065f46' 
@@ -230,60 +230,31 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     summaryLabel: { 
-        fontSize: 9, 
+        fontSize: 10, 
         color: '#475569', 
         fontWeight: 'bold',
         marginBottom: 2
     },
     summaryValue: { 
-        fontSize: 11, 
+        fontSize: 12, 
         fontWeight: 'bold', 
         color: '#0f172a' 
     },
     summaryHighlightLabel: { 
-        fontSize: 9.5, 
+        fontSize: 10.5, 
         color: '#065f46', 
         fontWeight: 'bold',
         marginBottom: 2
     },
     summaryHighlightValue: { 
-        fontSize: 13, 
+        fontSize: 14.5, 
         fontWeight: 'bold', 
         color: '#047857' 
     },
 
-    // Signatures
-    signaturesRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        marginTop: 28, 
-        paddingHorizontal: 25 
-    },
-    signatureBlock: { 
-        alignItems: 'center', 
-        width: '28%' 
-    },
-    signatureLine: { 
-        borderTopWidth: 1.2, 
-        borderTopColor: '#0f172a', 
-        width: '100%', 
-        marginBottom: 4 
-    },
-    signatureTitle: { 
-        fontSize: 9.5, 
-        fontWeight: 'bold', 
-        textAlign: 'center', 
-        color: '#1e293b' 
-    },
-    signatureSub: { 
-        fontSize: 8.5, 
-        textAlign: 'center', 
-        color: '#64748b' 
-    },
-
     pageNumber: { 
         position: 'absolute', 
-        fontSize: 8.5, 
+        fontSize: 9, 
         bottom: 8, 
         left: 0, 
         right: 0, 
@@ -319,26 +290,35 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
     const summary = getArrearsSummary(results, customColumns);
     const isNps = basicInfo.category === 'NPS';
 
-    // Width percentages calculation
-    const srWidth = 2.8;
-    const monthWidth = 6.8;
+    // Proportional, balanced column width calculations
+    // Eliminates excessive whitespace in Net Payable by distributing width proportionally across all columns
+    const wSr = 3.0;
+    const wMonth = 7.2;
+    const wPay = 5.8;
+    const wDa = 5.4;
+    const wHra = 5.0;
+    const wTa = 4.8;
+    const wCustom = 5.0;
+    const wTotal = 6.8;
+    const wDcps = isNps ? 6.2 : 0;
+    const wNet = 7.0;
 
-    // Detail column widths in Due, Drawn, Difference
-    const colPay = 4.6;
-    const colDa = 4.2;
-    const colHra = 4.0;
-    const colTa = 3.6;
-    const colCustom = 3.8;
-    const colTotal = 5.2;
+    const groupWeight = wPay + wDa + wHra + wTa + (customColumns.length * wCustom) + wTotal;
+    const totalWeight = wSr + wMonth + (groupWeight * 3) + wDcps + wNet;
+    const scale = 100 / totalWeight;
 
+    const srWidth = wSr * scale;
+    const monthWidth = wMonth * scale;
+    const colPay = wPay * scale;
+    const colDa = wDa * scale;
+    const colHra = wHra * scale;
+    const colTa = wTa * scale;
+    const colCustom = wCustom * scale;
+    const colTotal = wTotal * scale;
     const groupBaseWidth = colPay + colDa + colHra + colTa + (customColumns.length * colCustom) + colTotal;
-    const total3Groups = groupBaseWidth * 3;
-    const fixedWidths = srWidth + monthWidth + total3Groups;
-    
-    // Remaining space allocated cleanly between DCPS and Net Payable
-    const remaining = 100 - fixedWidths;
-    const dcpsWidth = isNps ? Math.max(6.5, remaining * 0.42) : 0;
-    const netWidth = isNps ? (remaining - dcpsWidth) : remaining;
+    const dcpsWidth = isNps ? (wDcps * scale) : 0;
+    // Net Payable cleanly takes the remaining exact fraction to guarantee 100.00% total width
+    const netWidth = 100 - (srWidth + monthWidth + (groupBaseWidth * 3) + dcpsWidth);
 
     const pw = (val: number) => `${val.toFixed(2)}%`;
 
@@ -697,24 +677,6 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                     </View>
                 </View>
 
-                {/* Verification & Signatures */}
-                <View style={styles.signaturesRow} wrap={false}>
-                    <View style={styles.signatureBlock}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureTitle}>Prepared By (तयार करणार)</Text>
-                        <Text style={styles.signatureSub}>Senior Clerk / Assistant</Text>
-                    </View>
-                    <View style={styles.signatureBlock}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureTitle}>Checked By (तपासणार)</Text>
-                        <Text style={styles.signatureSub}>Superintendent / AAO</Text>
-                    </View>
-                    <View style={styles.signatureBlock}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureTitle}>Drawing & Disbursing Officer</Text>
-                        <Text style={styles.signatureSub}>आहरण व संवितरण अधिकारी</Text>
-                    </View>
-                </View>
 
                 <Text 
                     style={styles.pageNumber} 

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { DateInput } from '@/components/ui/date-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -418,12 +419,12 @@ export default function MedicalPage() {
 
                                 {/* Dates and Addresses */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Date of Appointment (नियुक्ती दिनांक)</Label>
-                                    <Input name="appointment_date" type="date" value={formData.appointment_date} onChange={handleInputChange} className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Date of Appointment (नियुक्ती दिनांक) - DD/MM/YYYY</Label>
+                                    <DateInput name="appointment_date" value={formData.appointment_date} onChange={handleInputChange} className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Date of Retirement (सेवानिवृत्ती दिनांक)</Label>
-                                    <Input name="retirement_date" type="date" value={formData.retirement_date || ''} onChange={handleInputChange} className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Date of Retirement (सेवानिवृत्ती दिनांक) - DD/MM/YYYY</Label>
+                                    <DateInput name="retirement_date" value={formData.retirement_date || ''} onChange={handleInputChange} className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-700 font-semibold text-xs">Certificate Place (स्थळ)</Label>
@@ -511,12 +512,12 @@ export default function MedicalPage() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Admission Date (दाखल दिनांक)</Label>
-                                    <Input name="admit_date_from" type="date" value={formData.admit_date_from} onChange={handleInputChange} className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Admission Date (दाखल दिनांक) - DD/MM/YYYY</Label>
+                                    <DateInput name="admit_date_from" value={formData.admit_date_from} onChange={handleInputChange} className="bg-white" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold text-xs">Discharge Date (सुट्टी दिनांक)</Label>
-                                    <Input name="admit_date_to" type="date" value={formData.admit_date_to} onChange={handleInputChange} className="bg-white" />
+                                    <Label className="text-slate-700 font-semibold text-xs">Discharge Date (सुट्टी दिनांक) - DD/MM/YYYY</Label>
+                                    <DateInput name="admit_date_to" value={formData.admit_date_to} onChange={handleInputChange} className="bg-white" />
                                 </div>
                             </CardContent>
                         </Card>
@@ -708,7 +709,9 @@ export default function MedicalPage() {
                                 <CardContent className="pt-6 space-y-4">
                                     <div className="flex gap-2">
                                         <Input placeholder="Receipt No" value={newPathology.receipt_no} onChange={(e) => setNewPathology({...newPathology, receipt_no: e.target.value})} className="bg-white" />
-                                        <Input type="date" value={newPathology.date} onChange={(e) => setNewPathology({...newPathology, date: e.target.value})} className="bg-white w-36" />
+                                        <div className="w-40">
+                                            <DateInput value={newPathology.date} onChange={(e) => setNewPathology({...newPathology, date: e.target.value})} className="bg-white" />
+                                        </div>
                                         <Input 
                                             type="number" 
                                             placeholder="₹ Amount" 
@@ -752,7 +755,9 @@ export default function MedicalPage() {
                                 <CardContent className="pt-6 space-y-4">
                                     <div className="flex gap-2">
                                         <Input placeholder="Receipt No" value={newMedicine.receipt_no} onChange={(e) => setNewMedicine({...newMedicine, receipt_no: e.target.value})} className="bg-white" />
-                                        <Input type="date" value={newMedicine.date} onChange={(e) => setNewMedicine({...newMedicine, date: e.target.value})} className="bg-white w-36" />
+                                        <div className="w-40">
+                                            <DateInput value={newMedicine.date} onChange={(e) => setNewMedicine({...newMedicine, date: e.target.value})} className="bg-white" />
+                                        </div>
                                         <Input 
                                             type="number" 
                                             placeholder="₹ Amount" 

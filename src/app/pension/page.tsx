@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Landmark, Download, FileText, Sparkles, ShieldCheck, HeartHandshake, Coins, Clock } from "lucide-react";
@@ -148,9 +149,8 @@ export default function PensionPage() {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold text-slate-700">Date of Birth (जन्म तारीख)</Label>
-                                        <Input 
-                                            type="date" 
+                                        <Label className="text-xs font-semibold text-slate-700">Date of Birth (जन्म तारीख) - DD/MM/YYYY</Label>
+                                        <DateInput 
                                             name="dob" 
                                             value={formData.dob} 
                                             onChange={handleInputChange} 
@@ -171,9 +171,8 @@ export default function PensionPage() {
                                         </select>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold text-slate-700">Date of Joining (प्रथम नियुक्ती तारीख)</Label>
-                                        <Input 
-                                            type="date" 
+                                        <Label className="text-xs font-semibold text-slate-700">Date of Joining (प्रथम नियुक्ती तारीख) - DD/MM/YYYY</Label>
+                                        <DateInput 
                                             name="doj" 
                                             value={formData.doj} 
                                             onChange={handleInputChange} 
@@ -182,9 +181,8 @@ export default function PensionPage() {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold text-slate-700">Retirement Date (सेवानिवृत्ती दिनांक)</Label>
-                                        <Input 
-                                            type="date" 
+                                        <Label className="text-xs font-semibold text-slate-700">Retirement Date (सेवानिवृत्ती दिनांक) - DD/MM/YYYY</Label>
+                                        <DateInput 
                                             name="retirementDate" 
                                             value={formData.retirementDate} 
                                             onChange={handleInputChange} 

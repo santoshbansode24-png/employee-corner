@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Landmark, TrendingDown, Trash2 } from "lucide-react";
 import ComponentInputGroup from './ComponentInputGroup';
+import { DateInput } from "@/components/ui/date-input";
 
 interface DueDrawnProps {
     type: 'due' | 'drawn';
@@ -161,11 +162,10 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                     <div>
                                         <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Date (लागू दिनांक)</label>
-                                        <input 
-                                            type="date" 
+                                        <DateInput 
                                             value={period.from ? (period.from.length === 7 ? `${period.from}-01` : period.from) : ''} 
                                             onChange={(e) => updatePromotionPeriod(type, idx, 'from', e.target.value)} 
-                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                            className="bg-white border-gray-200 text-xs py-1 h-8"
                                         />
                                     </div>
                                     <div>
