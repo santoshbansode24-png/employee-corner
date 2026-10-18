@@ -227,7 +227,7 @@ export default function MedicalPage() {
         });
     };
 
-    // Direct Client-Side Download of Official Maharashtra Medical Proposal PDF with Server Fallback
+    // Official Maharashtra Government Medical Proposal PDF Download (Prioritizes official docx converted PDF)
     const handleDownloadPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
@@ -238,29 +238,37 @@ export default function MedicalPage() {
         const safeName = (formData.emp_name_english || formData.emp_name_marathi || 'Medical_Claim').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
         try {
-            const { pdf } = await import('@react-pdf/renderer');
-            const blob = await pdf(
-                <MedicalPDFDocument data={formData} totals={totals} />
-            ).toBlob();
+            // 1. Try server route to generate official government proposal PDF from public/medical_form.docx
+            const res = await fetch('/api/generate-medical-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: formData, totals })
+            });
 
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || `Server PDF route returned ${res.status}`);
+            }
+
+            const isDocxFallback = res.headers.get('X-Fallback') === 'True';
+            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Medical-Proposal-${safeName}.pdf`;
+            a.download = `Medical-Proposal-${safeName}.${isDocxFallback ? 'docx' : 'pdf'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-        } catch (error: any) {
-            console.warn('Client PDF generation error, trying server fallback:', error);
+        } catch (serverErr: any) {
+            console.warn('Server official PDF generation error, trying client fallback:', serverErr);
             try {
-                const res = await fetch('/api/generate-medical-pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: formData, totals })
-                });
-                if (!res.ok) throw new Error('Server PDF route failed');
-                const blob = await res.blob();
+                // 2. Client-side fallback with React-PDF
+                const { pdf } = await import('@react-pdf/renderer');
+                const blob = await pdf(
+                    <MedicalPDFDocument data={formData} totals={totals} />
+                ).toBlob();
+
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -269,16 +277,16 @@ export default function MedicalPage() {
                 a.click();
                 document.body.removeChild(a);
                 setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-            } catch (serverErr: any) {
-                console.error('All PDF generation methods failed:', serverErr);
-                alert('Failed to generate PDF: ' + (error?.message || serverErr?.message || 'Unknown error'));
+            } catch (clientErr: any) {
+                console.error('All PDF generation methods failed:', clientErr);
+                alert('Failed to generate PDF: ' + (serverErr?.message || clientErr?.message || 'Unknown error'));
             }
         } finally {
             setIsPdfGenerating(false);
         }
     };
 
-    // Direct Instant PDF Preview / Print in New Tab with Popup Blocker Avoidance & Failover
+    // Official Maharashtra Government Medical Proposal PDF Preview / Print in New Tab
     const handlePreviewPDF = async () => {
         const empName = formData.emp_name_english || formData.emp_name_marathi;
         if (!empName && !formData.patient_name_english && !formData.patient_name_marathi) {
@@ -292,18 +300,26 @@ export default function MedicalPage() {
         try {
             previewWindow = window.open('about:blank', '_blank');
             if (previewWindow) {
-                previewWindow.document.write('<div style="font-family:system-ui,-apple-system,sans-serif;padding:30px;color:#1e3a8a;text-align:center;"><h2>वैद्यकीय प्रतिपूर्ती प्रस्ताव (Medical Proposal PDF) तयार होत आहे...</h2><p style="color:#64748b;">Generating high-resolution official PDF document, please wait...</p></div>');
+                previewWindow.document.write('<div style="font-family:system-ui,-apple-system,sans-serif;padding:30px;color:#1e3a8a;text-align:center;"><h2>वैद्यकीय प्रतिपूर्ती प्रस्ताव (Medical Proposal PDF) तयार होत आहे...</h2><p style="color:#64748b;">Generating official Maharashtra Government proposal PDF, please wait a moment...</p></div>');
             }
         } catch (e) {
             // Popup blocked or not supported
         }
 
         try {
-            const { pdf } = await import('@react-pdf/renderer');
-            const blob = await pdf(
-                <MedicalPDFDocument data={formData} totals={totals} />
-            ).toBlob();
+            // 1. Try server route to generate official government proposal PDF
+            const res = await fetch('/api/generate-medical-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: formData, totals })
+            });
 
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || `Server PDF route returned ${res.status}`);
+            }
+
+            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             if (previewWindow && !previewWindow.closed) {
                 previewWindow.location.href = url;
@@ -311,16 +327,15 @@ export default function MedicalPage() {
                 window.open(url, '_blank');
             }
             setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-        } catch (error: any) {
-            console.warn('Client PDF preview error, trying server fallback:', error);
+        } catch (serverErr: any) {
+            console.warn('Server official PDF preview error, trying client fallback:', serverErr);
             try {
-                const res = await fetch('/api/generate-medical-pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: formData, totals })
-                });
-                if (!res.ok) throw new Error('Server PDF route failed');
-                const blob = await res.blob();
+                // 2. Client-side fallback with React-PDF
+                const { pdf } = await import('@react-pdf/renderer');
+                const blob = await pdf(
+                    <MedicalPDFDocument data={formData} totals={totals} />
+                ).toBlob();
+
                 const url = window.URL.createObjectURL(blob);
                 if (previewWindow && !previewWindow.closed) {
                     previewWindow.location.href = url;
@@ -328,10 +343,10 @@ export default function MedicalPage() {
                     window.open(url, '_blank');
                 }
                 setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-            } catch (serverErr: any) {
+            } catch (clientErr: any) {
                 if (previewWindow) previewWindow.close();
-                console.error('PDF preview failed:', serverErr);
-                alert('Failed to preview PDF: ' + (error?.message || serverErr?.message || 'Unknown error'));
+                console.error('All PDF preview methods failed:', clientErr);
+                alert('Failed to preview PDF: ' + (serverErr?.message || clientErr?.message || 'Unknown error'));
             }
         } finally {
             setIsPdfGenerating(false);

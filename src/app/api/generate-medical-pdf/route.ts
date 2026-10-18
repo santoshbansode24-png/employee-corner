@@ -19,6 +19,24 @@ import rawLibre from 'libreoffice-convert';
 const libre: any = rawLibre;
 const execPromise = util.promisify(exec);
 
+function getSofficeBin(): string {
+    const candidates = [
+        'C:\\Program Files\\LibreOffice\\program\\soffice.com',
+        'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+        'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.com',
+        'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+        '/usr/bin/soffice',
+        '/usr/local/bin/soffice',
+        '/usr/lib/libreoffice/program/soffice'
+    ];
+    for (const cand of candidates) {
+        if (fs.existsSync(cand)) {
+            return cand;
+        }
+    }
+    return 'soffice';
+}
+
 function escapeXml(unsafe: any): string {
     if (unsafe === undefined || unsafe === null) return '';
     return String(unsafe)
@@ -345,11 +363,15 @@ export async function POST(req: NextRequest) {
 
         let pdfBuf: Buffer | null = null;
 
-        // Method 1: Direct native soffice command (Fastest & most accurate on Linux / Alpine container)
+        // Method 1: Direct native soffice command (Fastest & most accurate on Linux / Alpine container and Windows)
         try {
-            await execPromise(`soffice --headless --convert-to pdf --outdir "${tmpDir}" "${tempDocxPath}"`, { timeout: 45000 });
+            const sofficeBin = getSofficeBin();
+            const cmd = `"${sofficeBin}" --headless --convert-to pdf:writer_pdf_Export --outdir "${tmpDir}" "${tempDocxPath}"`;
+            console.log("Invoking LibreOffice converter:", cmd);
+            await execPromise(cmd, { timeout: 60000 });
             if (fs.existsSync(tempPdfPath)) {
                 pdfBuf = fs.readFileSync(tempPdfPath);
+                console.log("LibreOffice PDF conversion succeeded, size:", pdfBuf.length);
             }
         } catch (execErr: any) {
             console.log("Direct soffice CLI attempt failed/not found:", execErr?.message || execErr);

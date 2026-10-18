@@ -244,63 +244,63 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
             {/* PAGE 1: FORM C - ESSENTIALITY CERTIFICATE & ROOM RENT MATRIX */}
             <Page size="A4" style={styles.page}>
                 <View style={styles.headerBox} wrap={false}>
-                    <Text style={styles.govHeader}>GOVERNMENT OF MAHARASHTRA • MEDICAL ATTENDANCE RULES</Text>
-                    <Text style={styles.title}>ESSENTIALITY CERTIFICATE "FORM-C"</Text>
-                    <Text style={styles.subTitle}>Certificate Granted to Government Servant & Eligible Dependent Family Members</Text>
+                    <Text style={styles.govHeader}>महाराष्ट्र शासन • वैद्यकीय प्रतिपूर्ती नियम (GOVERNMENT OF MAHARASHTRA)</Text>
+                    <Text style={styles.title}>आवश्यकता प्रमाणपत्र - "फॉर्म सी" (ESSENTIALITY CERTIFICATE)</Text>
+                    <Text style={styles.subTitle}>शासकीय कर्मचारी व पात्र कुटुंबियांकरिता वैद्यकीय खर्चाच्या परताव्याचा अर्ज</Text>
                 </View>
 
-                <Text style={styles.sectionHeader}>I. Government Servant & Patient Particulars</Text>
+                <Text style={styles.sectionHeader}>१. शासकीय कर्मचारी व रुग्णाचा तपशील (Employee & Patient Particulars)</Text>
                 <View style={styles.gridContainer}>
-                    {renderDetailRow('1', 'Name of Government Servant (कर्मचाऱ्याचे नाव)', data.emp_name_marathi || data.emp_name_english || data.emp_name_designation_marathi || '-')}
-                    {renderDetailRow('2', 'Designation & Cadre (पदनाम)', data.emp_designation_marathi || data.emp_designation_english || '-')}
-                    {renderDetailRow('3', 'Office / Department (कार्यालय)', data.office_name_marathi || data.office_name_english || '-')}
-                    {renderDetailRow('4', 'Basic Pay (Level Matrix) (मूळ वेतन)', data.basic_pay ? `Rs. ${fmtInt(data.basic_pay)}` : '-')}
-                    {renderDetailRow('5', 'Date of Appointment (नियुक्ती दिनांक)', formatDateDisplay(data.appointment_date))}
-                    {renderDetailRow('6', 'Residential Address (पत्ता)', data.res_address_marathi || data.res_address_english || '-')}
-                    {renderDetailRow('7', 'Name of Patient (रुग्णाचे नाव)', data.patient_name_marathi || data.patient_name_english || data.patient_name || '-')}
-                    {renderDetailRow('8', 'Relationship with Govt Servant (नाते)', data.patient_relation_marathi || data.patient_relation || 'Self')}
-                    {renderDetailRow('9', 'Age of Patient (वय)', data.patient_age ? `${data.patient_age} Years` : '-')}
-                    {renderDetailRow('10', 'Place Where Illness Incurred (आजाराचे ठिकाण)', data.place_of_illness || '-')}
-                    {renderDetailRow('11', 'Name & Address of Hospital (रुग्णालय)', data.hospital_name_marathi || data.hospital_name_english || '-')}
-                    {renderDetailRow('12', 'Treating Medical Officer / Specialist (वैद्यकीय अधिकारी)', data.dr_name_marathi || data.treating_doctor_name_english || '-')}
-                    {renderDetailRow('13', 'Hospitalization Period (उपचार कालावधी)', `${formatDateDisplay(data.admit_date_from)}  to  ${formatDateDisplay(data.admit_date_to)}`)}
+                    {renderDetailRow('१', 'कर्मचाऱ्याचे नाव (Name of Government Servant)', data.emp_name_marathi || data.emp_name_english || data.emp_name_designation_marathi || '-')}
+                    {renderDetailRow('२', 'पदनाम (Designation & Cadre)', data.emp_designation_marathi || data.emp_designation_english || '-')}
+                    {renderDetailRow('३', 'कार्यालय / विभाग (Office / Department)', data.office_name_marathi || data.office_name_english || '-')}
+                    {renderDetailRow('४', 'मूळ वेतन (Basic Pay - 7th Pay Matrix)', data.basic_pay ? `रु. ${fmtInt(data.basic_pay)}` : '-')}
+                    {renderDetailRow('५', 'नियुक्ती दिनांक (Date of Appointment)', formatDateDisplay(data.appointment_date))}
+                    {renderDetailRow('६', 'निवासस्थानाचा पत्ता (Residential Address)', data.res_address_marathi || data.res_address_english || '-')}
+                    {renderDetailRow('७', 'रुग्णाचे नाव (Name of Patient)', data.patient_name_marathi || data.patient_name_english || data.patient_name || '-')}
+                    {renderDetailRow('८', 'कर्मचाऱ्याशी नाते (Relationship)', data.patient_relation_marathi || data.patient_relation || 'स्वतः (Self)')}
+                    {renderDetailRow('९', 'रुग्णाचे वय (Age of Patient)', data.patient_age ? `${data.patient_age} वर्षे` : '-')}
+                    {renderDetailRow('१०', 'आजारी पडल्याचे ठिकाण (Place of Illness)', data.place_of_illness || '-')}
+                    {renderDetailRow('११', 'रुग्णालयाचे नाव व पत्ता (Hospital Name & Address)', data.hospital_name_marathi || data.hospital_name_english || '-')}
+                    {renderDetailRow('१२', 'उपचार करणारे वैद्यकीय अधिकारी (Treating Doctor)', data.dr_name_marathi || data.treating_doctor_name_english || '-')}
+                    {renderDetailRow('१३', 'रुग्णालयातील वास्तव्याचा कालावधी (Admit Period)', `${formatDateDisplay(data.admit_date_from)}  ते  ${formatDateDisplay(data.admit_date_to)}`)}
                 </View>
 
                 {/* Admission Room Matrix */}
-                <Text style={styles.sectionHeader}>II. Hospital Room Rent & Stay Admissibility</Text>
+                <Text style={styles.sectionHeader}>२. रुग्णालयातील वास्तव्याचे विवरण व देयता (Room Rent & Stay Matrix)</Text>
                 <View style={styles.gridContainer} wrap={false}>
                     <View style={styles.tableHeaderRow}>
-                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>Sr.</Text></View>
-                        <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>Ward Category (Admissibility Rule)</Text></View>
-                        <View style={[styles.colVal, { width: '14%', textAlign: 'center', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Days</Text></View>
-                        <View style={[styles.colVal, { width: '18%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Rate / Day (Rs.)</Text></View>
-                        <View style={[styles.colVal, { width: '20%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Claimed (Rs.)</Text></View>
+                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>अ.क्र.</Text></View>
+                        <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>कक्षाचा प्रकार (Ward Category & Rule)</Text></View>
+                        <View style={[styles.colVal, { width: '14%', textAlign: 'center', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>दिवस</Text></View>
+                        <View style={[styles.colVal, { width: '18%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>दर / दिवस (रु.)</Text></View>
+                        <View style={[styles.colVal, { width: '20%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>दावा रक्कम (रु.)</Text></View>
                     </View>
 
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>1</Text></View>
-                        <View style={[styles.colLabel, { width: '42%' }]}><Text>General Ward (95% Admissible)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>१</Text></View>
+                        <View style={[styles.colLabel, { width: '42%' }]}><Text>सामान्य कक्ष / General Ward (९५% देय)</Text></View>
                         <View style={[styles.colVal, { width: '14%' }]}><Text style={{ textAlign: 'center' }}>{data.gw_days || '0'}</Text></View>
                         <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.gw_rates)}</Text></View>
                         <View style={[styles.colVal, { width: '20%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.gw_total)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>2</Text></View>
-                        <View style={[styles.colLabel, { width: '42%' }]}><Text>Semi-Private Ward (90% Admissible)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>२</Text></View>
+                        <View style={[styles.colLabel, { width: '42%' }]}><Text>अर्ध-खाजगी कक्ष / Semi-Pvt (९०% देय)</Text></View>
                         <View style={[styles.colVal, { width: '14%' }]}><Text style={{ textAlign: 'center' }}>{data.semi_days || '0'}</Text></View>
                         <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.semi_rates)}</Text></View>
                         <View style={[styles.colVal, { width: '20%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.semi_total)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>3</Text></View>
-                        <View style={[styles.colLabel, { width: '42%' }]}><Text>Private Room (75% Admissible)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>३</Text></View>
+                        <View style={[styles.colLabel, { width: '42%' }]}><Text>खाजगी कक्ष / Private Room (७५% देय)</Text></View>
                         <View style={[styles.colVal, { width: '14%' }]}><Text style={{ textAlign: 'center' }}>{data.pvt_days || '0'}</Text></View>
                         <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.pvt_rates)}</Text></View>
                         <View style={[styles.colVal, { width: '20%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.pvt_total)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>4</Text></View>
-                        <View style={[styles.colLabel, { width: '42%' }]}><Text>ICU / ICCU (100% Admissible)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>४</Text></View>
+                        <View style={[styles.colLabel, { width: '42%' }]}><Text>आयसीयू / ICU / ICCU (१००% देय)</Text></View>
                         <View style={[styles.colVal, { width: '14%' }]}><Text style={{ textAlign: 'center' }}>{data.icu_days || '0'}</Text></View>
                         <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.icu_rates)}</Text></View>
                         <View style={[styles.colVal, { width: '20%' }]}><Text style={{ textAlign: 'right' }}>{fmtInt(data.icu_total)}</Text></View>
@@ -308,13 +308,13 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
 
                     <View style={styles.totalRow}>
                         <View style={[styles.colLabel, { width: '48%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
-                            <Text style={{ fontWeight: 'bold' }}>Total Room Rent Claimed / Admissible</Text>
+                            <Text style={{ fontWeight: 'bold' }}>एकूण वास्तव्याचा दावा / देय रक्कम (Total Room Rent)</Text>
                         </View>
                         <View style={[styles.colVal, { width: '26%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
-                            <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>Claim: {fmt(totals.stay_total)}</Text>
+                            <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>दावा: {fmt(totals.stay_total)}</Text>
                         </View>
                         <View style={[styles.colVal, { width: '26%' }]}>
-                            <Text style={{ textAlign: 'right', fontWeight: 'bold', color: '#166534' }}>Adm: {fmt(totals.admissible_stay)}</Text>
+                            <Text style={{ textAlign: 'right', fontWeight: 'bold', color: '#166534' }}>देय: {fmt(totals.admissible_stay)}</Text>
                         </View>
                     </View>
                 </View>
@@ -322,51 +322,51 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                 {/* Signatures on Page 1 */}
                 <View style={styles.signatureContainer} wrap={false}>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Signature of Employee</Text>
-                        <Text style={styles.sigSub}>(Claimant Government Servant)</Text>
+                        <Text style={styles.sigTitle}>शासकीय कर्मचाऱ्याची स्वाक्षरी</Text>
+                        <Text style={styles.sigSub}>(दावेदार शासकीय सेवक)</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Medical Superintendent</Text>
-                        <Text style={styles.sigSub}>(Hospital Seal & Sign)</Text>
+                        <Text style={styles.sigTitle}>वैद्यकीय अधीक्षक</Text>
+                        <Text style={styles.sigSub}>(रुग्णालयाचा शिक्का व सही)</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Controlling Officer / DDO</Text>
-                        <Text style={styles.sigSub}>Office Seal</Text>
+                        <Text style={styles.sigTitle}>नियंत्रण अधिकारी / DDO</Text>
+                        <Text style={styles.sigSub}>कार्यालयीन शिक्का</Text>
                     </View>
                 </View>
 
-                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Maharashtra Civil Services (Medical Attendance) Rules • Form-C • Page ${pageNumber} of ${totalPages}`} fixed />
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `कर्मचारी कॉर्नर २.० • महाराष्ट्र नागरी सेवा (वैद्यकीय देखभाल) नियम • फॉर्म-सी • पान ${pageNumber} / ${totalPages}`} fixed />
             </Page>
 
             {/* PAGE 2: FORM D - PROCEDURAL CHARGES & FINAL SUMMARY */}
             <Page size="A4" style={styles.page}>
                 <View style={styles.headerBox} wrap={false}>
-                    <Text style={styles.govHeader}>GOVERNMENT OF MAHARASHTRA • MEDICAL REIMBURSEMENT</Text>
-                    <Text style={styles.title}>PROCEDURAL & OPERATIVE CHARGES (FORM "D")</Text>
-                    <Text style={styles.subTitle}>Statement of Operative, Diagnostic & Therapeutic Expenditure</Text>
+                    <Text style={styles.govHeader}>महाराष्ट्र शासन • वैद्यकीय प्रतिपूर्ती नियम (GOVERNMENT OF MAHARASHTRA)</Text>
+                    <Text style={styles.title}>शस्त्रक्रिया व इतर उपचारांचे विवरण - "फॉर्म डी" (FORM "D")</Text>
+                    <Text style={styles.subTitle}>शस्त्रक्रिया, निदान व उपचारात्मक खर्चाचा तपशील व अंतिम मंजुरी गोषवारा</Text>
                 </View>
 
-                <Text style={styles.sectionHeader}>I. Form "D" Procedural Details (Admissible @ 90%)</Text>
+                <Text style={styles.sectionHeader}>१. फॉर्म "डी" - उपचारांचा तपशील (९०% देय / Admissible @ 90%)</Text>
                 <View style={styles.gridContainer}>
                     <View style={styles.tableHeaderRow} wrap={false}>
-                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>Sr.</Text></View>
-                        <View style={[styles.colLabel, { width: '50%', fontWeight: 'bold' }]}><Text>Particulars of Procedure / Charge</Text></View>
-                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Claimed (Rs.)</Text></View>
-                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Admissible 90% (Rs.)</Text></View>
+                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>अ.क्र.</Text></View>
+                        <View style={[styles.colLabel, { width: '50%', fontWeight: 'bold' }]}><Text>उपचार / शुल्काचा तपशील (Particulars)</Text></View>
+                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>दावा रक्कम (रु.)</Text></View>
+                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>देय रक्कम ९०% (रु.)</Text></View>
                     </View>
 
                     {[
-                        { sr: '1', label: 'Admission / Registration Charges', val: data.admission_charges },
-                        { sr: '2', label: 'Surgeon Operation Fees', val: data.surgeon_charges },
-                        { sr: '3', label: 'Assistant Surgeon Charges', val: data.asst_surgeon_charges },
-                        { sr: '4', label: 'Anesthetist Charges', val: data.anesthesia_charges },
-                        { sr: '5', label: 'Operation Theatre (OT) Charges', val: data.ot_charges },
-                        { sr: '6', label: 'OT Assistant / Nursing Charges', val: Number(data.ot_assistant_charges || 0) + Number(data.nursing_charges || 0) },
-                        { sr: '7', label: 'Resident Medical Officer (RMO) Charges', val: data.rmo_charges },
-                        { sr: '8', label: 'Doctor / Specialist Visit Charges', val: Number(data.doctor_visit_charges || 0) + Number(data.special_visit_charges || 0) },
-                        { sr: '9', label: 'Radiology / Sonography / CT / MRI', val: data.radiology_charges },
-                        { sr: '10', label: 'Oxygen / Monitor / Infusion Charges', val: Number(data.oxygen_charges || 0) + Number(data.monitor_charges || 0) + Number(data.iv_infusion_charges || 0) },
-                        { sr: '11', label: 'Other Ancillary Hospital Charges', val: data.other_charges },
+                        { sr: '१', label: 'नोंदणी / ॲडमिशन शुल्क (Admission / Reg)', val: data.admission_charges },
+                        { sr: '२', label: 'शल्यचिकित्सक (सर्जन) फी (Surgeon Operation)', val: data.surgeon_charges },
+                        { sr: '३', label: 'सहाय्यक शल्यचिकित्सक फी (Asst Surgeon)', val: data.asst_surgeon_charges },
+                        { sr: '४', label: 'भूलतज्ज्ञ (ॲनेस्थेटिस्ट) फी (Anesthetist)', val: data.anesthesia_charges },
+                        { sr: '५', label: 'ऑपरेशन थिएटर (OT) शुल्क (OT Charges)', val: data.ot_charges },
+                        { sr: '६', label: 'ओटी असिस्टंट व नर्सिंग शुल्क (OT Asst & Nursing)', val: Number(data.ot_assistant_charges || 0) + Number(data.nursing_charges || 0) },
+                        { sr: '७', label: 'निवासी वैद्यकीय अधिकारी शुल्क (RMO Charges)', val: data.rmo_charges },
+                        { sr: '८', label: 'डॉक्टर / तज्ज्ञ व्हिजिट फी (Doctor Visit Fees)', val: Number(data.doctor_visit_charges || 0) + Number(data.special_visit_charges || 0) },
+                        { sr: '९', label: 'रेडिओलॉजी / सोनोग्राफी / सिटी / एमआरआय (Imaging)', val: data.radiology_charges },
+                        { sr: '१०', label: 'ऑक्सिजन / मॉनिटर / आयव्ही इन्फ्युजन (O2 / Monitor)', val: Number(data.oxygen_charges || 0) + Number(data.monitor_charges || 0) + Number(data.iv_infusion_charges || 0) },
+                        { sr: '११', label: 'इतर संलग्न रुग्णालय शुल्क (Other Charges)', val: data.other_charges },
                     ].map((item) => {
                         const amt = Number(item.val) || 0;
                         return (
@@ -381,7 +381,7 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
 
                     <View style={styles.totalRow} wrap={false}>
                         <View style={[styles.colLabel, { width: '56%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
-                            <Text style={{ fontWeight: 'bold' }}>Total Form D Procedural Charges</Text>
+                            <Text style={{ fontWeight: 'bold' }}>एकूण फॉर्म "डी" उपचार खर्च (Total Form D Charges)</Text>
                         </View>
                         <View style={[styles.colVal, { width: '22%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
                             <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>{fmt(totals.procedural_total)}</Text>
@@ -393,42 +393,42 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                 </View>
 
                 {/* FINAL GRAND SUMMARY */}
-                <Text style={styles.sectionHeader}>II. Consolidated Medical Proposal Summary</Text>
+                <Text style={styles.sectionHeader}>२. एकत्रित वैद्यकीय खर्च व मंजुरी गोषवारा (Consolidated Summary)</Text>
                 <View style={styles.gridContainer} wrap={false}>
                     <View style={styles.tableHeaderRow}>
-                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>Head</Text></View>
-                        <View style={[styles.colLabel, { width: '50%', fontWeight: 'bold' }]}><Text>Expenditure Head Description</Text></View>
-                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Claimed Amount (Rs.)</Text></View>
-                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Admissible Amount (Rs.)</Text></View>
+                        <View style={[styles.colSr, { width: '6%', fontWeight: 'bold' }]}><Text>बाब</Text></View>
+                        <View style={[styles.colLabel, { width: '50%', fontWeight: 'bold' }]}><Text>खर्चाच्या बाबींचा तपशील (Expenditure Head)</Text></View>
+                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>दावा रक्कम (रु.)</Text></View>
+                        <View style={[styles.colVal, { width: '22%', textAlign: 'right', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>देय रक्कम (रु.)</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>A</Text></View>
-                        <View style={[styles.colLabel, { width: '50%' }]}><Text>Room Rent & Ward Charges</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>अ</Text></View>
+                        <View style={[styles.colLabel, { width: '50%' }]}><Text>रुग्णालयातील वास्तव्याचा खर्च (Room Rent & Stay)</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right' }}>{fmt(totals.stay_total)}</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right', color: '#166534' }}>{fmt(totals.admissible_stay)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>B</Text></View>
-                        <View style={[styles.colLabel, { width: '50%' }]}><Text>Form D Procedural & Surgical Charges</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>ब</Text></View>
+                        <View style={[styles.colLabel, { width: '50%' }]}><Text>फॉर्म "डी" शस्त्रक्रिया व उपचार (Form D Procedures)</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right' }}>{fmt(totals.procedural_total)}</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right', color: '#166534' }}>{fmt(totals.admissible_procedural)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>C</Text></View>
-                        <View style={[styles.colLabel, { width: '50%' }]}><Text>Pathology & Diagnostic Tests (90% Adm)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>क</Text></View>
+                        <View style={[styles.colLabel, { width: '50%' }]}><Text>पॅथॉलॉजी व लॅब चाचण्या (Pathology Tests - ९०% देय)</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right' }}>{fmt(totals.path_total)}</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right', color: '#166534' }}>{fmt(totals.admissible_path)}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.colSr, { width: '6%' }]}><Text>D</Text></View>
-                        <View style={[styles.colLabel, { width: '50%' }]}><Text>Medicines & Injections (90% Adm)</Text></View>
+                        <View style={[styles.colSr, { width: '6%' }]}><Text>ड</Text></View>
+                        <View style={[styles.colLabel, { width: '50%' }]}><Text>औषधे व इंजेक्शन्स (Medicines - ९०% देय)</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right' }}>{fmt(totals.med_total)}</Text></View>
                         <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'right', color: '#166534' }}>{fmt(totals.admissible_meds)}</Text></View>
                     </View>
 
                     <View style={styles.highlightRow}>
                         <View style={[styles.colLabel, { width: '56%', borderRightWidth: 1, borderRightColor: '#2563eb' }]}>
-                            <Text style={{ fontWeight: 'bold', color: '#1e3a8a' }}>GRAND TOTAL SANCTION PROPOSAL</Text>
+                            <Text style={{ fontWeight: 'bold', color: '#1e3a8a' }}>एकूण मंजूर प्रस्ताव (GRAND TOTAL SANCTION)</Text>
                         </View>
                         <View style={[styles.colVal, { width: '22%', borderRightWidth: 1, borderRightColor: '#2563eb' }]}>
                             <Text style={{ textAlign: 'right', fontWeight: 'bold', color: '#1e3a8a' }}>{fmt(totals.grand_claim)}</Text>
@@ -442,41 +442,41 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                 {/* Signatures on Page 2 */}
                 <View style={styles.signatureContainer} wrap={false}>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Senior Clerk / Scrutiny</Text>
-                        <Text style={styles.sigSub}>Office Establishment</Text>
+                        <Text style={styles.sigTitle}>वरिष्ठ लिपिक / छाननी</Text>
+                        <Text style={styles.sigSub}>कार्यालयीन आस्थापना</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Civil Surgeon / CMO</Text>
-                        <Text style={styles.sigSub}>District Hospital Countersign</Text>
+                        <Text style={styles.sigTitle}>जिल्हा शल्य चिकित्सक</Text>
+                        <Text style={styles.sigSub}>जिल्हा रुग्णालय प्रतिस्वाक्षरी</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Head of Office / DDO</Text>
-                        <Text style={styles.sigSub}>Sanctioning Authority</Text>
+                        <Text style={styles.sigTitle}>कार्यालय प्रमुख / DDO</Text>
+                        <Text style={styles.sigSub}>सक्षम मंजुरी प्राधिकारी</Text>
                     </View>
                 </View>
 
-                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Form "D" & Consolidated Sanction Proposal • Page ${pageNumber} of ${totalPages}`} fixed />
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `कर्मचारी कॉर्नर २.० • फॉर्म "डी" व एकत्रित मंजुरी गोषवारा • पान ${pageNumber} / ${totalPages}`} fixed />
             </Page>
 
             {/* PAGE 3: ITEMIZED RECEIPTS (PATHOLOGY & MEDICINES) & DECLARATION */}
             <Page size="A4" style={styles.page}>
                 <View style={styles.headerBox} wrap={false}>
-                    <Text style={styles.govHeader}>GOVERNMENT OF MAHARASHTRA • MEDICAL ATTENDANCE RULES</Text>
-                    <Text style={styles.title}>ANNEXURE OF BILLS & CASH MEMOS</Text>
-                    <Text style={styles.subTitle}>Itemized Statement of Pathology Reports & Pharmacy Receipts</Text>
+                    <Text style={styles.govHeader}>महाराष्ट्र शासन • वैद्यकीय प्रतिपूर्ती नियम (GOVERNMENT OF MAHARASHTRA)</Text>
+                    <Text style={styles.title}>तपासणी व औषध बिलांचा तपशील (ANNEXURE OF BILLS)</Text>
+                    <Text style={styles.subTitle}>पॅथॉलॉजी चाचण्या, औषध खरेदी बिले व कुटुंबियांचा तपशील</Text>
                 </View>
 
                 {/* Side-by-Side Receipts Layout for Maximum Space & Clean Paging */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                     {/* Left: Pathology */}
                     <View style={{ width: '49%' }}>
-                        <Text style={[styles.sectionHeader, { marginTop: 0 }]}>A. Pathology & Labs</Text>
+                        <Text style={[styles.sectionHeader, { marginTop: 0 }]}>अ. पॅथॉलॉजी व लॅब तपासणी बिले</Text>
                         <View style={styles.gridContainer}>
                             <View style={styles.tableHeaderRow} wrap={false}>
                                 <View style={[styles.colSr, { width: '10%', fontWeight: 'bold' }]}><Text>#</Text></View>
-                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
-                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Date</Text></View>
-                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Amt (Rs.)</Text></View>
+                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>बिल क्र.</Text></View>
+                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>दिनांक</Text></View>
+                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>रक्कम (रु.)</Text></View>
                             </View>
                             {data.pathology_receipts && data.pathology_receipts.length > 0 ? (
                                 data.pathology_receipts.map((r, i) => (
@@ -489,12 +489,12 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                                 ))
                             ) : (
                                 <View style={styles.tableRow} wrap={false}>
-                                    <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>No bills added</Text></View>
+                                    <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>कोणतीही बिले नाहीत</Text></View>
                                 </View>
                             )}
                             <View style={styles.totalRow} wrap={false}>
                                 <View style={[styles.colLabel, { width: '52%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Total Pathology</Text>
+                                    <Text style={{ fontWeight: 'bold' }}>एकूण लॅब खर्च</Text>
                                 </View>
                                 <View style={[styles.colVal, { width: '48%' }]}>
                                     <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>{fmt(totals.path_total)}</Text>
@@ -505,13 +505,13 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
 
                     {/* Right: Medicines */}
                     <View style={{ width: '49%' }}>
-                        <Text style={[styles.sectionHeader, { marginTop: 0 }]}>B. Pharmacy & Medicines</Text>
+                        <Text style={[styles.sectionHeader, { marginTop: 0 }]}>ब. औषधे व इंजेक्शन्स बिले</Text>
                         <View style={styles.gridContainer}>
                             <View style={styles.tableHeaderRow} wrap={false}>
                                 <View style={[styles.colSr, { width: '10%', fontWeight: 'bold' }]}><Text>#</Text></View>
-                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>Bill No</Text></View>
-                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Date</Text></View>
-                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>Amt (Rs.)</Text></View>
+                                <View style={[styles.colLabel, { width: '42%', fontWeight: 'bold' }]}><Text>बिल क्र.</Text></View>
+                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>दिनांक</Text></View>
+                                <View style={[styles.colVal, { width: '24%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'right' }}>रक्कम (रु.)</Text></View>
                             </View>
                             {data.medicine_receipts && data.medicine_receipts.length > 0 ? (
                                 data.medicine_receipts.map((r, i) => (
@@ -524,12 +524,12 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                                 ))
                             ) : (
                                 <View style={styles.tableRow} wrap={false}>
-                                    <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>No bills added</Text></View>
+                                    <View style={[styles.colVal, { width: '100%', textAlign: 'center' }]}><Text style={{ color: '#94a3b8', textAlign: 'center' }}>कोणतीही बिले नाहीत</Text></View>
                                 </View>
                             )}
                             <View style={styles.totalRow} wrap={false}>
                                 <View style={[styles.colLabel, { width: '52%', borderRightWidth: 1, borderRightColor: '#94a3b8' }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Total Medicines</Text>
+                                    <Text style={{ fontWeight: 'bold' }}>एकूण औषध खर्च</Text>
                                 </View>
                                 <View style={[styles.colVal, { width: '48%' }]}>
                                     <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>{fmt(totals.med_total)}</Text>
@@ -540,25 +540,25 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                 </View>
 
                 {/* Section C: Dependent Family Members Declaration */}
-                <Text style={styles.sectionHeader}>C. Dependent Family Members Declaration (शासकीय नियमानुसार)</Text>
+                <Text style={styles.sectionHeader}>क. आर्थिकदृष्ट्या अवलंबून असलेल्या कुटुंबियांचा तपशील (परिशिष्ट - सात)</Text>
                 <View style={styles.gridContainer} wrap={false}>
                     <View style={styles.tableHeaderRow}>
-                        <View style={[styles.colSr, { width: '8%', fontWeight: 'bold' }]}><Text>Sr.</Text></View>
-                        <View style={[styles.colLabel, { width: '52%', fontWeight: 'bold' }]}><Text>Name of Dependent Family Member</Text></View>
-                        <View style={[styles.colVal, { width: '22%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Relationship</Text></View>
-                        <View style={[styles.colVal, { width: '18%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>Age (Yrs)</Text></View>
+                        <View style={[styles.colSr, { width: '8%', fontWeight: 'bold' }]}><Text>अ.क्र.</Text></View>
+                        <View style={[styles.colLabel, { width: '52%', fontWeight: 'bold' }]}><Text>कुटुंबियांचे पूर्ण नाव (Name of Family Member)</Text></View>
+                        <View style={[styles.colVal, { width: '22%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>नाते (Relation)</Text></View>
+                        <View style={[styles.colVal, { width: '18%', fontWeight: 'bold' }]}><Text style={{ textAlign: 'center' }}>वय (Age)</Text></View>
                     </View>
                     {[
-                        { sr: '1', name: data.m_name_1, rel: data.m_rel_1, age: data.m_age_1 },
-                        { sr: '2', name: data.m_name_2, rel: data.m_rel_2, age: data.m_age_2 },
-                        { sr: '3', name: data.m_name_3, rel: data.m_rel_3, age: data.m_age_3 },
-                        { sr: '4', name: data.m_name_4, rel: data.m_rel_4, age: data.m_age_4 },
+                        { sr: '१', name: data.m_name_1, rel: data.m_rel_1, age: data.m_age_1 },
+                        { sr: '२', name: data.m_name_2, rel: data.m_rel_2, age: data.m_age_2 },
+                        { sr: '३', name: data.m_name_3, rel: data.m_rel_3, age: data.m_age_3 },
+                        { sr: '४', name: data.m_name_4, rel: data.m_rel_4, age: data.m_age_4 },
                     ].map((m) => (
                         <View key={m.sr} style={styles.tableRow} wrap={false}>
                             <View style={[styles.colSr, { width: '8%' }]}><Text>{m.sr}</Text></View>
                             <View style={[styles.colLabel, { width: '52%' }]}><Text>{m.name || '-'}</Text></View>
                             <View style={[styles.colVal, { width: '22%' }]}><Text style={{ textAlign: 'center' }}>{m.rel || '-'}</Text></View>
-                            <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'center' }}>{m.age ? `${m.age} Yrs` : '-'}</Text></View>
+                            <View style={[styles.colVal, { width: '18%' }]}><Text style={{ textAlign: 'center' }}>{m.age ? `${m.age} वर्षे` : '-'}</Text></View>
                         </View>
                     ))}
                 </View>
@@ -566,27 +566,27 @@ const MedicalPDFDocument: React.FC<MedicalPDFProps> = ({ data, totals }) => {
                 {/* Declaration Block */}
                 <View style={{ marginTop: 8, padding: 6, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#f8fafc' }} wrap={false}>
                     <Text style={{ fontSize: 7, color: '#334155', lineHeight: 1.25 }}>
-                        Declaration: I hereby declare that the statements made in this claim are true to the best of my knowledge and belief and that the person for whom medical expenses were incurred is wholly dependent upon me as per Maharashtra Medical Attendance Rules. The original cash memos and test reports submitted herewith are genuine and have not been claimed previously from any source.
+                        प्रतिज्ञापत्र: मी याद्वारे प्रमाणित करतो/करते की, वरील वैद्यकीय प्रतिपूर्ती दाव्यात नमूद केलेली माहिती माझ्या माहितीप्रमाणे व समजुतीनुसार खरी व बरोबर आहे. ज्या व्यक्तीकरिता वैद्यकीय खर्च करण्यात आला आहे, ती व्यक्ती महाराष्ट्र नागरी सेवा (वैद्यकीय देखभाल) नियमानुसार माझ्यावर पूर्णतः अवलंबून आहे. सादर केलेली सर्व मूळ देयके, कॅश मेमो व चाचणी अहवाल खरे असून यापूर्वी या खर्चाचा परतावा इतर कुठूनही घेतलेला नाही.
                     </Text>
                 </View>
 
                 {/* Signatures on Page 3 */}
                 <View style={styles.signatureContainer} wrap={false}>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Signature of Govt Servant</Text>
-                        <Text style={styles.sigSub}>Date: _______________</Text>
+                        <Text style={styles.sigTitle}>शासकीय कर्मचाऱ्याची स्वाक्षरी</Text>
+                        <Text style={styles.sigSub}>दिनांक: _______________</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Superintendent / Chemist</Text>
-                        <Text style={styles.sigSub}>Verification Stamp</Text>
+                        <Text style={styles.sigTitle}>पडताळणी अधिकारी / केमिस्ट</Text>
+                        <Text style={styles.sigSub}>पडताळणी शिक्का व स्वाक्षरी</Text>
                     </View>
                     <View style={styles.sigBlock}>
-                        <Text style={styles.sigTitle}>Controlling Officer / DDO</Text>
-                        <Text style={styles.sigSub}>Passed for Payment</Text>
+                        <Text style={styles.sigTitle}>नियंत्रण अधिकारी / DDO</Text>
+                        <Text style={styles.sigSub}>अदायगीस मंजुरी</Text>
                     </View>
                 </View>
 
-                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Smart Toolkit 2.0 • Medical Claim Receipts & Family Annexure • Page ${pageNumber} of ${totalPages}`} fixed />
+                <Text style={styles.footer} render={({ pageNumber, totalPages }) => `कर्मचारी कॉर्नर २.० • बिलांचे विवरण व कुटुंब तपशील • पान ${pageNumber} / ${totalPages}`} fixed />
             </Page>
         </Document>
     );
