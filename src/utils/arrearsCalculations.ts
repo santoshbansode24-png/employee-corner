@@ -130,7 +130,10 @@ export const getPromotionPeriodForMonth = (periods: any[], month: number, year: 
 };
 
 export const calculateArrearsLogic = (params: any) => {
-    const { basicInfo, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods, toggles, customColumns } = params;
+    const { basicInfo, dueComponents, drawnComponents, duePromotionPeriods, drawnPromotionPeriods, toggles = {}, customColumns = [] } = params;
+    const includeTA = toggles.includeTA !== false;
+    const includeHRA = toggles.includeHRA !== false;
+    const includeDA = toggles.includeDA !== false;
     const months = getMonthYearList(basicInfo.fromMonth, basicInfo.toMonth);
     const results: any[] = [];
     
@@ -170,9 +173,12 @@ export const calculateArrearsLogic = (params: any) => {
         // Active Due Promotion Period for DA/HRA/TA lookup
         const activeDuePromotion = getPromotionPeriodForMonth(duePromotionPeriods, month, year);
         
-        let dueTA = getValueForMonth(dueComponents.ta, month, year) || 0;
-        if (activeDuePromotion && activeDuePromotion.ta !== undefined && activeDuePromotion.ta !== '') {
-            dueTA = parseFloat(activeDuePromotion.ta) || 0;
+        let dueTA = 0;
+        if (includeTA) {
+            dueTA = getValueForMonth(dueComponents.ta, month, year) || 0;
+            if (activeDuePromotion && activeDuePromotion.ta !== undefined && activeDuePromotion.ta !== '') {
+                dueTA = parseFloat(activeDuePromotion.ta) || 0;
+            }
         }
         
 
@@ -200,26 +206,40 @@ export const calculateArrearsLogic = (params: any) => {
         // Active Drawn Promotion Period
         const activeDrawnPromotion = getPromotionPeriodForMonth(drawnPromotionPeriods, month, year);
 
-        let drawnTA = getValueForMonth(drawnComponents.ta, month, year) || 0;
-        if (activeDrawnPromotion && activeDrawnPromotion.ta !== undefined && activeDrawnPromotion.ta !== '') {
-            drawnTA = parseFloat(activeDrawnPromotion.ta) || 0;
+        let drawnTA = 0;
+        if (includeTA) {
+            drawnTA = getValueForMonth(drawnComponents.ta, month, year) || 0;
+            if (activeDrawnPromotion && activeDrawnPromotion.ta !== undefined && activeDrawnPromotion.ta !== '') {
+                drawnTA = parseFloat(activeDrawnPromotion.ta) || 0;
+            }
         }
 
-        let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
-        let dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
-        
-        if (activeDuePromotion && activeDuePromotion.daRate > 0) {
-            dueDARate = parseFloat(activeDuePromotion.daRate);
+        let dueDARate = 0;
+        let dueDAAmt = 0;
+        if (includeDA) {
+            let userDueDa = getValueForMonth(dueComponents.daRate, month, year);
+            dueDARate = userDueDa !== null ? userDueDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+            
+            if (activeDuePromotion && activeDuePromotion.daRate > 0) {
+                dueDARate = parseFloat(activeDuePromotion.daRate);
+            }
+            dueDAAmt = Math.round(runningPay * dueDARate / 100);
         }
 
-        let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
-        let dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, dueDARate) : 0);
+        let dueHRA = 0;
+        let dueHRAAmt = 0;
+        if (includeHRA) {
+            let userDueHra = getValueForMonth(dueComponents.hraRate, month, year);
+            dueHRA = userDueHra !== null ? userDueHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, dueDARate) : 0);
 
-        if (activeDuePromotion && activeDuePromotion.hraRate > 0) {
-            dueHRA = parseFloat(activeDuePromotion.hraRate);
+            if (activeDuePromotion && activeDuePromotion.hraRate > 0) {
+                dueHRA = parseFloat(activeDuePromotion.hraRate);
+            }
+            const getMinHRA = (cat: string) => { if (cat === 'X') return 5400; if (cat === 'Y') return 3600; if (cat === 'Z') return 1800; return 0; };
+            const minHRA = getMinHRA(basicInfo.cityCategory);
+            dueHRAAmt = Math.round(runningPay * dueHRA / 100);
+            if (dueHRA > 0 && dueHRAAmt < minHRA) dueHRAAmt = minHRA;
         }
-
-        const dueDAAmt = Math.round(runningPay * dueDARate / 100);
         
         let dueCustomTotal = 0;
         const dueCustomValues: Record<string, number> = {};
@@ -239,28 +259,35 @@ export const calculateArrearsLogic = (params: any) => {
             dueCustomTotal += val;
         });
 
-        const getMinHRA = (cat: string) => { if (cat === 'X') return 5400; if (cat === 'Y') return 3600; if (cat === 'Z') return 1800; return 0; };
-        const minHRA = getMinHRA(basicInfo.cityCategory);
-        let dueHRAAmt = Math.round(runningPay * dueHRA / 100);
-        if (dueHRA > 0 && dueHRAAmt < minHRA) dueHRAAmt = minHRA;
         const dueTotal = runningPay + dueDAAmt + dueHRAAmt + dueTA + dueCustomTotal;
 
         // Drawn Calcs
-        let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
-        let drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
+        let drawnDARate = 0;
+        let drawnDAAmt = 0;
+        if (includeDA) {
+            let userDrawnDa = getValueForMonth(drawnComponents.daRate, month, year);
+            drawnDARate = userDrawnDa !== null ? userDrawnDa : (toggles.autoDAMaharashtra ? getMaharashtraDARate(month, year) : 0);
 
-        if (activeDrawnPromotion && activeDrawnPromotion.daRate > 0) {
-            drawnDARate = parseFloat(activeDrawnPromotion.daRate);
+            if (activeDrawnPromotion && activeDrawnPromotion.daRate > 0) {
+                drawnDARate = parseFloat(activeDrawnPromotion.daRate);
+            }
+            drawnDAAmt = Math.round(runningDrawnPay * drawnDARate / 100);
         }
 
-        let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
-        let drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, drawnDARate) : 0);
+        let drawnHRA = 0;
+        let drawnHRAAmt = 0;
+        if (includeHRA) {
+            let userDrawnHra = getValueForMonth(drawnComponents.hraRate, month, year);
+            drawnHRA = userDrawnHra !== null ? userDrawnHra : (toggles.autoHRAMaharashtra ? getMaharashtraHRARate(month, year, basicInfo.cityCategory, drawnDARate) : 0);
 
-        if (activeDrawnPromotion && activeDrawnPromotion.hraRate > 0) {
-            drawnHRA = parseFloat(activeDrawnPromotion.hraRate);
+            if (activeDrawnPromotion && activeDrawnPromotion.hraRate > 0) {
+                drawnHRA = parseFloat(activeDrawnPromotion.hraRate);
+            }
+            const getMinHRA = (cat: string) => { if (cat === 'X') return 5400; if (cat === 'Y') return 3600; if (cat === 'Z') return 1800; return 0; };
+            const minHRA = getMinHRA(basicInfo.cityCategory);
+            drawnHRAAmt = Math.round(runningDrawnPay * drawnHRA / 100);
+            if (drawnHRA > 0 && drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
         }
-
-        const drawnDAAmt = Math.round(runningDrawnPay * drawnDARate / 100);
         
         let drawnCustomTotal = 0;
         const drawnCustomValues: Record<string, number> = {};
@@ -279,8 +306,6 @@ export const calculateArrearsLogic = (params: any) => {
             drawnCustomTotal += val;
         });
 
-        let drawnHRAAmt = Math.round(runningDrawnPay * drawnHRA / 100);
-        if (drawnHRA > 0 && drawnHRAAmt < minHRA) drawnHRAAmt = minHRA;
         const drawnTotal = runningDrawnPay + drawnDAAmt + drawnHRAAmt + drawnTA + drawnCustomTotal;
 
         // Diff

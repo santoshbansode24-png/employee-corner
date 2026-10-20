@@ -261,6 +261,11 @@ interface PDFProps {
     basicInfo: any;
     customColumns: any[];
     results: any[];
+    toggles?: {
+        includeTA?: boolean;
+        includeHRA?: boolean;
+        includeDA?: boolean;
+    };
 }
 
 const formatRupees = (val: number) => {
@@ -280,24 +285,27 @@ const formatDateDMY = (dateStr: string) => {
     return dateStr;
 };
 
-const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [], results = [] }) => {
+const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [], results = [], toggles }) => {
     const summary = getArrearsSummary(results, customColumns);
     const isNps = basicInfo.category === 'NPS';
+    const includeTA = toggles?.includeTA !== false;
+    const includeHRA = toggles?.includeHRA !== false;
+    const includeDA = toggles?.includeDA !== false;
 
     // Proportional, balanced column width calculations
     const wSr = 2.4;
     const wMonth = 6.4;
-    const wPay = 4.6;
-    const wDa = 4.2;
-    const wHra = 3.8;
-    const wTa = 3.6;
+    const wPay = 4.8;
+    const wDa = includeDA ? 4.4 : 0;
+    const wHra = includeHRA ? 4.0 : 0;
+    const wTa = includeTA ? 3.8 : 0;
     const wCustom = 3.8;
-    const wTotal = 5.0;
-    const wNps14 = isNps ? 4.2 : 0;
-    const wTotalAmount = 5.4;
-    const wGrossAmount = 5.2;
-    const wDcps = isNps ? 4.0 : 0;
-    const wNet = 5.2;
+    const wTotal = 5.2;
+    const wNps14 = isNps ? 4.4 : 0;
+    const wTotalAmount = 5.6;
+    const wGrossAmount = 5.4;
+    const wDcps = isNps ? 4.2 : 0;
+    const wNet = 5.6;
 
     const dueDrawnWeight = wPay + wDa + wHra + wTa + (customColumns.length * wCustom) + wTotal;
     const diffWeight = wPay + wDa + wHra + wTa + (customColumns.length * wCustom) + wNps14 + wTotalAmount + wGrossAmount;
@@ -307,9 +315,9 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
     const srWidth = wSr * scale;
     const monthWidth = wMonth * scale;
     const colPay = wPay * scale;
-    const colDa = wDa * scale;
-    const colHra = wHra * scale;
-    const colTa = wTa * scale;
+    const colDa = includeDA ? (wDa * scale) : 0;
+    const colHra = includeHRA ? (wHra * scale) : 0;
+    const colTa = includeTA ? (wTa * scale) : 0;
     const colCustom = wCustom * scale;
     const colDueDrawnTotal = wTotal * scale;
     const colNps14 = isNps ? (wNps14 * scale) : 0;
@@ -407,9 +415,9 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 
                 {/* Due Sub Cols */}
                 <View style={[styles.subHeaderCell, { width: pw(colPay) }]}><Text style={styles.subHeaderText}>Pay</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>
+                {includeDA && <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>}
+                {includeHRA && <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>}
+                {includeTA && <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>}
                 {customColumns.map(c => (
                     <View key={`due-h-${c.id}`} style={[styles.subHeaderCell, { width: pw(colCustom) }]}>
                         <Text style={styles.subHeaderText}>{c.label.toUpperCase()}</Text>
@@ -421,9 +429,9 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 
                 {/* Drawn Sub Cols */}
                 <View style={[styles.subHeaderCell, { width: pw(colPay) }]}><Text style={styles.subHeaderText}>Pay</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>
+                {includeDA && <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>}
+                {includeHRA && <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>}
+                {includeTA && <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>}
                 {customColumns.map(c => (
                     <View key={`drawn-h-${c.id}`} style={[styles.subHeaderCell, { width: pw(colCustom) }]}>
                         <Text style={styles.subHeaderText}>{c.label.toUpperCase()}</Text>
@@ -435,9 +443,9 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 
                 {/* Difference Sub Cols */}
                 <View style={[styles.subHeaderCell, { width: pw(colPay) }]}><Text style={styles.subHeaderText}>PAY</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>
-                <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>
+                {includeDA && <View style={[styles.subHeaderCell, { width: pw(colDa) }]}><Text style={styles.subHeaderText}>DA</Text></View>}
+                {includeHRA && <View style={[styles.subHeaderCell, { width: pw(colHra) }]}><Text style={styles.subHeaderText}>HRA</Text></View>}
+                {includeTA && <View style={[styles.subHeaderCell, { width: pw(colTa) }]}><Text style={styles.subHeaderText}>TA</Text></View>}
                 {customColumns.map(c => (
                     <View key={`diff-h-${c.id}`} style={[styles.subHeaderCell, { width: pw(colCustom) }]}>
                         <Text style={styles.subHeaderText}>{c.label.toUpperCase()}</Text>
@@ -482,15 +490,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                         <View style={[styles.cell, { width: pw(colPay) }]}>
                             <Text style={styles.cellNumberText}>{formatRupees(row.due.pay)}</Text>
                         </View>
-                        <View style={[styles.cell, { width: pw(colDa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.due.da)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colHra) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.due.hra)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colTa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.due.ta)}</Text>
-                        </View>
+                        {includeDA && (
+                            <View style={[styles.cell, { width: pw(colDa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.due.da)}</Text>
+                            </View>
+                        )}
+                        {includeHRA && (
+                            <View style={[styles.cell, { width: pw(colHra) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.due.hra)}</Text>
+                            </View>
+                        )}
+                        {includeTA && (
+                            <View style={[styles.cell, { width: pw(colTa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.due.ta)}</Text>
+                            </View>
+                        )}
                         {customColumns.map(c => (
                             <View key={`due-${c.id}-${i}`} style={[styles.cell, { width: pw(colCustom) }]}>
                                 <Text style={styles.cellNumberText}>{formatRupees(row.due.custom?.[c.id] || 0)}</Text>
@@ -504,15 +518,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                         <View style={[styles.cell, { width: pw(colPay) }]}>
                             <Text style={styles.cellNumberText}>{formatRupees(row.drawn.pay)}</Text>
                         </View>
-                        <View style={[styles.cell, { width: pw(colDa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.drawn.da)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colHra) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.drawn.hra)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colTa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.drawn.ta)}</Text>
-                        </View>
+                        {includeDA && (
+                            <View style={[styles.cell, { width: pw(colDa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.drawn.da)}</Text>
+                            </View>
+                        )}
+                        {includeHRA && (
+                            <View style={[styles.cell, { width: pw(colHra) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.drawn.hra)}</Text>
+                            </View>
+                        )}
+                        {includeTA && (
+                            <View style={[styles.cell, { width: pw(colTa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.drawn.ta)}</Text>
+                            </View>
+                        )}
                         {customColumns.map(c => (
                             <View key={`drawn-${c.id}-${i}`} style={[styles.cell, { width: pw(colCustom) }]}>
                                 <Text style={styles.cellNumberText}>{formatRupees(row.drawn.custom?.[c.id] || 0)}</Text>
@@ -526,15 +546,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                         <View style={[styles.cell, { width: pw(colPay) }]}>
                             <Text style={styles.cellNumberText}>{formatRupees(row.diff.pay)}</Text>
                         </View>
-                        <View style={[styles.cell, { width: pw(colDa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.diff.da)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colHra) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.diff.hra)}</Text>
-                        </View>
-                        <View style={[styles.cell, { width: pw(colTa) }]}>
-                            <Text style={styles.cellNumberText}>{formatRupees(row.diff.ta)}</Text>
-                        </View>
+                        {includeDA && (
+                            <View style={[styles.cell, { width: pw(colDa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.diff.da)}</Text>
+                            </View>
+                        )}
+                        {includeHRA && (
+                            <View style={[styles.cell, { width: pw(colHra) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.diff.hra)}</Text>
+                            </View>
+                        )}
+                        {includeTA && (
+                            <View style={[styles.cell, { width: pw(colTa) }]}>
+                                <Text style={styles.cellNumberText}>{formatRupees(row.diff.ta)}</Text>
+                            </View>
+                        )}
                         {customColumns.map(c => (
                             <View key={`diff-${c.id}-${i}`} style={[styles.cell, { width: pw(colCustom) }]}>
                                 <Text style={styles.cellNumberText}>{formatRupees(row.diff.custom?.[c.id] || 0)}</Text>
@@ -575,15 +601,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 <View style={[styles.totalCell, { width: pw(colPay) }]}>
                     <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDuePay)}</Text>
                 </View>
-                <View style={[styles.totalCell, { width: pw(colDa) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueDA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colHra) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueHRA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colTa) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueTA)}</Text>
-                </View>
+                {includeDA && (
+                    <View style={[styles.totalCell, { width: pw(colDa) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueDA)}</Text>
+                    </View>
+                )}
+                {includeHRA && (
+                    <View style={[styles.totalCell, { width: pw(colHra) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueHRA)}</Text>
+                    </View>
+                )}
+                {includeTA && (
+                    <View style={[styles.totalCell, { width: pw(colTa) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueTA)}</Text>
+                    </View>
+                )}
                 {customColumns.map(c => (
                     <View key={`due-tot-${c.id}`} style={[styles.totalCell, { width: pw(colCustom) }]}>
                         <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDueCustom[c.id] || 0)}</Text>
@@ -597,15 +629,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 <View style={[styles.totalCell, { width: pw(colPay) }]}>
                     <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnPay)}</Text>
                 </View>
-                <View style={[styles.totalCell, { width: pw(colDa) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnDA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colHra) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnHRA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colTa) }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnTA)}</Text>
-                </View>
+                {includeDA && (
+                    <View style={[styles.totalCell, { width: pw(colDa) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnDA)}</Text>
+                    </View>
+                )}
+                {includeHRA && (
+                    <View style={[styles.totalCell, { width: pw(colHra) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnHRA)}</Text>
+                    </View>
+                )}
+                {includeTA && (
+                    <View style={[styles.totalCell, { width: pw(colTa) }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnTA)}</Text>
+                    </View>
+                )}
                 {customColumns.map(c => (
                     <View key={`drawn-tot-${c.id}`} style={[styles.totalCell, { width: pw(colCustom) }]}>
                         <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDrawnCustom[c.id] || 0)}</Text>
@@ -619,15 +657,21 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 <View style={[styles.totalCell, { width: pw(colPay), backgroundColor: '#86efac' }]}>
                     <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffPay)}</Text>
                 </View>
-                <View style={[styles.totalCell, { width: pw(colDa), backgroundColor: '#86efac' }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffDA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colHra), backgroundColor: '#86efac' }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffHRA)}</Text>
-                </View>
-                <View style={[styles.totalCell, { width: pw(colTa), backgroundColor: '#86efac' }]}>
-                    <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffTA)}</Text>
-                </View>
+                {includeDA && (
+                    <View style={[styles.totalCell, { width: pw(colDa), backgroundColor: '#86efac' }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffDA)}</Text>
+                    </View>
+                )}
+                {includeHRA && (
+                    <View style={[styles.totalCell, { width: pw(colHra), backgroundColor: '#86efac' }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffHRA)}</Text>
+                    </View>
+                )}
+                {includeTA && (
+                    <View style={[styles.totalCell, { width: pw(colTa), backgroundColor: '#86efac' }]}>
+                        <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffTA)}</Text>
+                    </View>
+                )}
                 {customColumns.map(c => (
                     <View key={`diff-tot-${c.id}`} style={[styles.totalCell, { width: pw(colCustom), backgroundColor: '#86efac' }]}>
                         <Text style={styles.totalTextNumber}>{formatRupees(summary.totalDiffCustom[c.id] || 0)}</Text>

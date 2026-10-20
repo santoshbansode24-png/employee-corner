@@ -22,6 +22,9 @@ interface DueDrawnProps {
     updatePromotionPeriod: (type: string, idx: number, field: string, val: any) => void;
     addPeriod: (type: string) => void;
     removePeriod?: (type: string, idx: number) => void;
+    includeTA?: boolean;
+    includeHRA?: boolean;
+    includeDA?: boolean;
 }
 
 const DueDrawnCard: React.FC<DueDrawnProps> = ({ 
@@ -38,7 +41,10 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
     promotionPeriods = [],
     updatePromotionPeriod,
     addPeriod,
-    removePeriod
+    removePeriod,
+    includeTA = true,
+    includeHRA = true,
+    includeDA = true
 }) => {
     const isDue = type === 'due';
     const Icon = isDue ? Landmark : TrendingDown;
@@ -82,45 +88,51 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                     isAutoHRA={false}
                 />
                 
-                <ComponentInputGroup 
-                    type={type}
-                    compKey="daRate"
-                    label={`DA Rate ${autoDAMaharashtra ? '(Auto)' : ''}`}
-                    inputClass={inputClass}
-                    items={components.daRate}
-                    updateComponent={updateComponent}
-                    fromMonth={fromMonth}
-                    cityCategory={cityCategory}
-                    isAutoDA={autoDAMaharashtra}
-                    isAutoHRA={false}
-                />
+                {includeDA && (
+                    <ComponentInputGroup 
+                        type={type}
+                        compKey="daRate"
+                        label={`DA Rate ${autoDAMaharashtra ? '(Auto)' : ''}`}
+                        inputClass={inputClass}
+                        items={components.daRate}
+                        updateComponent={updateComponent}
+                        fromMonth={fromMonth}
+                        cityCategory={cityCategory}
+                        isAutoDA={autoDAMaharashtra}
+                        isAutoHRA={false}
+                    />
+                )}
 
-                <ComponentInputGroup 
-                    type={type}
-                    compKey="hraRate"
-                    label={`HRA Rate ${autoHRAMaharashtra ? '(Auto)' : ''}`}
-                    inputClass={inputClass}
-                    items={components.hraRate}
-                    updateComponent={updateComponent}
-                    fromMonth={fromMonth}
-                    cityCategory={cityCategory}
-                    isAutoDA={false}
-                    isAutoHRA={autoHRAMaharashtra}
-                    daRateItemAmount={daAmt}
-                />
+                {includeHRA && (
+                    <ComponentInputGroup 
+                        type={type}
+                        compKey="hraRate"
+                        label={`HRA Rate ${autoHRAMaharashtra ? '(Auto)' : ''}`}
+                        inputClass={inputClass}
+                        items={components.hraRate}
+                        updateComponent={updateComponent}
+                        fromMonth={fromMonth}
+                        cityCategory={cityCategory}
+                        isAutoDA={false}
+                        isAutoHRA={autoHRAMaharashtra}
+                        daRateItemAmount={daAmt}
+                    />
+                )}
 
-                <ComponentInputGroup 
-                    type={type}
-                    compKey="ta"
-                    label="Transport Allowance"
-                    inputClass={inputClass}
-                    items={components.ta}
-                    updateComponent={updateComponent}
-                    fromMonth={fromMonth}
-                    cityCategory={cityCategory}
-                    isAutoDA={false}
-                    isAutoHRA={false}
-                />
+                {includeTA && (
+                    <ComponentInputGroup 
+                        type={type}
+                        compKey="ta"
+                        label="Transport Allowance (TA)"
+                        inputClass={inputClass}
+                        items={components.ta}
+                        updateComponent={updateComponent}
+                        fromMonth={fromMonth}
+                        cityCategory={cityCategory}
+                        isAutoDA={false}
+                        isAutoHRA={false}
+                    />
+                )}
 
                 {customColumns.map(col => (
                     <ComponentInputGroup 
@@ -178,36 +190,42 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                                             className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">DA (%)</label>
-                                        <input 
-                                            type="number" 
-                                            placeholder="DA %" 
-                                            value={period.daRate || ''} 
-                                            onChange={(e) => updatePromotionPeriod(type, idx, 'daRate', Number(e.target.value))} 
-                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">HRA (%)</label>
-                                        <input 
-                                            type="number" 
-                                            placeholder="HRA %" 
-                                            value={period.hraRate || ''} 
-                                            onChange={(e) => updatePromotionPeriod(type, idx, 'hraRate', Number(e.target.value))} 
-                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">TA (₹)</label>
-                                        <input 
-                                            type="number" 
-                                            placeholder="TA" 
-                                            value={period.ta || ''} 
-                                            onChange={(e) => updatePromotionPeriod(type, idx, 'ta', Number(e.target.value))} 
-                                            className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
-                                        />
-                                    </div>
+                                    {includeDA && (
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">DA (%)</label>
+                                            <input 
+                                                type="number" 
+                                                placeholder="DA %" 
+                                                value={period.daRate || ''} 
+                                                onChange={(e) => updatePromotionPeriod(type, idx, 'daRate', Number(e.target.value))} 
+                                                className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                            />
+                                        </div>
+                                    )}
+                                    {includeHRA && (
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">HRA (%)</label>
+                                            <input 
+                                                type="number" 
+                                                placeholder="HRA %" 
+                                                value={period.hraRate || ''} 
+                                                onChange={(e) => updatePromotionPeriod(type, idx, 'hraRate', Number(e.target.value))} 
+                                                className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                            />
+                                        </div>
+                                    )}
+                                    {includeTA && (
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">TA (₹)</label>
+                                            <input 
+                                                type="number" 
+                                                placeholder="TA" 
+                                                value={period.ta || ''} 
+                                                onChange={(e) => updatePromotionPeriod(type, idx, 'ta', Number(e.target.value))} 
+                                                className="w-full bg-white border border-gray-200 rounded p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-opacity-50"
+                                            />
+                                        </div>
+                                    )}
                                     {customColumns.map(col => (
                                         <div key={col.id}>
                                             <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">{col.label}</label>

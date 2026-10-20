@@ -29,7 +29,10 @@ export default function ArrearsPage() {
     const [toggles, setToggles] = useState({
         autoDAMaharashtra: true,
         autoHRAMaharashtra: true,
-        promotionEnabled: false
+        promotionEnabled: false,
+        includeTA: true,
+        includeHRA: true,
+        includeDA: true
     });
 
     const [dueComponents, setDueComponents] = useState<any>({ 
@@ -147,7 +150,10 @@ export default function ArrearsPage() {
         setToggles({
             autoDAMaharashtra: true,
             autoHRAMaharashtra: true,
-            promotionEnabled: false
+            promotionEnabled: false,
+            includeTA: true,
+            includeHRA: true,
+            includeDA: true
         });
     }, []);
 
@@ -226,6 +232,9 @@ export default function ArrearsPage() {
                         addCustomColumn={addCustomColumn}
                         customColumns={customColumns}
                         removeCustomColumn={removeCustomColumn}
+                        includeTA={toggles.includeTA}
+                        includeHRA={toggles.includeHRA}
+                        includeDA={toggles.includeDA}
                     />
                     
                     <DueDrawnCard 
@@ -243,6 +252,9 @@ export default function ArrearsPage() {
                         updatePromotionPeriod={updatePromotionPeriod}
                         addPeriod={handleAddPeriod}
                         removePeriod={removePromotionPeriod}
+                        includeTA={toggles.includeTA}
+                        includeHRA={toggles.includeHRA}
+                        includeDA={toggles.includeDA}
                     />
 
                     <DueDrawnCard 
@@ -260,6 +272,9 @@ export default function ArrearsPage() {
                         updatePromotionPeriod={updatePromotionPeriod}
                         addPeriod={handleAddPeriod}
                         removePeriod={removePromotionPeriod}
+                        includeTA={toggles.includeTA}
+                        includeHRA={toggles.includeHRA}
+                        includeDA={toggles.includeDA}
                     />
                 </div>
 
@@ -273,6 +288,7 @@ export default function ArrearsPage() {
                     setIsTableExpanded={setIsTableExpanded}
                     fromMonth={debouncedCalcInput.basicInfo.fromMonth}
                     toMonth={debouncedCalcInput.basicInfo.toMonth}
+                    toggles={debouncedCalcInput.toggles}
                 />
 
                 {/* PDF Generation Download CTA (On-Demand) */}
@@ -288,6 +304,7 @@ export default function ArrearsPage() {
                         basicInfo={debouncedCalcInput.basicInfo} 
                         customColumns={debouncedCalcInput.customColumns} 
                         results={calculationResults} 
+                        toggles={debouncedCalcInput.toggles}
                     />
                 </div>
 

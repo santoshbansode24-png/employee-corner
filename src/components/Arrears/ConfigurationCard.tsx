@@ -20,6 +20,9 @@ interface ConfigurationProps {
     addCustomColumn: () => void;
     customColumns?: any[];
     removeCustomColumn?: (id: string) => void;
+    includeTA?: boolean;
+    includeHRA?: boolean;
+    includeDA?: boolean;
 }
 
 const ConfigurationCard: React.FC<ConfigurationProps> = ({ 
@@ -34,7 +37,10 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
     setNewColumn, 
     addCustomColumn,
     customColumns = [],
-    removeCustomColumn
+    removeCustomColumn,
+    includeTA = true,
+    includeHRA = true,
+    includeDA = true
 }) => {
     return (
         <Card className="shadow-lg border-purple-100">
@@ -115,6 +121,76 @@ const ConfigurationCard: React.FC<ConfigurationProps> = ({
                         <option value="July">July (1st July)</option>
                         <option value="Both">Both (Jan & July)</option>
                     </select>
+                </div>
+
+                {/* Allowance Visibility & Inclusion Switches */}
+                <div className="md:col-span-2 pt-3 border-t border-purple-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
+                        <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            Arrears Allowance Components (घटक समाविष्ट करा / वगळा)
+                        </Label>
+                        <span className="text-[11px] text-purple-600 font-medium">
+                            Turn OFF to exclude allowance & hide column from statement
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* TA Switch */}
+                        <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                            includeTA ? 'bg-emerald-50/70 border-emerald-200' : 'bg-gray-50 border-gray-200 opacity-60'
+                        }`}>
+                            <div className="flex flex-col pr-2">
+                                <span className="text-sm font-bold text-gray-800">Transport Allowance (TA)</span>
+                                <span className="text-[11px] text-gray-500">
+                                    {includeTA ? 'Active in Statement' : 'Excluded (Column Hidden)'}
+                                </span>
+                            </div>
+                            <input 
+                                type="checkbox" 
+                                id="toggleTA"
+                                className="w-5 h-5 text-emerald-600 focus:ring-emerald-500 rounded cursor-pointer"
+                                checked={includeTA}
+                                onChange={e => onToggleChange('includeTA', e.target.checked)}
+                            />
+                        </div>
+
+                        {/* HRA Switch */}
+                        <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                            includeHRA ? 'bg-pink-50/70 border-pink-200' : 'bg-gray-50 border-gray-200 opacity-60'
+                        }`}>
+                            <div className="flex flex-col pr-2">
+                                <span className="text-sm font-bold text-gray-800">House Rent (HRA)</span>
+                                <span className="text-[11px] text-gray-500">
+                                    {includeHRA ? 'Active in Statement' : 'Excluded (Column Hidden)'}
+                                </span>
+                            </div>
+                            <input 
+                                type="checkbox" 
+                                id="toggleHRA"
+                                className="w-5 h-5 text-pink-600 focus:ring-pink-500 rounded cursor-pointer"
+                                checked={includeHRA}
+                                onChange={e => onToggleChange('includeHRA', e.target.checked)}
+                            />
+                        </div>
+
+                        {/* DA Switch */}
+                        <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                            includeDA ? 'bg-purple-50/70 border-purple-200' : 'bg-gray-50 border-gray-200 opacity-60'
+                        }`}>
+                            <div className="flex flex-col pr-2">
+                                <span className="text-sm font-bold text-gray-800">Dearness (DA)</span>
+                                <span className="text-[11px] text-gray-500">
+                                    {includeDA ? 'Active in Statement' : 'Excluded (Column Hidden)'}
+                                </span>
+                            </div>
+                            <input 
+                                type="checkbox" 
+                                id="toggleDA"
+                                className="w-5 h-5 text-purple-600 focus:ring-purple-500 rounded cursor-pointer"
+                                checked={includeDA}
+                                onChange={e => onToggleChange('includeDA', e.target.checked)}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="space-y-2">

@@ -9,12 +9,14 @@ interface ArrearsPDFDownloadButtonProps {
     basicInfo: any;
     customColumns: any[];
     results: any[];
+    toggles?: any;
 }
 
 const ArrearsPDFDownloadButton: React.FC<ArrearsPDFDownloadButtonProps> = ({
     basicInfo,
     customColumns,
-    results
+    results,
+    toggles
 }) => {
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -40,6 +42,7 @@ const ArrearsPDFDownloadButton: React.FC<ArrearsPDFDownloadButtonProps> = ({
                     basicInfo={basicInfo} 
                     customColumns={customColumns} 
                     results={results} 
+                    toggles={toggles}
                 />
             ).toBlob();
 
