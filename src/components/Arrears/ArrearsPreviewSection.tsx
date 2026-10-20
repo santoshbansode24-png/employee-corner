@@ -75,9 +75,15 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
 
                 <Card className="bg-white border-indigo-100 shadow-sm rounded-xl">
                     <CardContent className="p-4 sm:p-5">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gross Diff (एकूण फरक)</p>
-                        <p className="text-xl sm:text-2xl font-black text-indigo-700 mt-1">₹{formatINR(summary.totalDiff)}</p>
-                        <p className="text-[11px] text-indigo-500 font-medium mt-1">Before deductions</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            {category === 'NPS' ? 'Total Amount (एकूण फरक + 14%)' : 'Gross Diff (एकूण फरक)'}
+                        </p>
+                        <p className="text-xl sm:text-2xl font-black text-indigo-700 mt-1">
+                            ₹{formatINR(category === 'NPS' ? summary.totalTotalAmount : summary.totalDiff)}
+                        </p>
+                        <p className="text-[11px] text-indigo-500 font-medium mt-1">
+                            Gross Diff: ₹{formatINR(summary.totalGrossAmount || summary.totalDiff)}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -145,11 +151,13 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                                     <th colSpan={4 + customColumns.length + 1} className="p-2 text-center bg-orange-50 text-orange-800 border-r border-slate-200">
                                         Drawn Amount (आहरित रक्कम)
                                     </th>
-                                    <th className="p-2.5 text-center bg-blue-50 text-blue-800 border-r border-slate-200">Gross Diff</th>
+                                    <th colSpan={4 + customColumns.length + (category === 'NPS' ? 3 : 2)} className="p-2 text-center bg-slate-200 text-slate-800 border-r border-slate-300 font-extrabold uppercase tracking-wider">
+                                        DIFFERENCE (फरक)
+                                    </th>
                                     {category === 'NPS' && (
-                                        <th className="p-2.5 text-center bg-amber-50 text-amber-800 border-r border-slate-200">DCPS 10%</th>
+                                        <th className="p-2.5 text-center bg-white text-slate-800 border-r border-slate-200 font-bold whitespace-nowrap">NPS 10%</th>
                                     )}
-                                    <th className="p-2.5 text-center bg-emerald-100 text-emerald-900 font-black">Net Payable</th>
+                                    <th className="p-2.5 text-center bg-[#dcfce7] text-emerald-950 font-black whitespace-nowrap">NET PAYBLE</th>
                                 </tr>
                                 <tr className="bg-slate-50 text-[10px] text-slate-600 border-b border-slate-200">
                                     <th className="p-1.5 border-r border-slate-200"></th>
@@ -168,10 +176,23 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                                     <th className="p-1.5 text-center">TA</th>
                                     {customColumns.map(c => <th key={`drawn-th-${c.id}`} className="p-1.5 text-center">{c.label}</th>)}
                                     <th className="p-1.5 text-center font-bold border-r border-slate-200 bg-orange-50/60">Total</th>
-                                    {/* Diff & Final */}
-                                    <th className="p-1.5 border-r border-slate-200"></th>
-                                    {category === 'NPS' && <th className="p-1.5 border-r border-slate-200"></th>}
-                                    <th className="p-1.5"></th>
+                                    {/* Diff Subheads */}
+                                    <th className="p-1.5 text-center font-bold text-slate-800 bg-slate-100">PAY</th>
+                                    <th className="p-1.5 text-center font-bold text-slate-800 bg-slate-100">DA</th>
+                                    <th className="p-1.5 text-center font-bold text-slate-800 bg-slate-100">HRA</th>
+                                    <th className="p-1.5 text-center font-bold text-slate-800 bg-slate-100">TA</th>
+                                    {customColumns.map(c => <th key={`diff-th-${c.id}`} className="p-1.5 text-center font-bold text-slate-800 bg-slate-100">{c.label.toUpperCase()}</th>)}
+                                    {category === 'NPS' && (
+                                        <th className="p-1.5 text-center font-bold text-slate-800 bg-slate-100 whitespace-nowrap">NPS 14%</th>
+                                    )}
+                                    <th className="p-1.5 text-center font-extrabold text-orange-950 bg-[#fed7aa] whitespace-nowrap border-l border-r border-orange-300">
+                                        TOTAL AMOUNT
+                                    </th>
+                                    <th className="p-1.5 text-center font-extrabold text-emerald-950 bg-[#dcfce7] whitespace-nowrap border-r border-slate-200">
+                                        GROSS AMOUNT
+                                    </th>
+                                    {category === 'NPS' && <th className="p-1.5 border-r border-slate-200 bg-white"></th>}
+                                    <th className="p-1.5 bg-[#dcfce7]"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -200,12 +221,21 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                                         <td className="p-2 text-center">{formatINR(row.drawn.ta)}</td>
                                         {customColumns.map(c => <td key={`drawn-td-${c.id}`} className="p-2 text-center">{formatINR(row.drawn.custom?.[c.id] || 0)}</td>)}
                                         <td className="p-2 text-center font-semibold bg-orange-50/30 border-r border-slate-100 text-slate-900">{formatINR(row.drawn.total)}</td>
-                                        {/* Diff */}
-                                        <td className="p-2 text-center font-bold text-indigo-700 border-r border-slate-100">{formatINR(row.diff.total)}</td>
+                                        {/* Difference */}
+                                        <td className="p-2 text-center font-medium">{formatINR(row.diff.pay)}</td>
+                                        <td className="p-2 text-center font-medium">{formatINR(row.diff.da)}</td>
+                                        <td className="p-2 text-center font-medium">{formatINR(row.diff.hra)}</td>
+                                        <td className="p-2 text-center font-medium">{formatINR(row.diff.ta)}</td>
+                                        {customColumns.map(c => <td key={`diff-td-${c.id}`} className="p-2 text-center font-medium">{formatINR(row.diff.custom?.[c.id] || 0)}</td>)}
                                         {category === 'NPS' && (
-                                            <td className="p-2 text-center font-semibold text-amber-700 border-r border-slate-100">{formatINR(row.dcps)}</td>
+                                            <td className="p-2 text-center font-medium text-slate-800">{formatINR(row.nps14)}</td>
                                         )}
-                                        <td className="p-2 text-center font-extrabold text-emerald-700 bg-emerald-50/40">{formatINR(row.finalAmount)}</td>
+                                        <td className="p-2 text-center font-bold bg-[#fed7aa]/50 text-orange-950 border-l border-r border-orange-200">{formatINR(row.totalAmount)}</td>
+                                        <td className="p-2 text-center font-bold bg-[#dcfce7]/40 text-slate-800 border-r border-slate-200">{formatINR(row.grossAmount)}</td>
+                                        {category === 'NPS' && (
+                                            <td className="p-2 text-center font-semibold text-slate-800 border-r border-slate-200">{formatINR(row.dcps)}</td>
+                                        )}
+                                        <td className="p-2 text-center font-extrabold text-emerald-900 bg-emerald-50/40">{formatINR(row.finalAmount)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -226,12 +256,22 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                                     <td className="p-2.5 text-center">{formatINR(summary.totalDrawnTA)}</td>
                                     {customColumns.map(c => <td key={`tot-drawn-${c.id}`} className="p-2.5 text-center">{formatINR(summary.totalDrawnCustom[c.id] || 0)}</td>)}
                                     <td className="p-2.5 text-center border-r border-slate-300 bg-orange-100/60">{formatINR(summary.totalDrawn)}</td>
-                                    {/* Diff & Final Totals */}
-                                    <td className="p-2.5 text-center text-indigo-900 border-r border-slate-300">{formatINR(summary.totalDiff)}</td>
+                                    {/* Diff Totals with screenshot exact colors */}
+                                    <td className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalDiffPay)}</td>
+                                    <td className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalDiffDA)}</td>
+                                    <td className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalDiffHRA)}</td>
+                                    <td className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalDiffTA)}</td>
+                                    {customColumns.map(c => <td key={`tot-diff-${c.id}`} className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalDiffCustom[c.id] || 0)}</td>)}
                                     {category === 'NPS' && (
-                                        <td className="p-2.5 text-center text-amber-900 border-r border-slate-300">{formatINR(summary.totalDCPS)}</td>
+                                        <td className="p-2.5 text-center bg-[#86efac] text-black font-extrabold border-r border-emerald-400">{formatINR(summary.totalNPS14)}</td>
                                     )}
-                                    <td className="p-2.5 text-center text-emerald-950 bg-emerald-200">{formatINR(summary.netPayable)}</td>
+                                    <td className="p-2.5 text-center bg-[#fed7aa] text-black font-black border-r border-orange-300">{formatINR(summary.totalTotalAmount)}</td>
+                                    <td className="p-2.5 text-center bg-[#f472b6] text-black font-black border-r border-pink-400">{formatINR(summary.totalGrossAmount || summary.totalDiff)}</td>
+                                    {/* DCPS & Net Totals */}
+                                    {category === 'NPS' && (
+                                        <td className="p-2.5 text-center bg-[#fef08a] text-[#dc2626] font-black border-r border-yellow-400">{formatINR(summary.totalDCPS)}</td>
+                                    )}
+                                    <td className="p-2.5 text-center bg-[#fed7aa] text-black font-black">{formatINR(summary.netPayable)}</td>
                                 </tr>
                             </tfoot>
                         </table>

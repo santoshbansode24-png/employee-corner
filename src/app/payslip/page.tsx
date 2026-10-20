@@ -324,10 +324,10 @@ export default function PayslipPage() {
                                             name="cityCategory" 
                                             value={`${formData.cityCategory} Category — HRA: ${
                                                 formData.cityCategory === 'X' 
-                                                    ? (formData.daRate >= 50 ? '30%' : formData.daRate >= 25 ? '27%' : '24%')
+                                                    ? (formData.daRate > 50 ? '30%' : formData.daRate >= 25 ? '27%' : '24%')
                                                     : formData.cityCategory === 'Y'
-                                                    ? (formData.daRate >= 50 ? '20%' : formData.daRate >= 25 ? '18%' : '16%')
-                                                    : (formData.daRate >= 50 ? '10%' : formData.daRate >= 25 ? '9%' : '8%')
+                                                    ? (formData.daRate > 50 ? '20%' : formData.daRate >= 25 ? '18%' : '16%')
+                                                    : (formData.daRate > 50 ? '10%' : formData.daRate >= 25 ? '9%' : '8%')
                                             } (Min ₹${formData.cityCategory === 'X' ? '5,400' : formData.cityCategory === 'Y' ? '3,600' : '1,800'})`} 
                                             disabled 
                                             className="bg-slate-100 cursor-not-allowed font-semibold text-slate-800" 

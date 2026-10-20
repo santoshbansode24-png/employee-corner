@@ -61,13 +61,13 @@ export const calculatePayslipLogic = (formData: any, additionalAllowances: any[]
     let minHRA = 0;
     
     if (formData.cityCategory === 'X') {
-        hraRate = daRate >= 50 ? 30 : (daRate >= 25 ? 27 : 24);
+        hraRate = daRate > 50 ? 30 : (daRate >= 25 ? 27 : 24);
         minHRA = 5400;
     } else if (formData.cityCategory === 'Y') {
-        hraRate = daRate >= 50 ? 20 : (daRate >= 25 ? 18 : 16);
+        hraRate = daRate > 50 ? 20 : (daRate >= 25 ? 18 : 16);
         minHRA = 3600;
     } else {
-        hraRate = daRate >= 50 ? 10 : (daRate >= 25 ? 9 : 8);
+        hraRate = daRate > 50 ? 10 : (daRate >= 25 ? 9 : 8);
         minHRA = 1800;
     }
 

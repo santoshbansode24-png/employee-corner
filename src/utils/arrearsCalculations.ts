@@ -27,8 +27,8 @@ export const DA_RATES_MAHARASHTRA = [
 export const HRA_RATES_Z = [
     { start: '2016-01-01', end: '2018-12-31', rate: 0 },
     { start: '2019-01-01', end: '2021-06-30', rate: 8 },
-    { start: '2021-07-01', end: '2023-12-31', rate: 9 },
-    { start: '2024-01-01', end: '2099-12-31', rate: 10 },
+    { start: '2021-07-01', end: '2024-06-30', rate: 9 },
+    { start: '2024-07-01', end: '2099-12-31', rate: 10 },
 ];
 
 export const getMaharashtraHRARate = (month: number, year: number, category: string, customDaRate?: number) => {
@@ -37,8 +37,8 @@ export const getMaharashtraHRARate = (month: number, year: number, category: str
 
     const daRate = customDaRate !== undefined ? customDaRate : getMaharashtraDARate(month, year);
     let zRate = 8;
-    // 7th CPC rule: When DA reaches 50% (>= 50), HRA increases to 30%, 20%, 10%
-    if (daRate >= 50) {
+    // 7th CPC rule: When DA rate is greater than 50% (> 50), HRA increases to 30%, 20%, 10%
+    if (daRate > 50) {
         zRate = 10;
     } else if (daRate >= 25) {
         zRate = 9;
@@ -294,16 +294,30 @@ export const calculateArrearsLogic = (params: any) => {
 
         let dcps = basicInfo.category === 'NPS' ? Math.round((diffPay + diffDA) * 0.10) : 0;
         const nps14 = basicInfo.category === 'NPS' ? Math.round((diffPay + diffDA) * 0.14) : 0;
-        const finalAmount = diffTotal - dcps;
+        const totalAmount = diffTotal + nps14;
+        const grossAmount = totalAmount - nps14;
+        const finalAmount = grossAmount - dcps;
 
         results.push({
             label: label + (isIncrementApplies ? ' (INC)' : ''),
             isIncrementMonth: isIncrementApplies,
             due: { pay: runningPay, daRate: dueDARate, da: dueDAAmt, hraRate: dueHRA, hra: dueHRAAmt, ta: dueTA, custom: dueCustomValues, total: dueTotal },
             drawn: { pay: runningDrawnPay, daRate: drawnDARate, da: drawnDAAmt, hraRate: drawnHRA, hra: drawnHRAAmt, ta: drawnTA, custom: drawnCustomValues, total: drawnTotal },
-            diff: { pay: diffPay, da: diffDA, hra: diffHRA, ta: diffTA, custom: diffCustom, total: diffTotal },
+            diff: { 
+                pay: diffPay, 
+                da: diffDA, 
+                hra: diffHRA, 
+                ta: diffTA, 
+                custom: diffCustom, 
+                nps14, 
+                totalAmount, 
+                grossAmount, 
+                total: diffTotal 
+            },
             dcps,
             nps14,
+            totalAmount,
+            grossAmount,
             finalAmount
         });
     });
@@ -333,6 +347,8 @@ export const getArrearsSummary = (results: any[], customColumns: any[] = []) => 
         totalDiffTA: 0,
         totalDiffCustom: {} as Record<string, number>,
         totalDiff: 0,
+        totalTotalAmount: 0,
+        totalGrossAmount: 0,
 
         totalDCPS: 0,
         totalNPS14: 0,
@@ -364,6 +380,8 @@ export const getArrearsSummary = (results: any[], customColumns: any[] = []) => 
         summary.totalDiffHRA += row.diff.hra || 0;
         summary.totalDiffTA += row.diff.ta || 0;
         summary.totalDiff += row.diff.total || 0;
+        summary.totalTotalAmount += row.totalAmount || 0;
+        summary.totalGrossAmount += row.grossAmount || 0;
 
         summary.totalDCPS += row.dcps || 0;
         summary.totalNPS14 += row.nps14 || 0;
