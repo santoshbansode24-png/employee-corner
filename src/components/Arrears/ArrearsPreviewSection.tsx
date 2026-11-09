@@ -75,7 +75,7 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Due (देय)</p>
                         <p className="text-xl sm:text-2xl font-black text-slate-800 mt-1">₹{formatINR(summary.totalDue)}</p>
                         <p className="text-[11px] text-blue-600 font-medium mt-1 truncate" title={dateRangeLabel}>
-                            {dateRangeLabel} ({summary.monthCount}M)
+                            {dateRangeLabel} ({summary.monthCount}M{results.length > summary.monthCount ? `, ${results.length} periods` : ''})
                         </p>
                     </CardContent>
                 </Card>
@@ -212,10 +212,21 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-700">
                                 {results.map((row, idx) => (
-                                    <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${row.isIncrementMonth ? 'bg-amber-50/30 font-medium' : ''}`}>
+                                    <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${row.isIncrementMonth ? 'bg-amber-50/30 font-medium' : row.isSplitPeriod ? 'bg-sky-50/20' : ''}`}>
                                         <td className="p-2 text-center text-slate-400 border-r border-slate-100">{idx + 1}</td>
                                         <td className="p-2 font-medium text-slate-800 border-r border-slate-100 whitespace-nowrap text-center">
-                                            {row.label}
+                                            {row.isSplitPeriod ? (
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <span className="font-bold text-blue-950 text-xs">
+                                                        {row.periodLabel || row.label}
+                                                    </span>
+                                                    <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/70 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                                        {row.days} days
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span>{row.periodLabel || (row.label ? row.label.replace(' (INC)', '') : '')}</span>
+                                            )}
                                             {row.isIncrementMonth && (
                                                 <span className="ml-1.5 text-[9px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.5 rounded">
                                                     INC

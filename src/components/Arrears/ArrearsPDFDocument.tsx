@@ -294,7 +294,7 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
 
     // Proportional, balanced column width calculations
     const wSr = 2.4;
-    const wMonth = 6.4;
+    const wMonth = 6.8;
     const wPay = 4.8;
     const wDa = includeDA ? 4.4 : 0;
     const wHra = includeHRA ? 4.0 : 0;
@@ -483,7 +483,38 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                             <Text style={styles.cellCenterText}>{i + 1}</Text>
                         </View>
                         <View style={[styles.cell, { width: pw(monthWidth) }]}>
-                            <Text style={styles.cellCenterText}>{row.label}</Text>
+                            {row.isSplitPeriod ? (
+                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={[styles.cellCenterText, { fontSize: 6.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
+                                        {row.startDateDMY}
+                                    </Text>
+                                    <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#475569', lineHeight: 1.0 }]}>
+                                        to
+                                    </Text>
+                                    <Text style={[styles.cellCenterText, { fontSize: 6.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
+                                        {row.endDateDMY}
+                                    </Text>
+                                    <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#1e40af', lineHeight: 1.0 }]}>
+                                        ({row.days}d)
+                                    </Text>
+                                    {row.isIncrementMonth && (
+                                        <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#b45309', fontWeight: 'bold' }]}>
+                                            INC
+                                        </Text>
+                                    )}
+                                </View>
+                            ) : (
+                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={styles.cellCenterText}>
+                                        {row.periodLabel || (row.label ? row.label.replace(' (INC)', '') : '')}
+                                    </Text>
+                                    {row.isIncrementMonth && (
+                                        <Text style={[styles.cellCenterText, { fontSize: 6, color: '#b45309', fontWeight: 'bold' }]}>
+                                            INC
+                                        </Text>
+                                    )}
+                                </View>
+                            )}
                         </View>
                         
                         {/* Due Data */}

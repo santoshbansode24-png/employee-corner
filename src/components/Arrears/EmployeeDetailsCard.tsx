@@ -21,8 +21,12 @@ interface EmployeeDetailsProps {
 const normalizeDateForInput = (val: string, isEnd = false) => {
     if (!val) return '';
     // If it's YYYY-MM, append appropriate day
-    if (val.length === 7) {
-        return isEnd ? `${val}-30` : `${val}-01`;
+    if (val.length === 7 && val.includes('-')) {
+        const [y, m] = val.split('-').map(Number);
+        if (y && m) {
+            const lastDay = new Date(y, m, 0).getDate();
+            return isEnd ? `${val}-${String(lastDay).padStart(2, '0')}` : `${val}-01`;
+        }
     }
     return val;
 };

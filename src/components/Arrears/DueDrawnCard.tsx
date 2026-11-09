@@ -153,8 +153,13 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                 {/* PROMOTION PERIODS UI */}
                 {promotionPeriods && promotionPeriods.length > 0 && (
                     <div className="mt-4 space-y-3">
-                        <div className={`text-xs font-bold uppercase tracking-wider ${isDue ? 'text-emerald-700' : 'text-orange-700'}`}>
-                            Promotion / Timebound Overrides
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                            <div className={`text-xs font-bold uppercase tracking-wider ${isDue ? 'text-emerald-700' : 'text-orange-700'}`}>
+                                Promotion / Timebound Overrides (पदोन्नती / कालबद्ध)
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
+                                Supports mid-month dates (e.g. 05/03/2021)
+                            </span>
                         </div>
                         {promotionPeriods.map((period, idx) => (
                             <div key={idx} className={`p-3 bg-gray-50 border rounded-lg space-y-2 ${isDue ? 'border-emerald-200' : 'border-orange-200'} transition-all`}>
@@ -173,7 +178,7 @@ const DueDrawnCard: React.FC<DueDrawnProps> = ({
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                                     <div>
-                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Date (लागू दिनांक)</label>
+                                        <label className="text-[10px] font-semibold text-gray-500 block mb-0.5">Effective Date (लागू दिनांक - DD/MM/YYYY)</label>
                                         <DateInput 
                                             value={period.from ? (period.from.length === 7 ? `${period.from}-01` : period.from) : ''} 
                                             onChange={(e) => updatePromotionPeriod(type, idx, 'from', e.target.value)} 
