@@ -149,6 +149,42 @@ export async function POST(req: NextRequest) {
                 docXml = docXml.replace(duplicateBreakRegex, (_, p1, p2, p3) => p2 + p3);
             }
 
+            // 1b. Fix Kutumb Pramanpatra (Family Certificate) overflow:
+            // Remove consecutive empty paragraphs before "कुटुंब प्रमाणपत्र" and ensure a clean page break
+            const kutumbIndex = docXml.indexOf('कुटुंब प्रमाणपत्र');
+            if (kutumbIndex !== -1) {
+                const kutumbPStart = docXml.lastIndexOf('<w:p ', kutumbIndex) !== -1 
+                    ? docXml.lastIndexOf('<w:p ', kutumbIndex) 
+                    : docXml.lastIndexOf('<w:p>', kutumbIndex);
+
+                let cursor = kutumbPStart;
+                let foundEmpty = false;
+                while (true) {
+                    const prevPEnd = docXml.lastIndexOf('</w:p>', cursor);
+                    if (prevPEnd === -1) break;
+                    const prevPStart = docXml.lastIndexOf('<w:p ', prevPEnd) !== -1 
+                        ? docXml.lastIndexOf('<w:p ', prevPEnd) 
+                        : docXml.lastIndexOf('<w:p>', prevPEnd);
+                    if (prevPStart === -1) break;
+
+                    const pSnippet = docXml.substring(prevPStart, prevPEnd + 6);
+                    const pText = (pSnippet.match(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/g) || []).map(x => x.replace(/<[^>]+>/g, '')).join('').trim();
+                    if (pText === '') {
+                        foundEmpty = true;
+                        cursor = prevPStart;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (foundEmpty) {
+                    const prevChunk = docXml.substring(Math.max(0, cursor - 200), cursor);
+                    const hasBreak = /<w:br\s+w:type="page"\s*\/?>/.test(prevChunk);
+                    const pageBreakInsert = hasBreak ? '' : '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+                    docXml = docXml.substring(0, cursor) + pageBreakInsert + docXml.substring(kutumbPStart);
+                }
+            }
+
             // 2. Populate dynamic receipts tables (Medicine and Pathology)
             // Replace from highest index to lowest so character offsets remain exact
             const medRange = findLoopRange(docXml, 'medicine_receipts');
