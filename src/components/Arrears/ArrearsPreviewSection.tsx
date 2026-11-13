@@ -155,8 +155,8 @@ const ArrearsPreviewSection: React.FC<ArrearsPreviewSectionProps> = ({
 
                 {isTableExpanded && (
                     <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-                        <table className="w-full text-xs text-left border-collapse">
-                            <thead className="sticky top-0 z-20 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                        <table className="w-full text-sm text-left border-collapse [&_th]:border [&_th]:border-slate-400 [&_td]:border [&_td]:border-slate-300">
+                            <thead className="sticky top-0 z-20 bg-slate-100 border-b-2 border-slate-400 text-slate-800 font-bold uppercase tracking-wider">
                                 <tr>
                                     <th className="p-2.5 text-center border-r border-slate-200">SR</th>
                                     <th className="p-2.5 text-center border-r border-slate-200">Month</th>

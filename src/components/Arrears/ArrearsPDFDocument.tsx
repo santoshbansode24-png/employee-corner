@@ -27,14 +27,14 @@ Font.registerHyphenationCallback(word => [word]);
 
 const styles = StyleSheet.create({
     page: { 
-        paddingTop: 24, 
-        paddingBottom: 28, 
-        paddingLeft: 36, 
-        paddingRight: 28, 
+        paddingTop: 18, 
+        paddingBottom: 24, 
+        paddingLeft: 18, 
+        paddingRight: 18, 
         backgroundColor: '#ffffff', 
         flexDirection: 'column', 
         fontFamily: 'Nirmala',
-        fontSize: 10 
+        fontSize: 11 
     },
     
     // Header
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
         textAlign: 'center' 
     },
     orderTitle: { 
-        fontSize: 16, 
+        fontSize: 17, 
         fontWeight: 'bold', 
         color: '#1e3a8a', 
         textAlign: 'center', 
@@ -53,9 +53,9 @@ const styles = StyleSheet.create({
     // Employee & Statement Details Grid
     detailsBox: { 
         marginBottom: 8, 
-        padding: 7, 
-        borderWidth: 1.2, 
-        borderColor: '#94a3b8', 
+        padding: 8, 
+        borderWidth: 1.25, 
+        borderColor: '#475569', 
         borderRadius: 4, 
         backgroundColor: '#f8fafc' 
     },
@@ -68,11 +68,11 @@ const styles = StyleSheet.create({
         width: '49%' 
     },
     detailText: { 
-        fontSize: 10.5, 
+        fontSize: 11, 
         color: '#334155' 
     },
     detailValue: { 
-        fontSize: 10.5, 
+        fontSize: 11, 
         fontWeight: 'bold', 
         color: '#0f172a' 
     },
@@ -81,89 +81,89 @@ const styles = StyleSheet.create({
     table: { 
         width: '100%', 
         borderStyle: 'solid', 
-        borderWidth: 1.2, 
-        borderColor: '#334155', 
+        borderWidth: 1.5, 
+        borderColor: '#0f172a', 
         borderRightWidth: 0, 
         borderBottomWidth: 0 
     },
     tableRow: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 20 
+        minHeight: 24 
     },
     tableRowAlt: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 20, 
+        minHeight: 24, 
         backgroundColor: '#f8fafc' 
     },
     
     // Header Cells
     headerGroupCell: { 
         borderStyle: 'solid', 
-        borderColor: '#334155', 
-        borderWidth: 1, 
+        borderColor: '#0f172a', 
+        borderWidth: 1.25, 
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center', 
         alignItems: 'center',
-        paddingVertical: 3,
-        paddingHorizontal: 1
+        paddingVertical: 4,
+        paddingHorizontal: 2
     },
     headerGroupText: { 
-        fontSize: 9, 
+        fontSize: 11, 
         fontWeight: 'bold', 
         textAlign: 'center' 
     },
     
     subHeaderCell: { 
         borderStyle: 'solid', 
-        borderColor: '#334155', 
-        borderWidth: 1, 
+        borderColor: '#0f172a', 
+        borderWidth: 1.25, 
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center', 
         alignItems: 'center',
-        paddingVertical: 3,
-        paddingHorizontal: 1,
+        paddingVertical: 4,
+        paddingHorizontal: 2,
         backgroundColor: '#f1f5f9'
     },
     subHeaderText: { 
-        fontSize: 8, 
+        fontSize: 10, 
         fontWeight: 'bold', 
         textAlign: 'center',
-        color: '#1e293b'
+        color: '#0f172a' 
     },
 
     // Data Cells
     cell: { 
         borderStyle: 'solid', 
-        borderColor: '#334155', 
-        borderWidth: 1, 
+        borderColor: '#0f172a', 
+        borderWidth: 1.25, 
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center',
-        paddingVertical: 2.5,
-        paddingHorizontal: 1.5
+        paddingVertical: 3.5,
+        paddingHorizontal: 2.5
     },
     cellCenterText: { 
-        fontSize: 8.5, 
+        fontSize: 11.5, 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNumberText: { 
-        fontSize: 8.5, 
+        fontSize: 11.5, 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNumberBold: { 
-        fontSize: 8.5, 
+        fontSize: 11.5, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     cellNetPayableText: { 
-        fontSize: 8.5, 
+        fontSize: 11.5, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#047857' 
@@ -173,35 +173,35 @@ const styles = StyleSheet.create({
     totalRow: { 
         flexDirection: 'row', 
         width: '100%', 
-        minHeight: 22, 
+        minHeight: 26, 
         backgroundColor: '#e2e8f0', 
-        borderTopWidth: 1.5, 
+        borderTopWidth: 2, 
         borderTopColor: '#0f172a' 
     },
     totalCell: { 
         borderStyle: 'solid', 
-        borderColor: '#334155', 
-        borderWidth: 1, 
+        borderColor: '#0f172a', 
+        borderWidth: 1.25, 
         borderLeftWidth: 0, 
         borderTopWidth: 0, 
         justifyContent: 'center',
-        paddingVertical: 3,
-        paddingHorizontal: 1.5
+        paddingVertical: 4,
+        paddingHorizontal: 2.5
     },
     totalTextCenter: { 
-        fontSize: 9, 
+        fontSize: 11.5, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     totalTextNumber: { 
-        fontSize: 8.5, 
+        fontSize: 11, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#0f172a' 
     },
     totalTextNet: { 
-        fontSize: 9, 
+        fontSize: 11.5, 
         fontWeight: 'bold', 
         textAlign: 'center', 
         color: '#065f46' 
@@ -398,13 +398,13 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                 {/* DCPS 10% */}
                 {isNps && (
                     <View style={[styles.headerGroupCell, { width: pw(dcpsWidth), backgroundColor: '#ffffff' }]}>
-                        <Text style={[styles.headerGroupText, { color: '#1e293b', fontSize: 8.5 }]}>NPS 10%</Text>
+                        <Text style={[styles.headerGroupText, { color: '#1e293b', fontSize: 10 }]}>NPS 10%</Text>
                     </View>
                 )}
 
                 {/* Net Payable */}
                 <View style={[styles.headerGroupCell, { width: pw(netWidth), backgroundColor: '#dcfce7' }]}>
-                    <Text style={[styles.headerGroupText, { color: '#14532d', fontSize: 8.5 }]}>NET PAYBLE</Text>
+                    <Text style={[styles.headerGroupText, { color: '#14532d', fontSize: 10 }]}>NET PAYABLE</Text>
                 </View>
             </View>
 
@@ -457,20 +457,20 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                     </View>
                 )}
                 <View style={[styles.subHeaderCell, { width: pw(colTotalAmount), backgroundColor: '#fed7aa' }]}>
-                    <Text style={[styles.subHeaderText, { color: '#7c2d12', fontWeight: 'bold', fontSize: 7.5 }]}>TOTAL AMOUNT</Text>
+                    <Text style={[styles.subHeaderText, { color: '#7c2d12', fontWeight: 'bold', fontSize: 9 }]}>TOTAL AMOUNT</Text>
                 </View>
                 <View style={[styles.subHeaderCell, { width: pw(colGrossAmount), backgroundColor: '#dcfce7' }]}>
-                    <Text style={[styles.subHeaderText, { color: '#064e3b', fontWeight: 'bold', fontSize: 7.5 }]}>GROSS AMOUNT</Text>
+                    <Text style={[styles.subHeaderText, { color: '#064e3b', fontWeight: 'bold', fontSize: 9 }]}>GROSS AMOUNT</Text>
                 </View>
                 
                 {/* DCPS & Net Payable Sub Headers */}
                 {isNps && (
                     <View style={[styles.subHeaderCell, { width: pw(dcpsWidth), backgroundColor: '#ffffff' }]}>
-                        <Text style={[styles.subHeaderText, { color: '#1e293b', fontSize: 7.5 }]}>NPS 10%</Text>
+                        <Text style={[styles.subHeaderText, { color: '#1e293b', fontSize: 9 }]}>NPS 10%</Text>
                     </View>
                 )}
                 <View style={[styles.subHeaderCell, { width: pw(netWidth), backgroundColor: '#dcfce7' }]}>
-                    <Text style={[styles.subHeaderText, { color: '#14532d', fontSize: 7.5 }]}>NET PAYBLE</Text>
+                    <Text style={[styles.subHeaderText, { color: '#14532d', fontSize: 9 }]}>NET PAYABLE</Text>
                 </View>
             </View>
 
@@ -485,20 +485,20 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                         <View style={[styles.cell, { width: pw(monthWidth) }]}>
                             {row.isSplitPeriod ? (
                                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={[styles.cellCenterText, { fontSize: 6.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
+                                    <Text style={[styles.cellCenterText, { fontSize: 8.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
                                         {row.startDateDMY}
                                     </Text>
-                                    <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#475569', lineHeight: 1.0 }]}>
+                                    <Text style={[styles.cellCenterText, { fontSize: 7.5, color: '#475569', lineHeight: 1.05 }]}>
                                         to
                                     </Text>
-                                    <Text style={[styles.cellCenterText, { fontSize: 6.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
+                                    <Text style={[styles.cellCenterText, { fontSize: 8.5, lineHeight: 1.15, fontWeight: 'bold' }]}>
                                         {row.endDateDMY}
                                     </Text>
-                                    <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#1e40af', lineHeight: 1.0 }]}>
+                                    <Text style={[styles.cellCenterText, { fontSize: 7.5, color: '#1e40af', lineHeight: 1.05 }]}>
                                         ({row.days}d)
                                     </Text>
                                     {row.isIncrementMonth && (
-                                        <Text style={[styles.cellCenterText, { fontSize: 5.5, color: '#b45309', fontWeight: 'bold' }]}>
+                                        <Text style={[styles.cellCenterText, { fontSize: 7.5, color: '#b45309', fontWeight: 'bold' }]}>
                                             INC
                                         </Text>
                                     )}
@@ -509,7 +509,7 @@ const ArrearsPDFDocument: React.FC<PDFProps> = ({ basicInfo, customColumns = [],
                                         {row.periodLabel || (row.label ? row.label.replace(' (INC)', '') : '')}
                                     </Text>
                                     {row.isIncrementMonth && (
-                                        <Text style={[styles.cellCenterText, { fontSize: 6, color: '#b45309', fontWeight: 'bold' }]}>
+                                        <Text style={[styles.cellCenterText, { fontSize: 8, color: '#b45309', fontWeight: 'bold' }]}>
                                             INC
                                         </Text>
                                     )}
